@@ -88,6 +88,15 @@ export default function Home() {
     },
   ];
 
+  // Calcular estadísticas
+  const stats = {
+    total: anuncios.length,
+    operando: anuncios.filter(a => a.status === 'operando').length,
+    enDesarrollo: anuncios.filter(a => a.status === 'en_desarrollo').length,
+    incumplido: anuncios.filter(a => a.status === 'incumplido').length,
+    prometido: anuncios.filter(a => a.status === 'prometido').length,
+  };
+
   const getStatusColor = (status: string) => {
     const colors = {
       incumplido: 'bg-red-50 text-red-700 border-red-200',
@@ -139,6 +148,43 @@ export default function Home() {
             >
               Ver el tracker completo →
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Barra de estadísticas */}
+      <section className="bg-gray-50 border-y border-gray-200 py-4 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+            <div className="flex flex-wrap items-center gap-6">
+              <div>
+                <span className="font-medium text-gray-900">Total:</span>{' '}
+                <span className="text-gray-600">{stats.total}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-300" />
+              <div>
+                <span className="font-medium text-green-700">Operando:</span>{' '}
+                <span className="text-gray-600">{stats.operando}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-300" />
+              <div>
+                <span className="font-medium text-yellow-700">En desarrollo:</span>{' '}
+                <span className="text-gray-600">{stats.enDesarrollo}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-300" />
+              <div>
+                <span className="font-medium text-red-700">Incumplido:</span>{' '}
+                <span className="text-gray-600">{stats.incumplido}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-300" />
+              <div>
+                <span className="font-medium text-gray-700">Prometido:</span>{' '}
+                <span className="text-gray-600">{stats.prometido}</span>
+              </div>
+            </div>
+            <div className="text-xs text-gray-500">
+              Última actualización: 6 dic 2025
+            </div>
           </div>
         </div>
       </section>
@@ -199,37 +245,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer mínimo */}
-      <footer className="border-t border-gray-200 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
-            <div>
-              <p className="font-medium text-gray-900">Observatorio IA México</p>
-              <p className="text-xs mt-1">Tracker ciudadano de anuncios gubernamentales sobre IA</p>
-            </div>
-            <div className="text-center md:text-right">
-              <p>
-                Una iniciativa de{' '}
-                <a href="https://lawgic.com" target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 hover:underline">
-                  Lawgic
-                </a>
-              </p>
-              <p className="text-xs mt-1">
-                Dirigida por{' '}
-                <a 
-                  href="https://www.linkedin.com/in/aldoricardorodriguez" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="font-medium text-gray-900 hover:underline"
-                >
-                  Aldo Ricardo Rodríguez Cortés
-                </a>
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
