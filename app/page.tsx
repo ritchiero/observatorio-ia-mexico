@@ -66,8 +66,6 @@ export default function Home() {
       responsable: 'Sheinbaum',
       status: 'prometido',
       statusLabel: 'PROMETIDO',
-      fechaPrometida: '2026',
-      cumplida: false,
       detalle: 'Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.',
     },
     {
@@ -141,14 +139,7 @@ export default function Home() {
             realmente funciona cabe en una servilleta.
           </p>
 
-          <div className="text-center">
-            <Link 
-              href="/dashboard" 
-              className="inline-block bg-white text-gray-900 px-8 py-3 text-sm font-medium hover:bg-gray-100 transition-colors"
-            >
-              Ver el tracker completo →
-            </Link>
-          </div>
+
         </div>
       </section>
 
@@ -235,14 +226,7 @@ export default function Home() {
             </table>
           </div>
 
-          <div className="mt-8 text-center">
-            <Link 
-              href="/dashboard" 
-              className="inline-block bg-gray-900 text-white px-8 py-3 text-sm font-medium hover:bg-gray-800 transition-colors"
-            >
-              Ver dashboard completo →
-            </Link>
-          </div>
+
         </div>
       </section>
     </div>

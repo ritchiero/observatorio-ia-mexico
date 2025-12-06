@@ -21,13 +21,7 @@ export default function Header() {
               href="/" 
               className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
             >
-              Inicio
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              Dashboard
+              Tracker
             </Link>
             <Link 
               href="/actividad" 
