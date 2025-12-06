@@ -12,30 +12,34 @@ export default function AnuncioCard({ anuncio }: AnuncioCardProps) {
 
   return (
     <Link href={`/anuncio/${anuncio.id}`}>
-      <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-900 transition-colors cursor-pointer">
-        <div className="flex justify-between items-start gap-4 mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 flex-1">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-400 transition-colors cursor-pointer">
+        <div className="flex justify-between items-start gap-3 mb-2">
+          <h3 className="text-sm font-semibold text-gray-900 flex-1 line-clamp-2">
             {anuncio.titulo}
           </h3>
           <StatusBadge status={anuncio.status} />
         </div>
 
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+        <p className="text-gray-600 text-xs mb-3 line-clamp-2">
           {anuncio.descripcion}
         </p>
 
-        <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-          <div>
-            Anunciado: {fechaAnuncio?.toLocaleDateString('es-MX')}
-          </div>
+        <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+          {fechaAnuncio && (
+            <div>
+              Anunciado: {fechaAnuncio.toLocaleDateString('es-MX')}
+            </div>
+          )}
           {fechaPrometida && (
             <div>
               Prometido: {fechaPrometida.toLocaleDateString('es-MX')}
             </div>
           )}
-          <div>
-            {anuncio.responsable}
-          </div>
+          {anuncio.responsable && (
+            <div className="truncate">
+              {anuncio.responsable}
+            </div>
+          )}
         </div>
       </div>
     </Link>

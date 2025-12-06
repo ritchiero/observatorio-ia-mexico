@@ -27,18 +27,18 @@ export default function StatsOverview({ anuncios }: StatsOverviewProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
         >
           <div className="flex flex-col items-center text-center">
-            <stat.Icon className="w-8 h-8 text-gray-400 mb-2" />
-            <p className="text-3xl font-bold text-gray-900">
+            <stat.Icon className="w-6 h-6 text-gray-400 mb-2" />
+            <p className="text-2xl font-bold text-gray-900">
               {stat.value}
             </p>
-            <p className="text-sm text-gray-600 mt-2">{stat.label}</p>
+            <p className="text-xs text-gray-600 mt-1">{stat.label}</p>
           </div>
         </div>
       ))}
