@@ -179,8 +179,29 @@ export default function HomePage() {
             <p className="text-lg text-gray-700 mb-4">
               Este es un proyecto ciudadano de código abierto desarrollado para promover la transparencia gubernamental en el ámbito de la inteligencia artificial en México.
             </p>
-            <p className="text-lg text-gray-700 mb-8">
+            <p className="text-lg text-gray-700 mb-4">
               El sistema se mantiene automáticamente mediante agentes de IA que realizan búsquedas y actualizaciones periódicas, minimizando la necesidad de intervención humana y garantizando información actualizada.
+            </p>
+            <p className="text-lg text-gray-700 mb-8">
+              Una iniciativa de{' '}
+              <a 
+                href="https://lawgic.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-semibold text-gray-900 hover:underline"
+              >
+                Lawgic
+              </a>
+              {' '}dirigida por{' '}
+              <a 
+                href="https://www.linkedin.com/in/aldoricardorodriguez" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-semibold text-gray-900 hover:underline"
+              >
+                Aldo Ricardo Rodríguez Cortés
+              </a>
+              .
             </p>
             <Link
               href="/dashboard"
