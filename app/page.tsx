@@ -1,399 +1,235 @@
-'use client';
-
 import Link from 'next/link';
-import Image from 'next/image';
-import { 
-  ChartBarIcon, 
-  CpuChipIcon, 
-  ClockIcon, 
-  ShieldCheckIcon,
-  ArrowRightIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
 
-const anuncios = [
-  {
-    titulo: 'Laboratorio Nacional de IA',
-    descripcion: 'Prometido para octubre por la presidenta Sheinbaum. Octubre llegó y el laboratorio no.',
-    fecha: 'Abril 2025',
-    responsable: 'Sheinbaum',
-    status: 'Prometido',
-    logo: '/logos/gobierno-mexico.png'
-  },
-  {
-    titulo: 'Modelo de lenguaje propio',
-    descripcion: 'Anunciado en julio por Marcelo Ebrard. Sin documentación técnica ni código público.',
-    fecha: 'Julio 2025',
-    responsable: 'Ebrard',
-    status: 'En desarrollo',
-    logo: '/logos/secretaria-economia.png'
-  },
-  {
-    titulo: 'Plataforma México IA+',
-    descripcion: 'Evento realizado. Sin productos concretos.',
-    fecha: 'Julio 2025',
-    responsable: 'Economía + CCE',
-    status: 'Prometido',
-    logo: '/logos/secretaria-economia.png'
-  },
-  {
-    titulo: 'Inversión CloudHQ $4.8B USD',
-    descripcion: 'Anunciado. En planeación.',
-    fecha: 'Septiembre 2025',
-    responsable: 'Sheinbaum / Ebrard',
-    status: 'Prometido',
-    logo: '/logos/gobierno-mexico.png'
-  },
-  {
-    titulo: 'Marco normativo de IA',
-    descripcion: 'Propuesta publicada. Sin aprobación.',
-    fecha: 'Octubre 2025',
-    responsable: 'Senado',
-    status: 'Prometido',
-    logo: '/logos/senado.jpg'
-  },
-  {
-    titulo: 'Centro Público de Formación en IA',
-    descripcion: 'Convocatoria cerrada. Las clases inician en enero de 2026.',
-    fecha: 'Noviembre 2025',
-    responsable: 'ATDT + Infotec + TecNM',
-    status: 'En desarrollo',
-    logo: '/logos/gobierno-mexico.png'
-  },
-  {
-    titulo: 'KAL - Modelo de lenguaje mexicano',
-    descripcion: 'Presentado sin documentación técnica, sin código público, sin benchmarks.',
-    fecha: 'Noviembre 2025',
-    responsable: 'Saptiva + Secretaría de Economía',
-    status: 'En desarrollo',
-    logo: '/logos/secretaria-economia.png'
-  },
-  {
-    titulo: 'Coatlicue - Supercomputadora',
-    descripcion: 'Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.',
-    fecha: 'Noviembre 2025',
-    responsable: 'Sheinbaum',
-    status: 'Prometido',
-    logo: '/logos/gobierno-mexico.png'
-  },
-  {
-    titulo: 'Regulación regional IA (APEC)',
-    descripcion: 'Propuesta diplomática. Sin acuerdo vinculante.',
-    fecha: 'Noviembre 2025',
-    responsable: 'Marcelo Ebrard',
-    status: 'Prometido',
-    logo: '/logos/secretaria-economia.png'
-  },
-  {
-    titulo: '15 carreras de bachillerato con IA',
-    descripcion: 'Aprobadas. Implementación: próximo ciclo escolar.',
-    fecha: 'Diciembre 2025',
-    responsable: 'SEP',
-    status: 'Prometido',
-    logo: '/logos/sep.png'
-  },
-];
+export default function Home() {
+  const anuncios = [
+    {
+      fecha: 'Abril',
+      anuncio: 'Laboratorio Nacional de IA',
+      responsable: 'Sheinbaum',
+      status: 'incumplido',
+      statusLabel: 'INCUMPLIDO',
+      fechaPrometida: 'Oct 2025',
+      cumplida: false,
+      detalle: 'Prometido para octubre por la presidenta Sheinbaum. Octubre llegó y el laboratorio no.',
+    },
+    {
+      fecha: 'Julio',
+      anuncio: 'Modelo de lenguaje propio',
+      responsable: 'Ebrard',
+      status: 'prometido',
+      statusLabel: 'PROMETIDO',
+      detalle: 'Anunciado en julio por Marcelo Ebrard. Sin documentación técnica ni código público.',
+    },
+    {
+      fecha: 'Julio',
+      anuncio: 'Plataforma México IA+',
+      responsable: 'Economía + CCE',
+      status: 'prometido',
+      statusLabel: 'PROMETIDO',
+      detalle: 'Evento realizado. Sin productos concretos.',
+    },
+    {
+      fecha: 'Sept',
+      anuncio: 'Inversión CloudHQ $4.8B USD',
+      responsable: 'Sheinbaum / Ebrard',
+      status: 'prometido',
+      statusLabel: 'PROMETIDO',
+      detalle: 'Anunciado. En planeación.',
+    },
+    {
+      fecha: 'Oct',
+      anuncio: 'Marco normativo de IA',
+      responsable: 'Senado',
+      status: 'prometido',
+      statusLabel: 'PROMETIDO',
+      detalle: 'Propuesta publicada. Sin aprobación.',
+    },
+    {
+      fecha: 'Nov',
+      anuncio: 'Centro Público de Formación en IA',
+      responsable: 'ATDT + Infotec + TecNM',
+      status: 'en_desarrollo',
+      statusLabel: 'EN DESARROLLO',
+      detalle: 'Convocatoria cerrada. Las clases inician en enero de 2026.',
+    },
+    {
+      fecha: 'Nov',
+      anuncio: 'KAL - Modelo de lenguaje mexicano',
+      responsable: 'Saptiva + SE',
+      status: 'en_desarrollo',
+      statusLabel: 'EN DESARROLLO',
+      detalle: 'Presentado sin documentación técnica, sin código público, sin benchmarks.',
+    },
+    {
+      fecha: 'Nov',
+      anuncio: 'Coatlicue - Supercomputadora',
+      responsable: 'Sheinbaum',
+      status: 'prometido',
+      statusLabel: 'PROMETIDO',
+      fechaPrometida: '2026',
+      cumplida: false,
+      detalle: 'Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.',
+    },
+    {
+      fecha: 'Nov',
+      anuncio: 'Regulación regional IA (APEC)',
+      responsable: 'Marcelo Ebrard',
+      status: 'prometido',
+      statusLabel: 'PROMETIDO',
+      detalle: 'Propuesta diplomática. Sin acuerdo vinculante.',
+    },
+    {
+      fecha: 'Dic',
+      anuncio: '15 carreras de bachillerato con IA',
+      responsable: 'SEP',
+      status: 'prometido',
+      statusLabel: 'PROMETIDO',
+      detalle: 'Aprobadas. Implementación: próximo ciclo escolar.',
+    },
+  ];
 
-export default function HomePage() {
+  const getStatusColor = (status: string) => {
+    const colors = {
+      incumplido: 'bg-red-50 text-red-700 border-red-200',
+      en_desarrollo: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+      prometido: 'bg-gray-100 text-gray-700 border-gray-300',
+      operando: 'bg-green-50 text-green-700 border-green-200',
+      abandonado: 'bg-black text-white border-black',
+    };
+    return colors[status as keyof typeof colors] || colors.prometido;
+  };
+
+  const getStatusEmoji = (status: string) => {
+    const emojis = {
+      incumplido: '🔴',
+      en_desarrollo: '🟡',
+      prometido: '⚪',
+      operando: '🟢',
+      abandonado: '⚫',
+    };
+    return emojis[status as keyof typeof emojis] || '⚪';
+  };
+
   return (
-    <div className="bg-white">
-      {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            Observatorio IA México
-          </h1>
-          <p className="text-base text-gray-600 mb-2 max-w-2xl mx-auto">
-            Seguimiento ciudadano automatizado de anuncios gubernamentales sobre inteligencia artificial en México
-          </p>
-          <p className="text-sm text-gray-500 mb-6 max-w-2xl mx-auto">
-            Porque prometer no empobrece, pero cumplir sí se mide
-          </p>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-          >
-            Ver Dashboard
-            <ArrowRightIcon className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-
-      {/* Current Situation */}
-      <div className="bg-gray-50 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-start gap-3 mb-4">
-              <ExclamationTriangleIcon className="w-6 h-6 text-gray-900 flex-shrink-0 mt-0.5" />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                  La realidad en 2025
-                </h2>
-                <p className="text-sm text-gray-700 mb-3">
-                  El gobierno mexicano ha sido pródigo en promesas sobre inteligencia artificial: laboratorios nacionales, modelos de lenguaje soberanos, supercomputadoras con nombres aztecas, escuelas públicas de IA. Lo que escasea son los productos terminados.
-                </p>
-                <p className="text-sm text-gray-700">
-                  A diciembre de 2025, el inventario de lo que realmente funciona cabe en una servilleta.
-                </p>
-              </div>
+    <div className="min-h-screen bg-white">
+      {/* Hero con impacto - Fondo oscuro */}
+      <section className="bg-gray-900 text-white py-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-baseline justify-center gap-12 mb-8">
+            <div className="text-center">
+              <div className="text-8xl font-bold mb-2">10</div>
+              <div className="text-sm text-gray-400">anuncios principales<br />en 2025</div>
             </div>
-
-            {/* Key Stats */}
-            <div className="grid md:grid-cols-3 gap-4 mt-6">
-              <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-gray-900">10+</p>
-                <p className="text-xs text-gray-600 mt-1">Anuncios en 2025</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-gray-900">113</p>
-                <p className="text-xs text-gray-600 mt-1">Apps de IA reportadas</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-gray-900">223</p>
-                <p className="text-xs text-gray-600 mt-1">No calificaban como IA</p>
-              </div>
+            <div className="text-center">
+              <div className="text-8xl font-bold text-red-600 mb-2">0</div>
+              <div className="text-sm text-gray-400">productos funcionando<br />a escala</div>
             </div>
           </div>
-        </div>
-      </div>
+          
+          <p className="text-xl leading-relaxed mb-8 text-gray-300 text-center">
+            El gobierno mexicano prometió laboratorios nacionales, modelos de lenguaje soberanos, 
+            supercomputadoras con nombres aztecas. A diciembre de 2025, el inventario de lo que 
+            realmente funciona cabe en una servilleta.
+          </p>
 
-      {/* All Announcements */}
-      <div className="py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Anuncios destacados de 2025
-          </h2>
-          <div className="max-w-4xl mx-auto space-y-3">
-            {anuncios.map((anuncio, index) => (
-              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-400 transition-colors">
-                <div className="flex gap-4">
-                  {/* Logo */}
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 relative">
-                      <Image
-                        src={anuncio.logo}
-                        alt={anuncio.responsable}
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-4 mb-2">
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        {anuncio.titulo}
-                      </h3>
-                      <span className="text-xs px-2 py-1 bg-gray-100 border border-gray-300 rounded-full whitespace-nowrap flex-shrink-0">
-                        {anuncio.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-2">
-                      {anuncio.descripcion}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {anuncio.fecha} · {anuncio.responsable}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-6">
-            <Link
-              href="/dashboard"
-              className="text-sm text-gray-900 font-medium hover:underline"
+          <div className="text-center">
+            <Link 
+              href="/dashboard" 
+              className="inline-block bg-white text-gray-900 px-8 py-3 text-sm font-medium hover:bg-gray-100 transition-colors"
             >
-              Ver todos los anuncios →
+              Ver el tracker completo →
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Problem Section */}
-      <div className="bg-gray-50 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
-              ¿Por qué existe este proyecto?
-            </h2>
-            <p className="text-sm text-gray-700 mb-3">
-              Dar seguimiento manual a los anuncios gubernamentales, verificar su cumplimiento y monitorear su progreso requiere tiempo y esfuerzo constante. La opacidad es generalizada y muchas dependencias ni siquiera responden a solicitudes de información.
-            </p>
-            <p className="text-sm text-gray-700">
-              Este observatorio automatiza ese proceso utilizando agentes de IA que buscan, detectan y monitorean anuncios gubernamentales de forma autónoma, proporcionando transparencia ciudadana sin intervención humana constante.
-            </p>
+      {/* Tabla de anuncios */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold mb-8 text-gray-900">Anuncios de IA en 2025</h2>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full border border-gray-200">
+              <thead className="bg-gray-900 text-white">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Fecha</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Anuncio</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Responsable</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {anuncios.map((item, index) => (
+                  <tr 
+                    key={index}
+                    className={`border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    }`}
+                  >
+                    <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">{item.fecha}</td>
+                    <td className="px-4 py-4">
+                      <div className="text-sm font-medium text-gray-900">{item.anuncio}</div>
+                      <div className="text-xs text-gray-500 mt-1">{item.detalle}</div>
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-600">{item.responsable}</td>
+                    <td className="px-4 py-4">
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-medium border ${getStatusColor(item.status)}`}>
+                        <span>{getStatusEmoji(item.status)}</span>
+                        <span>{item.statusLabel}</span>
+                      </div>
+                      {item.fechaPrometida && !item.cumplida && (
+                        <div className="text-xs text-red-600 mt-1">
+                          Fecha prometida: {item.fechaPrometida} ❌
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
 
-      {/* How it Works */}
-      <div className="py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            ¿Cómo funciona?
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div className="bg-white border border-gray-200 rounded-lg p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <CpuChipIcon className="w-6 h-6 text-gray-900" />
-                <h3 className="text-base font-semibold text-gray-900">
-                  Agente de Detección
-                </h3>
-              </div>
-              <p className="text-sm text-gray-700 mb-2">
-                Se ejecuta automáticamente el día 1 de cada mes para buscar nuevos anuncios gubernamentales sobre IA.
-              </p>
-              <ul className="space-y-1 text-xs text-gray-600">
-                <li>• Busca en fuentes oficiales y medios</li>
-                <li>• Extrae información estructurada</li>
-                <li>• Registra automáticamente nuevos anuncios</li>
-              </ul>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <ClockIcon className="w-6 h-6 text-gray-900" />
-                <h3 className="text-base font-semibold text-gray-900">
-                  Agente de Monitoreo
-                </h3>
-              </div>
-              <p className="text-sm text-gray-700 mb-2">
-                Se ejecuta automáticamente el día 15 de cada mes para actualizar el status de anuncios existentes.
-              </p>
-              <ul className="space-y-1 text-xs text-gray-600">
-                <li>• Verifica progreso de proyectos</li>
-                <li>• Actualiza status automáticamente</li>
-                <li>• Registra cambios y evidencias</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Features */}
-      <div className="bg-gray-50 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Características principales
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="flex justify-center mb-3">
-                <ChartBarIcon className="w-8 h-8 text-gray-900" />
-              </div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                Dashboard en Tiempo Real
-              </h3>
-              <p className="text-xs text-gray-600">
-                Visualiza estadísticas y el estado actual de todos los anuncios gubernamentales
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="flex justify-center mb-3">
-                <CpuChipIcon className="w-8 h-8 text-gray-900" />
-              </div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                Automatización Total
-              </h3>
-              <p className="text-xs text-gray-600">
-                Los agentes trabajan 24/7 sin necesidad de intervención humana constante
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="flex justify-center mb-3">
-                <ShieldCheckIcon className="w-8 h-8 text-gray-900" />
-              </div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                Transparencia Ciudadana
-              </h3>
-              <p className="text-xs text-gray-600">
-                Información pública y accesible para cualquier ciudadano interesado
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tech Stack */}
-      <div className="py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
-            Tecnología
-          </h2>
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-white border border-gray-200 rounded-lg p-5">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Next.js 14</p>
-                  <p className="text-xs text-gray-600">Framework</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Claude API</p>
-                  <p className="text-xs text-gray-600">Agentes IA</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Firebase</p>
-                  <p className="text-xs text-gray-600">Base de datos</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Vercel</p>
-                  <p className="text-xs text-gray-600">Hosting</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* About */}
-      <div className="bg-gray-50 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Sobre el proyecto
-            </h2>
-            <p className="text-sm text-gray-700 mb-3">
-              Este es un proyecto ciudadano de código abierto desarrollado para promover la transparencia gubernamental en el ámbito de la inteligencia artificial en México.
-            </p>
-            <p className="text-sm text-gray-700 mb-3">
-              El sistema se mantiene automáticamente mediante agentes de IA que realizan búsquedas y actualizaciones periódicas, minimizando la necesidad de intervención humana y garantizando información actualizada.
-            </p>
-            <p className="text-sm text-gray-700 mb-6">
-              Una iniciativa de{' '}
-              <a 
-                href="https://lawgic.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="font-semibold text-gray-900 hover:underline"
-              >
-                Lawgic
-              </a>
-              {' '}dirigida por{' '}
-              <a 
-                href="https://www.linkedin.com/in/aldoricardorodriguez" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="font-semibold text-gray-900 hover:underline"
-              >
-                Aldo Ricardo Rodríguez Cortés
-              </a>
-              .
-            </p>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+          <div className="mt-8 text-center">
+            <Link 
+              href="/dashboard" 
+              className="inline-block bg-gray-900 text-white px-8 py-3 text-sm font-medium hover:bg-gray-800 transition-colors"
             >
-              Explorar Dashboard
-              <ArrowRightIcon className="w-4 h-4" />
+              Ver dashboard completo →
             </Link>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Footer mínimo */}
+      <footer className="border-t border-gray-200 py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
+            <div>
+              <p className="font-medium text-gray-900">Observatorio IA México</p>
+              <p className="text-xs mt-1">Tracker ciudadano de anuncios gubernamentales sobre IA</p>
+            </div>
+            <div className="text-center md:text-right">
+              <p>
+                Una iniciativa de{' '}
+                <a href="https://lawgic.com" target="_blank" rel="noopener noreferrer" className="font-medium text-gray-900 hover:underline">
+                  Lawgic
+                </a>
+              </p>
+              <p className="text-xs mt-1">
+                Dirigida por{' '}
+                <a 
+                  href="https://www.linkedin.com/in/aldoricardorodriguez" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="font-medium text-gray-900 hover:underline"
+                >
+                  Aldo Ricardo Rodríguez Cortés
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
