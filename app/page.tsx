@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   ChartBarIcon, 
   CpuChipIcon, 
@@ -9,6 +10,89 @@ import {
   ArrowRightIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+
+const anuncios = [
+  {
+    titulo: 'Laboratorio Nacional de IA',
+    descripcion: 'Prometido para octubre por la presidenta Sheinbaum. Octubre llegó y el laboratorio no.',
+    fecha: 'Abril 2025',
+    responsable: 'Sheinbaum',
+    status: 'Prometido',
+    logo: '/logos/gobierno-mexico.png'
+  },
+  {
+    titulo: 'Modelo de lenguaje propio',
+    descripcion: 'Anunciado en julio por Marcelo Ebrard. Sin documentación técnica ni código público.',
+    fecha: 'Julio 2025',
+    responsable: 'Ebrard',
+    status: 'En desarrollo',
+    logo: '/logos/secretaria-economia.png'
+  },
+  {
+    titulo: 'Plataforma México IA+',
+    descripcion: 'Evento realizado. Sin productos concretos.',
+    fecha: 'Julio 2025',
+    responsable: 'Economía + CCE',
+    status: 'Prometido',
+    logo: '/logos/secretaria-economia.png'
+  },
+  {
+    titulo: 'Inversión CloudHQ $4.8B USD',
+    descripcion: 'Anunciado. En planeación.',
+    fecha: 'Septiembre 2025',
+    responsable: 'Sheinbaum / Ebrard',
+    status: 'Prometido',
+    logo: '/logos/gobierno-mexico.png'
+  },
+  {
+    titulo: 'Marco normativo de IA',
+    descripcion: 'Propuesta publicada. Sin aprobación.',
+    fecha: 'Octubre 2025',
+    responsable: 'Senado',
+    status: 'Prometido',
+    logo: '/logos/senado.jpg'
+  },
+  {
+    titulo: 'Centro Público de Formación en IA',
+    descripcion: 'Convocatoria cerrada. Las clases inician en enero de 2026.',
+    fecha: 'Noviembre 2025',
+    responsable: 'ATDT + Infotec + TecNM',
+    status: 'En desarrollo',
+    logo: '/logos/gobierno-mexico.png'
+  },
+  {
+    titulo: 'KAL - Modelo de lenguaje mexicano',
+    descripcion: 'Presentado sin documentación técnica, sin código público, sin benchmarks.',
+    fecha: 'Noviembre 2025',
+    responsable: 'Saptiva + Secretaría de Economía',
+    status: 'En desarrollo',
+    logo: '/logos/secretaria-economia.png'
+  },
+  {
+    titulo: 'Coatlicue - Supercomputadora',
+    descripcion: 'Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.',
+    fecha: 'Noviembre 2025',
+    responsable: 'Sheinbaum',
+    status: 'Prometido',
+    logo: '/logos/gobierno-mexico.png'
+  },
+  {
+    titulo: 'Regulación regional IA (APEC)',
+    descripcion: 'Propuesta diplomática. Sin acuerdo vinculante.',
+    fecha: 'Noviembre 2025',
+    responsable: 'Marcelo Ebrard',
+    status: 'Prometido',
+    logo: '/logos/secretaria-economia.png'
+  },
+  {
+    titulo: '15 carreras de bachillerato con IA',
+    descripcion: 'Aprobadas. Implementación: próximo ciclo escolar.',
+    fecha: 'Diciembre 2025',
+    responsable: 'SEP',
+    status: 'Prometido',
+    logo: '/logos/sep.png'
+  },
+];
 
 export default function HomePage() {
   return (
@@ -35,7 +119,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Current Situation - NEW */}
+      {/* Current Situation */}
       <div className="bg-gray-50 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
@@ -73,80 +157,48 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Recent Announcements */}
+      {/* All Announcements */}
       <div className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             Anuncios destacados de 2025
           </h2>
           <div className="max-w-4xl mx-auto space-y-3">
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                    Laboratorio Nacional de IA
-                  </h3>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Prometido para octubre por la presidenta Sheinbaum. Octubre llegó y el laboratorio no.
-                  </p>
-                  <p className="text-xs text-gray-500">Abril 2025 · Sheinbaum</p>
+            {anuncios.map((anuncio, index) => (
+              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-400 transition-colors">
+                <div className="flex gap-4">
+                  {/* Logo */}
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 relative">
+                      <Image
+                        src={anuncio.logo}
+                        alt={anuncio.responsable}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-4 mb-2">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        {anuncio.titulo}
+                      </h3>
+                      <span className="text-xs px-2 py-1 bg-gray-100 border border-gray-300 rounded-full whitespace-nowrap flex-shrink-0">
+                        {anuncio.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-2">
+                      {anuncio.descripcion}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {anuncio.fecha} · {anuncio.responsable}
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs px-2 py-1 bg-gray-100 border border-gray-300 rounded-full whitespace-nowrap">
-                  Prometido
-                </span>
               </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                    KAL - Modelo de lenguaje mexicano
-                  </h3>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Presentado sin documentación técnica, sin código público, sin benchmarks.
-                  </p>
-                  <p className="text-xs text-gray-500">Noviembre 2025 · Saptiva + Secretaría de Economía</p>
-                </div>
-                <span className="text-xs px-2 py-1 bg-gray-100 border border-gray-300 rounded-full whitespace-nowrap">
-                  En desarrollo
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                    Coatlicue - Supercomputadora
-                  </h3>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.
-                  </p>
-                  <p className="text-xs text-gray-500">Noviembre 2025 · Sheinbaum</p>
-                </div>
-                <span className="text-xs px-2 py-1 bg-gray-100 border border-gray-300 rounded-full whitespace-nowrap">
-                  Prometido
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                    Centro Público de Formación en IA
-                  </h3>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Convocatoria cerrada. Las clases inician en enero de 2026.
-                  </p>
-                  <p className="text-xs text-gray-500">Noviembre 2025 · ATDT + Infotec + TecNM</p>
-                </div>
-                <span className="text-xs px-2 py-1 bg-gray-100 border border-gray-300 rounded-full whitespace-nowrap">
-                  En desarrollo
-                </span>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="text-center mt-6">
