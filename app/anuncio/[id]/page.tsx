@@ -66,7 +66,7 @@ export default function AnuncioDetailPage() {
   const eventosNegativos = eventos.filter(e => e.impacto === 'negativo').length;
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl mx-auto space-y-6 sm:space-y-8">
       {/* Botón volver */}
       <button
         onClick={() => router.push('/')}

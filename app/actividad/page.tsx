@@ -24,14 +24,14 @@ export default function ActividadPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-xl text-gray-600">Cargando...</div>
+        <div className="text-lg sm:text-xl text-gray-600">Cargando...</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-10">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">
         Actividad Reciente
       </h1>
       <ActividadFeed actividad={actividad} />

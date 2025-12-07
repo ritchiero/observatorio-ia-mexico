@@ -143,20 +143,20 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero con impacto - Fondo oscuro */}
-      <section className="bg-gray-900 text-white py-20 px-4">
+      <section className="bg-gray-900 text-white py-12 sm:py-16 md:py-20 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-baseline justify-center gap-12 mb-8">
+          <div className="flex items-baseline justify-center gap-6 sm:gap-8 md:gap-12 mb-6 sm:mb-8">
             <div className="text-center">
-              <div className="text-8xl font-bold mb-2">10</div>
-              <div className="text-sm text-gray-400">anuncios principales<br />en 2025</div>
+              <div className="text-5xl sm:text-6xl md:text-8xl font-bold mb-1 sm:mb-2">10</div>
+              <div className="text-xs sm:text-sm text-gray-400">anuncios principales<br />en 2025</div>
             </div>
             <div className="text-center">
-              <div className="text-8xl font-bold text-red-600 mb-2">0</div>
-              <div className="text-sm text-gray-400">productos funcionando<br />a escala</div>
+              <div className="text-5xl sm:text-6xl md:text-8xl font-bold text-red-600 mb-1 sm:mb-2">0</div>
+              <div className="text-xs sm:text-sm text-gray-400">productos funcionando<br />a escala</div>
             </div>
           </div>
           
-          <p className="text-xl leading-relaxed mb-8 text-gray-300 text-center">
+          <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-6 sm:mb-8 text-gray-300 text-center px-2">
             El gobierno mexicano prometió laboratorios nacionales, modelos de lenguaje soberanos, 
             supercomputadoras con nombres aztecas. A diciembre de 2025, el inventario de lo que 
             realmente funciona cabe en una servilleta.
@@ -167,30 +167,55 @@ export default function Home() {
       </section>
 
       {/* Barra de estadísticas */}
-      <section className="bg-gray-50 border-y border-gray-200 py-4 px-4">
+      <section className="bg-gray-50 border-y border-gray-200 py-3 sm:py-4 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
-            <div className="flex flex-wrap items-center gap-6">
+          {/* Vista móvil: grid compacto */}
+          <div className="grid grid-cols-5 gap-2 text-center sm:hidden">
+            <div className="bg-white rounded-lg py-2 px-1 border border-gray-200">
+              <div className="text-lg font-bold text-gray-900">{stats.total}</div>
+              <div className="text-[10px] text-gray-500">Total</div>
+            </div>
+            <div className="bg-white rounded-lg py-2 px-1 border border-green-200">
+              <div className="text-lg font-bold text-green-600">{stats.operando}</div>
+              <div className="text-[10px] text-gray-500">Operando</div>
+            </div>
+            <div className="bg-white rounded-lg py-2 px-1 border border-yellow-200">
+              <div className="text-lg font-bold text-yellow-600">{stats.enDesarrollo}</div>
+              <div className="text-[10px] text-gray-500">Desarrollo</div>
+            </div>
+            <div className="bg-white rounded-lg py-2 px-1 border border-red-200">
+              <div className="text-lg font-bold text-red-600">{stats.incumplido}</div>
+              <div className="text-[10px] text-gray-500">Incumplido</div>
+            </div>
+            <div className="bg-white rounded-lg py-2 px-1 border border-gray-200">
+              <div className="text-lg font-bold text-gray-600">{stats.prometido}</div>
+              <div className="text-[10px] text-gray-500">Prometido</div>
+            </div>
+          </div>
+
+          {/* Vista desktop: horizontal */}
+          <div className="hidden sm:flex flex-wrap items-center justify-between gap-4 text-sm">
+            <div className="flex flex-wrap items-center gap-4 md:gap-6">
               <div>
                 <span className="font-medium text-gray-900">Total:</span>{' '}
                 <span className="text-gray-600">{stats.total}</span>
               </div>
-              <div className="h-4 w-px bg-gray-300" />
+              <div className="h-4 w-px bg-gray-300 hidden md:block" />
               <div>
-                <span className="font-medium text-red-700">Operando:</span>{' '}
-                <span className="font-bold text-red-600">{stats.operando}</span>
+                <span className="font-medium text-green-700">Operando:</span>{' '}
+                <span className="font-bold text-green-600">{stats.operando}</span>
               </div>
-              <div className="h-4 w-px bg-gray-300" />
+              <div className="h-4 w-px bg-gray-300 hidden md:block" />
               <div>
                 <span className="font-medium text-yellow-700">En desarrollo:</span>{' '}
                 <span className="text-gray-600">{stats.enDesarrollo}</span>
               </div>
-              <div className="h-4 w-px bg-gray-300" />
+              <div className="h-4 w-px bg-gray-300 hidden md:block" />
               <div>
                 <span className="font-medium text-red-700">Incumplido:</span>{' '}
                 <span className="text-gray-600">{stats.incumplido}</span>
               </div>
-              <div className="h-4 w-px bg-gray-300" />
+              <div className="h-4 w-px bg-gray-300 hidden md:block" />
               <div>
                 <span className="font-medium text-gray-700">Prometido:</span>{' '}
                 <span className="text-gray-600">{stats.prometido}</span>
@@ -200,22 +225,27 @@ export default function Home() {
               Última actualización: 6 dic 2025
             </div>
           </div>
+          
+          {/* Fecha de actualización móvil */}
+          <div className="sm:hidden text-center mt-2">
+            <span className="text-[10px] text-gray-400">Última actualización: 6 dic 2025</span>
+          </div>
         </div>
       </section>
 
       {/* Tabla de anuncios */}
-      <section className="py-16 px-4">
+      <section className="py-8 sm:py-12 md:py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Anuncios de IA en 2025</h2>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Anuncios de IA en 2025</h2>
             
             {/* Filtro por status */}
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Filtrar:</label>
+              <label className="text-sm font-medium text-gray-700 hidden sm:inline">Filtrar:</label>
               <select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 <option value="todos">Todos ({stats.total})</option>
                 <option value="incumplido">🔴 Incumplido ({stats.incumplido})</option>
@@ -226,7 +256,40 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="overflow-x-auto">
+          {/* Vista móvil: Cards */}
+          <div className="md:hidden space-y-3">
+            {anunciosFiltrados.map((item, index) => (
+              <div
+                key={index}
+                onClick={() => router.push(`/anuncio/${item.id}`)}
+                className="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm cursor-pointer transition-all active:bg-blue-50"
+              >
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{item.fecha}</span>
+                      <span className="text-xs text-gray-500">·</span>
+                      <span className="text-xs text-gray-600">{item.responsable}</span>
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900">{item.anuncio}</h3>
+                  </div>
+                  <div className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded ${getStatusColor(item.status)}`}>
+                    <span>{getStatusEmoji(item.status)}</span>
+                    <span className="hidden xs:inline">{item.statusLabel}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 line-clamp-2">{item.detalle}</p>
+                {item.fechaPrometida && !item.cumplida && (
+                  <div className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                    <span>📅</span> Prometido: {item.fechaPrometida} ❌
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Vista desktop: Tabla */}
+          <div className="hidden md:block overflow-x-auto">
             <table key={filtroStatus} className="w-full border border-gray-200">
               <thead className="bg-gray-900 text-white">
                 <tr>
