@@ -63,7 +63,6 @@ export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
             tipo: f.tipo as TipoFuente,
             url: f.url,
             titulo: f.titulo,
-            fecha: Timestamp.fromDate(new Date(anuncio.fecha_anuncio)),
             fechaPublicacion: new Date(anuncio.fecha_anuncio),
           }));
 
