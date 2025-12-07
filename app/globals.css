@@ -1,13 +1,22 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Space+Grotesk:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
 
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
+  --background: #030303;
+  --foreground: #E5E5E5;
+  --c-gold: #D4AF37;
+  --c-gold-bright: #F4D03F;
+  --c-gold-dim: #8a701e;
+  --c-black: #030303;
+  --c-dark: #0a0a0a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-gold: var(--c-gold);
+  --color-gold-bright: var(--c-gold-bright);
+  --color-gold-dim: var(--c-gold-dim);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -15,30 +24,139 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar personalizada para el tema claro */
+/* Fuentes personalizadas */
+.font-serif-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-sans-tech {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+}
+
+/* Scrollbar personalizada para tema oscuro */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f3f4f6;
+  background: #0a0a0a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: #2a2a2a;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: var(--c-gold-dim);
 }
 
-/* Selección de texto con colores tech */
+/* Selección de texto con colores dorados */
 ::selection {
-  background: rgba(6, 182, 212, 0.3);
-  color: #111827;
+  background: rgba(212, 175, 55, 0.3);
+  color: var(--c-gold-bright);
+}
+
+/* Textura de ruido/granulado */
+.noise-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Animaciones keyframes */
+@keyframes scanline {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(50px) scale(0.98); filter: blur(12px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes pulse-gold {
+  0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotate-radar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(200%) skewX(-12deg); }
+}
+
+/* Utilidades de animación */
+.animate-reveal {
+  animation: revealUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-700 { animation-delay: 700ms; }
+
+/* Grid de radar */
+.radar-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at 50% 50%, black 40%, transparent 80%);
+}
+
+/* Glow dorado en texto */
+.gold-glow-text {
+  text-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+/* Gradiente de texto dorado */
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--c-gold-bright) 0%, var(--c-gold) 50%, var(--c-gold-dim) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
