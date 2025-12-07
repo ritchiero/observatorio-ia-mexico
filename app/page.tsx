@@ -178,8 +178,7 @@ export default function Home() {
           
           <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-6 sm:mb-8 text-gray-600 text-center px-2">
             México ha anunciado ambiciosas metas en IA: laboratorios nacionales, modelos de lenguaje 
-            soberanos, supercomputadoras. A diciembre de 2025, los avances verificables y operativos 
-            siguen siendo limitados.
+            soberanos, supercomputadoras. <span className="font-semibold text-gray-900">A diciembre de 2025, el inventario de lo que realmente funciona: cero productos a escala.</span>
           </p>
 
           {/* Badge México + IA */}

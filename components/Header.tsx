@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [iaPiDropdownOpen, setIaPiDropdownOpen] = useState(false);
 
   return (
     <header className="border-b border-gray-200 bg-white">
@@ -42,6 +43,74 @@ export default function Header() {
                 Tracker
               </span>
             </Link>
+
+            {/* Dropdown IA y PI */}
+            <div 
+              className="relative"
+              onMouseEnter={() => setIaPiDropdownOpen(true)}
+              onMouseLeave={() => setIaPiDropdownOpen(false)}
+            >
+              <button className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                </svg>
+                IA y PI
+                <svg className={`w-3 h-3 transition-transform ${iaPiDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown menu */}
+              {iaPiDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
+                  <Link 
+                    href="/ia-pi/casos"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-cyan-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>⚖️</span>
+                      <span>Casos Judiciales</span>
+                    </div>
+                  </Link>
+                  <Link 
+                    href="/ia-pi/criterios"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-cyan-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>📜</span>
+                      <span>Criterios y Precedentes</span>
+                    </div>
+                  </Link>
+                  <Link 
+                    href="/ia-pi/propuestas"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-cyan-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>🏛️</span>
+                      <span>Propuestas Legislativas</span>
+                    </div>
+                  </Link>
+                  <Link 
+                    href="/ia-pi/problematicas"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-cyan-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>🚨</span>
+                      <span>Problemáticas</span>
+                    </div>
+                  </Link>
+                  <div className="border-t border-gray-100 mt-2 pt-2">
+                    <Link 
+                      href="/ia-pi"
+                      className="block px-4 py-2 text-sm text-cyan-600 hover:bg-gray-100 font-medium transition-colors"
+                    >
+                      Ver todas →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Link 
               href="/actividad" 
               className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
@@ -84,6 +153,46 @@ export default function Header() {
               </svg>
               Tracker
             </Link>
+
+            {/* IA y PI en móvil */}
+            <div className="px-3 py-2">
+              <div className="text-xs font-semibold text-gray-500 mb-2">IA y Propiedad Intelectual</div>
+              <div className="space-y-1 pl-2">
+                <Link 
+                  href="/ia-pi/casos"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-cyan-600 rounded-lg transition-colors"
+                >
+                  <span>⚖️</span>
+                  <span>Casos Judiciales</span>
+                </Link>
+                <Link 
+                  href="/ia-pi/criterios"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-cyan-600 rounded-lg transition-colors"
+                >
+                  <span>📜</span>
+                  <span>Criterios</span>
+                </Link>
+                <Link 
+                  href="/ia-pi/propuestas"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-cyan-600 rounded-lg transition-colors"
+                >
+                  <span>🏛️</span>
+                  <span>Propuestas</span>
+                </Link>
+                <Link 
+                  href="/ia-pi/problematicas"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-cyan-600 rounded-lg transition-colors"
+                >
+                  <span>🚨</span>
+                  <span>Problemáticas</span>
+                </Link>
+              </div>
+            </div>
+
             <Link 
               href="/actividad" 
               onClick={() => setMenuOpen(false)}
