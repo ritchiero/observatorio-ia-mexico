@@ -12,6 +12,9 @@ export interface Fuente {
   accesible?: boolean | null;
   waybackUrl?: string;
   extracto?: string;
+  medio?: string;
+  archivoUrl?: string;
+  descripcion?: string;
 }
 
 export interface Actualizacion {
@@ -96,18 +99,8 @@ export interface MonitoreoResponse {
 // Tipos para Timeline Interactivo
 export type TipoEvento = 'anuncio_inicial' | 'actualizacion' | 'cambio_status' | 'cumplimiento' | 'incumplimiento' | 'retraso' | 'progreso';
 export type ImpactoEvento = 'positivo' | 'neutral' | 'negativo';
-export type TipoFuente = 'nota_prensa' | 'comunicado_oficial' | 'video' | 'documento' | 'tweet' | 'gaceta_oficial' | 'otro';
-
-export interface Fuente {
-  id: string;
-  tipo: TipoFuente;
-  url: string;
-  titulo: string;
-  medio?: string;
-  fechaPublicacion: Timestamp;
-  archivoUrl?: string; // Para preservar contenido
-  descripcion?: string;
-}
+// TipoFuente es un alias de FuenteTipo para compatibilidad con timeline
+export type TipoFuente = FuenteTipo | 'comunicado_oficial' | 'video' | 'documento' | 'tweet' | 'gaceta_oficial';
 
 export interface EventoTimeline {
   id: string;

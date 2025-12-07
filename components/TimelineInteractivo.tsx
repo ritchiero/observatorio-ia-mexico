@@ -105,12 +105,12 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
             <div className="space-y-2">
               {evento.fuentes.map((fuente) => {
                 let fechaFuente: Date;
-                if ((fuente.fechaPublicacion as any)._seconds) {
-                  fechaFuente = new Date((fuente.fechaPublicacion as any)._seconds * 1000);
-                } else if ((fuente.fechaPublicacion as any).seconds) {
-                  fechaFuente = new Date((fuente.fechaPublicacion as any).seconds * 1000);
+                if ((fuente.fecha as any)._seconds) {
+                  fechaFuente = new Date((fuente.fecha as any)._seconds * 1000);
+                } else if ((fuente.fecha as any).seconds) {
+                  fechaFuente = new Date((fuente.fecha as any).seconds * 1000);
                 } else {
-                  fechaFuente = new Date(fuente.fechaPublicacion as any);
+                  fechaFuente = new Date(fuente.fecha as any);
                 }
                 
                 const fechaFuenteFormateada = fechaFuente.toLocaleDateString('es-MX', {
@@ -120,7 +120,7 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
                 });
 
                 return (
-                  <div key={fuente.id} className="bg-white/5 border border-white/10 rounded p-2 sm:p-3 backdrop-blur-sm">
+                  <div key={fuente.url} className="bg-white/5 border border-white/10 rounded p-2 sm:p-3 backdrop-blur-sm">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-1">

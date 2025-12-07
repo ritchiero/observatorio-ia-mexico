@@ -110,6 +110,7 @@ export async function crearEventoInicial(params: {
       tipo: 'nota_prensa',
       url: params.fuenteOriginal,
       titulo: `Anuncio de ${params.titulo}`,
+      fecha: Timestamp.fromDate(params.fechaAnuncio) as any,
       fechaPublicacion: params.fechaAnuncio,
     },
     ...(params.fuentesAdicionales || []),
