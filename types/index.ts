@@ -2,6 +2,18 @@ import { Timestamp } from 'firebase/firestore';
 
 export type StatusType = 'prometido' | 'en_desarrollo' | 'operando' | 'incumplido' | 'abandonado';
 
+export type FuenteTipo = 'anuncio_original' | 'nota_prensa' | 'declaracion' | 'transparencia' | 'otro';
+
+export interface Fuente {
+  url: string;
+  titulo: string;
+  fecha: Timestamp;
+  tipo: FuenteTipo;
+  accesible?: boolean | null;
+  waybackUrl?: string;
+  extracto?: string;
+}
+
 export interface Actualizacion {
   fecha: Timestamp;
   descripcion: string;
@@ -19,7 +31,8 @@ export interface Anuncio {
   fechaPrometida: Timestamp | null;
   responsable: string;
   dependencia: string;
-  fuenteOriginal: string;
+  fuenteOriginal: string; // Deprecated - usar fuentes[]
+  fuentes?: Fuente[]; // Array de fuentes verificables
   citaPromesa: string;
   status: StatusType;
   actualizaciones: Actualizacion[];
