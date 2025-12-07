@@ -6,6 +6,23 @@ import { useState, useMemo } from 'react';
 export default function Home() {
   const router = useRouter();
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  
+  // Función para calcular días vencidos
+  const calcularDiasVencidos = (fechaPrometida: string): number => {
+    const meses: {[key: string]: number} = {
+      'Ene': 0, 'Feb': 1, 'Mar': 2, 'Abr': 3, 'May': 4, 'Jun': 5,
+      'Jul': 6, 'Ago': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dic': 11
+    };
+    const [mesStr, yearStr] = fechaPrometida.split(' ');
+    const mes = meses[mesStr];
+    const year = parseInt(yearStr);
+    // Último día del mes prometido
+    const fechaLimite = new Date(year, mes + 1, 0);
+    const hoy = new Date();
+    const diffTime = hoy.getTime() - fechaLimite.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
   const anuncios = [
     // Mapeo: título hardcodeado → ID de Firestore
     {
@@ -17,6 +34,7 @@ export default function Home() {
       statusLabel: 'INCUMPLIDO',
       fechaPrometida: 'Oct 2025',
       cumplida: false,
+      diasVencidos: 67,
       detalle: 'Prometido para octubre por la presidenta Sheinbaum. Octubre llegó y el laboratorio no.',
     },
     {
@@ -281,8 +299,8 @@ export default function Home() {
               <div className="text-lg font-bold text-gray-900">{stats.total}</div>
               <div className="text-[10px] text-gray-500">Total</div>
             </div>
-            <div className="bg-emerald-50 rounded-lg py-2 px-1 border border-emerald-200">
-              <div className="text-lg font-bold text-emerald-600">{stats.operando}</div>
+            <div className="bg-red-50 rounded-lg py-2 px-1 border border-red-200">
+              <div className="text-lg font-bold text-red-600">{stats.operando}</div>
               <div className="text-[10px] text-gray-500">Operando</div>
             </div>
             <div className="bg-amber-50 rounded-lg py-2 px-1 border border-amber-200">
@@ -308,8 +326,8 @@ export default function Home() {
               </div>
               <div className="h-4 w-px bg-gray-200 hidden md:block" />
               <div>
-                <span className="font-medium text-emerald-600">Operando:</span>{' '}
-                <span className="font-bold text-emerald-600">{stats.operando}</span>
+                <span className="font-medium text-red-600">Operando:</span>{' '}
+                <span className="font-bold text-red-600">{stats.operando}</span>
               </div>
               <div className="h-4 w-px bg-gray-200 hidden md:block" />
               <div>
@@ -391,9 +409,9 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 line-clamp-2">{item.detalle}</p>
-                {item.fechaPrometida && !item.cumplida && (
-                  <div className="text-xs text-red-600 mt-2 flex items-center gap-1">
-                    <span>📅</span> Prometido: {item.fechaPrometida} ❌
+                {item.fechaPrometida && !item.cumplida && item.status === 'incumplido' && (
+                  <div className="text-xs text-red-600 mt-2 flex items-center gap-1 font-medium">
+                    <span>⏱️</span> Incumplido hace {item.diasVencidos || calcularDiasVencidos(item.fechaPrometida)} días
                   </div>
                 )}
               </div>
@@ -431,9 +449,9 @@ export default function Home() {
                         <span>{getStatusEmoji(item.status)}</span>
                         <span>{item.statusLabel}</span>
                       </div>
-                      {item.fechaPrometida && !item.cumplida && (
-                        <div className="text-xs text-red-600 mt-1">
-                          Fecha prometida: {item.fechaPrometida} ❌
+                      {item.fechaPrometida && !item.cumplida && item.status === 'incumplido' && (
+                        <div className="text-xs text-red-600 mt-1 font-medium">
+                          ⏱️ Incumplido hace {item.diasVencidos || calcularDiasVencidos(item.fechaPrometida)} días
                         </div>
                       )}
                     </td>
