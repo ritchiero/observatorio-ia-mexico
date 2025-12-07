@@ -2,32 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Anuncio, EventoTimeline } from '@/types';
+import { Anuncio } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
-import TimelineInteractivo from '@/components/TimelineInteractivo';
+import Timeline from '@/components/Timeline';
 import { formatDate } from '@/lib/utils';
 
 export default function AnuncioDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [anuncio, setAnuncio] = useState<Anuncio | null>(null);
-  const [eventos, setEventos] = useState<EventoTimeline[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (params.id) {
-      // Cargar anuncio y eventos de timeline
-      Promise.all([
-        fetch(`/api/anuncios/${params.id}`).then(res => res.json()),
-        fetch(`/api/timeline/${params.id}`).then(res => res.json()),
-      ])
-        .then(([anuncioData, timelineData]) => {
-          setAnuncio(anuncioData.anuncio || null);
-          setEventos(timelineData.eventos || []);
+      fetch(`/api/anuncios/${params.id}`)
+        .then(res => res.json())
+        .then(data => {
+          setAnuncio(data.anuncio || null);
           setLoading(false);
         })
         .catch(err => {
-          console.error('Error al cargar datos:', err);
+          console.error('Error al cargar anuncio:', err);
           setLoading(false);
         });
     }
@@ -60,11 +55,6 @@ export default function AnuncioDetailPage() {
   const fechaAnuncio = anuncio.fechaAnuncio ? new Date(anuncio.fechaAnuncio as unknown as string) : null;
   const fechaPrometida = anuncio.fechaPrometida ? new Date(anuncio.fechaPrometida as unknown as string) : null;
 
-  // Calcular estadísticas
-  const totalFuentes = eventos.reduce((sum, e) => sum + e.fuentes.length, 0);
-  const eventosPositivos = eventos.filter(e => e.impacto === 'positivo').length;
-  const eventosNegativos = eventos.filter(e => e.impacto === 'negativo').length;
-
   return (
     <div className="space-y-8">
       {/* Botón volver */}
@@ -88,7 +78,7 @@ export default function AnuncioDetailPage() {
           {anuncio.descripcion}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="font-semibold text-gray-600">Responsable:</span>
             <span className="ml-2 text-gray-900">{anuncio.responsable}</span>
@@ -108,7 +98,7 @@ export default function AnuncioDetailPage() {
         </div>
 
         {anuncio.citaPromesa && (
-          <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded mb-4">
+          <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
             <p className="text-sm font-semibold text-blue-900 mb-1">
               Cita de la promesa:
             </p>
@@ -117,7 +107,7 @@ export default function AnuncioDetailPage() {
         )}
 
         {anuncio.fuenteOriginal && (
-          <div>
+          <div className="mt-4">
             <a
               href={anuncio.fuenteOriginal}
               target="_blank"
@@ -130,59 +120,12 @@ export default function AnuncioDetailPage() {
         )}
       </div>
 
-      {/* Estadísticas del Timeline */}
-      {eventos.length > 0 && (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">{eventos.length}</div>
-              <div className="text-sm text-gray-600">Eventos registrados</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">{totalFuentes}</div>
-              <div className="text-sm text-gray-600">Fuentes verificadas</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{eventosPositivos}</div>
-              <div className="text-sm text-gray-600">Avances</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-red-600">{eventosNegativos}</div>
-              <div className="text-sm text-gray-600">Retrocesos</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Timeline Interactivo */}
+      {/* Historial de seguimiento */}
       <div className="bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          📅 Timeline de Eventos
+          Historial de Seguimiento
         </h2>
-        
-        {eventos.length > 0 ? (
-          <TimelineInteractivo eventos={eventos} />
-        ) : (
-          <div className="text-center py-8 text-gray-600">
-            <p className="mb-2">No hay eventos registrados aún.</p>
-            <p className="text-sm">
-              El timeline se construirá automáticamente cuando el agente de monitoreo 
-              detecte actualizaciones sobre este anuncio.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Información adicional */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          Sobre este Timeline
-        </h3>
-        <p className="text-sm text-gray-600 leading-relaxed">
-          Este timeline se actualiza automáticamente mediante agentes de IA que monitorean 
-          noticias y comunicados oficiales. Cada evento está respaldado por fuentes verificables 
-          para garantizar la transparencia y accountability del gobierno mexicano en materia de IA.
-        </p>
+        <Timeline actualizaciones={anuncio.actualizaciones || []} />
       </div>
     </div>
   );

@@ -78,3 +78,73 @@ export interface MonitoreoResponse {
   nuevo_status?: StatusType;
   justificacion?: string;
 }
+
+// Tipos para Timeline Interactivo
+export type TipoEvento = 'anuncio_inicial' | 'actualizacion' | 'cambio_status' | 'cumplimiento' | 'incumplimiento' | 'retraso' | 'progreso';
+export type ImpactoEvento = 'positivo' | 'neutral' | 'negativo';
+export type TipoFuente = 'nota_prensa' | 'comunicado_oficial' | 'video' | 'documento' | 'tweet' | 'gaceta_oficial' | 'otro';
+
+export interface Fuente {
+  id: string;
+  tipo: TipoFuente;
+  url: string;
+  titulo: string;
+  medio?: string;
+  fechaPublicacion: Timestamp;
+  archivoUrl?: string; // Para preservar contenido
+  descripcion?: string;
+}
+
+export interface EventoTimeline {
+  id: string;
+  anuncioId: string;
+  fecha: Timestamp;
+  tipo: TipoEvento;
+  titulo: string;
+  descripcion: string;
+  fuentes: Fuente[];
+  citaTextual?: string;
+  responsable?: string;
+  impacto: ImpactoEvento;
+  createdAt: Timestamp;
+}
+
+// Tipos actualizados para respuestas de agentes con fuentes
+export interface DeteccionResponseConFuentes {
+  nuevos_anuncios: {
+    titulo: string;
+    descripcion: string;
+    fecha_anuncio: string;
+    fecha_prometida: string | null;
+    responsable: string;
+    dependencia: string;
+    fuente_url: string;
+    cita_promesa: string;
+    fuentes_adicionales?: {
+      tipo: TipoFuente;
+      url: string;
+      titulo: string;
+      medio?: string;
+    }[];
+  }[];
+}
+
+export interface MonitoreoResponseConFuentes {
+  hay_actualizacion: boolean;
+  actualizacion?: {
+    descripcion: string;
+    fuente_url: string;
+    tipo_evento: TipoEvento;
+    impacto: ImpactoEvento;
+    cita_textual?: string;
+    fuentes_adicionales?: {
+      tipo: TipoFuente;
+      url: string;
+      titulo: string;
+      medio?: string;
+    }[];
+  };
+  cambio_status_recomendado: boolean;
+  nuevo_status?: StatusType;
+  justificacion?: string;
+}

@@ -42,10 +42,20 @@ RESPONDE EN JSON VÁLIDO con este formato exacto:
       "responsable": "Nombre del funcionario",
       "dependencia": "Nombre de la dependencia",
       "fuente_url": "URL de la fuente oficial",
-      "cita_promesa": "Cita textual del compromiso"
+      "cita_promesa": "Cita textual del compromiso",
+      "fuentes_adicionales": [
+        {
+          "tipo": "nota_prensa|comunicado_oficial|video|documento|tweet|gaceta_oficial|otro",
+          "url": "URL de la fuente",
+          "titulo": "Título de la fuente",
+          "medio": "Nombre del medio (opcional)"
+        }
+      ]
     }
   ]
 }
+
+INCLUYE MÚLTIPLES FUENTES cuando sea posible (comunicado oficial + notas de prensa + videos).
 
 Si no encuentras nuevos anuncios, responde: {"nuevos_anuncios": []}`;
 }
@@ -95,12 +105,38 @@ RESPONDE EN JSON VÁLIDO con este formato exacto:
   "hay_actualizacion": true o false,
   "actualizacion": {
     "descripcion": "Descripción de la actualización encontrada",
-    "fuente_url": "URL de la fuente"
+    "fuente_url": "URL de la fuente",
+    "tipo_evento": "actualizacion|cambio_status|cumplimiento|incumplimiento|retraso|progreso",
+    "impacto": "positivo|neutral|negativo",
+    "cita_textual": "Cita textual relevante del funcionario o fuente (opcional)",
+    "fuentes_adicionales": [
+      {
+        "tipo": "nota_prensa|comunicado_oficial|video|documento|tweet|gaceta_oficial|otro",
+        "url": "URL de la fuente",
+        "titulo": "Título de la fuente",
+        "medio": "Nombre del medio (opcional)"
+      }
+    ]
   },
   "cambio_status_recomendado": true o false,
   "nuevo_status": "prometido|en_desarrollo|operando|incumplido|abandonado",
   "justificacion": "Razón del cambio de status"
 }
+
+CRITERIOS PARA tipo_evento:
+- actualizacion: Información nueva sin cambio de status
+- cambio_status: Cambio oficial de status del proyecto
+- cumplimiento: Proyecto cumplió lo prometido
+- incumplimiento: Fecha pasó sin cumplir
+- retraso: Anuncio de retraso oficial
+- progreso: Avance significativo hacia cumplimiento
+
+CRITERIOS PARA impacto:
+- positivo: Avances, cumplimientos, lanzamientos
+- neutral: Información sin cambio significativo
+- negativo: Retrasos, incumplimientos, cancelaciones
+
+INCLUYE MÚLTIPLES FUENTES cuando sea posible para mayor credibilidad.
 
 Si no hay actualizaciones, responde: {"hay_actualizacion": false, "cambio_status_recomendado": false}`;
 }

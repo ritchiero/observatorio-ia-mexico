@@ -1,8 +1,9 @@
 import { getAdminDb } from './firebase-admin';
 import { searchWithClaude } from './claude';
 import { getDeteccionPrompt, getMonitoreoPrompt } from './prompts';
-import { DeteccionResponse, MonitoreoResponse, TriggerTipo } from '@/types';
+import { DeteccionResponse, MonitoreoResponse, TriggerTipo, DeteccionResponseConFuentes, MonitoreoResponseConFuentes } from '@/types';
 import { Timestamp } from 'firebase-admin/firestore';
+import { crearEventoInicial, crearEventoTimeline } from './timeline';
 
 export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
   const startTime = Date.now();
@@ -20,7 +21,7 @@ export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
     const rawResponse = await searchWithClaude({ prompt });
 
     // Parsear respuesta JSON
-    let deteccion: DeteccionResponse;
+    let deteccion: DeteccionResponseConFuentes;
     try {
       // Extraer JSON de la respuesta (puede venir con texto adicional)
       const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
@@ -55,6 +56,29 @@ export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         });
+
+        // Crear evento inicial en el timeline
+        try {
+          const fuentesAdicionales = (anuncio.fuentes_adicionales || []).map(f => ({
+            tipo: f.tipo as any,
+            url: f.url,
+            titulo: f.titulo,
+            medio: f.medio,
+            fechaPublicacion: Timestamp.fromDate(new Date(anuncio.fecha_anuncio)),
+          }));
+
+          await crearEventoInicial({
+            anuncioId: anuncioRef.id,
+            titulo: anuncio.titulo,
+            fechaAnuncio: new Date(anuncio.fecha_anuncio),
+            responsable: anuncio.responsable,
+            citaPromesa: anuncio.cita_promesa,
+            fuenteOriginal: anuncio.fuente_url,
+            fuentesAdicionales,
+          });
+        } catch (timelineError) {
+          errores.push(`Error al crear evento de timeline: ${timelineError}`);
+        }
 
         // Registrar actividad
         await db.collection('actividad').add({
@@ -164,7 +188,7 @@ export async function ejecutarAgenteMonitoreo(trigger: TriggerTipo = 'manual') {
         const rawResponse = await searchWithClaude({ prompt });
 
         // Parsear respuesta
-        let monitoreo: MonitoreoResponse;
+        let monitoreo: MonitoreoResponseConFuentes;
         try {
           const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
           if (!jsonMatch) {
@@ -219,6 +243,42 @@ export async function ejecutarAgenteMonitoreo(trigger: TriggerTipo = 'manual') {
           }
 
           await db.collection('anuncios').doc(anuncio.id).update(updateData);
+          
+          // Crear evento en el timeline
+          try {
+            const fuentesAdicionales = (monitoreo.actualizacion.fuentes_adicionales || []).map(f => ({
+              tipo: f.tipo as any,
+              url: f.url,
+              titulo: f.titulo,
+              medio: f.medio,
+              fechaPublicacion: Timestamp.now(),
+            }));
+
+            await crearEventoTimeline({
+              anuncioId: anuncio.id,
+              fecha: new Date(),
+              tipo: monitoreo.actualizacion.tipo_evento || 'actualizacion',
+              titulo: monitoreo.cambio_status_recomendado 
+                ? `Cambio de status: ${monitoreo.nuevo_status}`
+                : 'Actualización detectada',
+              descripcion: monitoreo.actualizacion.descripcion,
+              fuentes: [
+                {
+                  tipo: 'nota_prensa' as any,
+                  url: monitoreo.actualizacion.fuente_url,
+                  titulo: monitoreo.actualizacion.descripcion,
+                  fechaPublicacion: Timestamp.now(),
+                },
+                ...fuentesAdicionales,
+              ],
+              citaTextual: monitoreo.actualizacion.cita_textual,
+              responsable: anuncio.responsable,
+              impacto: monitoreo.actualizacion.impacto || 'neutral',
+            });
+          } catch (timelineError) {
+            errores.push(`Error al crear evento de timeline para "${anuncio.titulo}": ${timelineError}`);
+          }
+          
           actualizacionesDetectadas++;
         }
       } catch (error) {
