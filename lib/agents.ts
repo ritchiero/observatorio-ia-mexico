@@ -1,7 +1,7 @@
 import { getAdminDb } from './firebase-admin';
 import { searchWithClaude } from './claude';
 import { getDeteccionPrompt, getMonitoreoPrompt } from './prompts';
-import { DeteccionResponse, MonitoreoResponse, TriggerTipo, DeteccionResponseConFuentes, MonitoreoResponseConFuentes, TipoFuente } from '@/types';
+import { TriggerTipo, DeteccionResponseConFuentes, MonitoreoResponseConFuentes, TipoFuente } from '@/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { crearEventoInicial, crearEventoTimeline } from './timeline';
 
