@@ -120,7 +120,7 @@ export default function HeroSection({ stats }: HeroSectionProps) {
           </div>
 
           {/* STATS ROW */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mt-16 border-t border-gray-300/10 pt-8 max-w-3xl animate-reveal delay-400">
+          <div className="grid grid-cols-2 gap-8 mt-16 border-t border-gray-300/10 pt-8 max-w-2xl animate-reveal delay-400">
             <div className="group cursor-default">
               <div className="font-serif-display text-4xl md:text-5xl text-gray-900 group-hover:text-blue-400 transition-colors duration-300">{stats.total}</div>
               <div className="font-sans-tech text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Anuncios Oficiales</div>
@@ -128,10 +128,6 @@ export default function HeroSection({ stats }: HeroSectionProps) {
             <div className="group cursor-default">
               <div className="font-serif-display text-4xl md:text-5xl text-blue-500 group-hover:text-gray-900 transition-colors duration-300">{stats.operando}</div>
               <div className="font-sans-tech text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Productos Operativos</div>
-            </div>
-            <div className="group cursor-default col-span-2 md:col-span-1">
-              <div className="font-serif-display text-4xl md:text-5xl text-gray-900/80 group-hover:text-blue-400 transition-colors duration-300">180m</div>
-              <div className="font-sans-tech text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Pesos sin auditar</div>
             </div>
           </div>
 
