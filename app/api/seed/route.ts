@@ -120,18 +120,18 @@ export async function POST() {
   try {
     const db = getAdminDb();
 
-    // Verificar si ya hay datos
-    const snapshot = await db.collection('anuncios').limit(1).get();
-    if (!snapshot.empty) {
-      return NextResponse.json(
-        { error: 'Ya existen datos en la base de datos. Elimina los datos existentes primero.' },
-        { status: 400 }
-      );
-    }
+    // Obtener anuncios existentes para evitar duplicados
+    const snapshot = await db.collection('anuncios').get();
+    const titulosExistentes = new Set(snapshot.docs.map(doc => doc.data().titulo));
 
-    // Insertar datos iniciales
+    // Insertar solo anuncios que no existen
     let insertados = 0;
     for (const dato of datosIniciales) {
+      // Saltar si ya existe
+      if (titulosExistentes.has(dato.titulo)) {
+        continue;
+      }
+      
       const anuncioRef = db.collection('anuncios').doc();
       await anuncioRef.set({
         id: anuncioRef.id,
