@@ -151,15 +151,18 @@ export default function Home() {
         
         <div className="relative max-w-4xl mx-auto">
           {/* Badge de IA */}
-          <div className="flex justify-center mb-6">
+          <div className="flex flex-col items-center gap-3 mb-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-800/50 border border-gray-700 text-xs sm:text-sm">
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
               </span>
-              <span className="text-gray-300">Monitoreo en tiempo real</span>
+              <span className="text-gray-300">Auditoría automatizada con agentes de IA</span>
               <span className="text-cyan-400">🤖</span>
             </div>
+            <p className="text-xs sm:text-sm text-gray-500 text-center max-w-md">
+              Un sistema que usa inteligencia artificial para rastrear y verificar automáticamente las promesas del gobierno mexicano sobre IA
+            </p>
           </div>
           
           <div className="flex items-baseline justify-center gap-6 sm:gap-8 md:gap-12 mb-6 sm:mb-8">
@@ -186,6 +189,86 @@ export default function Home() {
               <div className="h-6 w-px bg-gray-700" />
               <span className="text-sm font-medium text-gray-300">Observatorio ciudadano de <span className="text-cyan-400 font-semibold">Inteligencia Artificial</span></span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección: Cómo funciona - Observatorio Automatizado */}
+      <section className="bg-gray-900/50 border-y border-gray-800 py-10 sm:py-14 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8 sm:mb-10">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-3">
+              <span className="text-cyan-400">🤖</span> Auditoría automatizada con IA
+            </h2>
+            <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">
+              Este observatorio utiliza <span className="text-cyan-400 font-medium">agentes de inteligencia artificial</span> que trabajan 24/7 para rastrear, verificar y actualizar el estado de cada promesa gubernamental.
+            </p>
+          </div>
+
+          {/* Flujo de los agentes */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {/* Agente 1: Detección */}
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 sm:p-6 hover:border-cyan-700/50 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                  <span className="text-lg">🔍</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white text-sm sm:text-base">Agente de Detección</h3>
+                  <p className="text-xs text-gray-500">Busca nuevos anuncios</p>
+                </div>
+              </div>
+              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
+                Escanea diariamente noticias, comunicados oficiales y redes sociales para detectar <span className="text-cyan-400">nuevas promesas</span> del gobierno relacionadas con IA.
+              </p>
+            </div>
+
+            {/* Agente 2: Monitoreo */}
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 sm:p-6 hover:border-amber-700/50 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                  <span className="text-lg">📡</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white text-sm sm:text-base">Agente de Monitoreo</h3>
+                  <p className="text-xs text-gray-500">Verifica el progreso</p>
+                </div>
+              </div>
+              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
+                Rastrea cada anuncio existente buscando <span className="text-amber-400">evidencia de avance</span>: ¿hay presupuesto? ¿hay licitaciones? ¿hay código público? ¿hay producto funcionando?
+              </p>
+            </div>
+
+            {/* Resultado: Timeline */}
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 sm:p-6 hover:border-emerald-700/50 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                  <span className="text-lg">📊</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white text-sm sm:text-base">Timeline Verificable</h3>
+                  <p className="text-xs text-gray-500">Con fuentes citadas</p>
+                </div>
+              </div>
+              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
+                Cada cambio de estado incluye <span className="text-emerald-400">fuentes verificables</span>: enlaces a notas de prensa, documentos oficiales y citas textuales.
+              </p>
+            </div>
+          </div>
+
+          {/* Nota técnica */}
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800/80 border border-gray-700 text-xs text-gray-400">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Ejecutándose automáticamente cada 24 horas
+            </div>
+            <span className="text-gray-600 hidden sm:inline">•</span>
+            <span className="text-xs text-gray-500">
+              Construido con Claude AI + web search
+            </span>
           </div>
         </div>
       </section>
