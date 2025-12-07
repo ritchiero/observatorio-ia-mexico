@@ -221,7 +221,7 @@ export default function Home() {
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full border border-gray-200">
+            <table key={filtroStatus} className="w-full border border-gray-200">
               <thead className="bg-gray-900 text-white">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium">Fecha</th>
