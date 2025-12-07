@@ -146,6 +146,18 @@ export default function Home() {
     return colors[status as keyof typeof colors] || colors.prometido;
   };
 
+  const getLogo = (responsable: string) => {
+    if (responsable.includes('Sheinbaum')) return '/logos/presidencia.jpg';
+    if (responsable.includes('Ebrard')) return '/logos/economia.png';
+    if (responsable.includes('Economía') || responsable.includes('SE')) return '/logos/economia.png';
+    if (responsable.includes('SEP')) return '/logos/sep.png';
+    if (responsable.includes('Senado')) return '/logos/senado.jpg';
+    if (responsable.includes('CCE')) return '/logos/cce.jpg';
+    if (responsable.includes('Infotec') || responsable.includes('ATDT') || responsable.includes('TecNM')) return '/logos/infotec.jpg';
+    if (responsable.includes('Saptiva')) return '/logos/economia.png';
+    return '/logos/presidencia.jpg'; // Default
+  };
+
   const getStatusEmoji = (status: string) => {
     const emojis = {
       incumplido: '🔴',
@@ -397,7 +409,8 @@ export default function Home() {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{item.fecha}</span>
+                      <img src={getLogo(item.responsable)} alt="" className="w-5 h-5 rounded-full object-cover" />
+                      <span className="text-xs text-gray-500">{item.fecha}</span>
                       <span className="text-xs text-gray-300">·</span>
                       <span className="text-xs text-gray-500">{item.responsable}</span>
                     </div>
@@ -443,7 +456,12 @@ export default function Home() {
                       <div className="text-sm font-medium text-gray-900">{item.anuncio}</div>
                       <div className="text-xs text-gray-500 mt-1">{item.detalle}</div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-600">{item.responsable}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <img src={getLogo(item.responsable)} alt="" className="w-6 h-6 rounded-full object-cover" />
+                        <span className="text-sm text-gray-600">{item.responsable}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-4">
                       <div className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-medium border rounded ${getStatusColor(item.status)}`}>
                         <span>{getStatusEmoji(item.status)}</span>
