@@ -33,6 +33,7 @@ export interface Anuncio {
   dependencia: string;
   fuenteOriginal: string; // Deprecated - usar fuentes[]
   fuentes?: Fuente[]; // Array de fuentes verificables
+  resumenAgente?: string; // Resumen de hallazgos del agente de monitoreo
   citaPromesa: string;
   status: StatusType;
   actualizaciones: Actualizacion[];

@@ -6,6 +6,7 @@ import { Anuncio, EventoTimeline } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import TimelineInteractivo from '@/components/TimelineInteractivo';
 import { formatDate } from '@/lib/utils';
+import { FuentesList } from '@/components/FuentesList';
 
 export default function AnuncioDetailPage() {
   const params = useParams();
@@ -123,18 +124,19 @@ export default function AnuncioDetailPage() {
             </div>
           )}
 
-          {anuncio.fuenteOriginal && (
-            <div>
-              <a
-                href={anuncio.fuenteOriginal}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-cyan-600 hover:text-cyan-700 text-xs sm:text-sm inline-block py-1 transition-colors"
-              >
-                Ver fuente original →
-              </a>
+          {anuncio.resumenAgente && (
+            <div className="p-3 sm:p-4 bg-amber-50 border-l-2 sm:border-l-4 border-amber-500 rounded mb-4">
+              <p className="text-xs sm:text-sm font-semibold text-amber-700 mb-2 flex items-center gap-2">
+                <span>🤖</span> Hallazgos del agente de monitoreo:
+              </p>
+              <p className="text-sm sm:text-base text-gray-700">{anuncio.resumenAgente}</p>
             </div>
           )}
+
+          <div className="mt-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Fuentes verificables:</h3>
+            <FuentesList fuentes={anuncio.fuentes} fuenteOriginal={anuncio.fuenteOriginal} />
+          </div>
         </div>
 
         {/* Estadísticas del Timeline */}
