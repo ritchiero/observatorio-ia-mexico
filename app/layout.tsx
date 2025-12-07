@@ -7,8 +7,36 @@ import Footer from '@/components/Footer';
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Observatorio IA México',
-  description: 'Seguimiento ciudadano de anuncios gubernamentales sobre inteligencia artificial en México',
+  title: 'Observatorio IA México - 10 anuncios, 0 productos funcionando',
+  description: 'Tracker ciudadano de promesas de IA del gobierno mexicano. 10 anuncios en 2025, 0 productos funcionando a escala. Seguimiento con fuentes verificables.',
+  keywords: ['inteligencia artificial', 'México', 'gobierno', 'accountability', 'promesas', 'IA', 'tecnología'],
+  authors: [{ name: 'Observatorio IA México' }],
+  openGraph: {
+    title: 'Observatorio IA México - 10 anuncios, 0 productos funcionando',
+    description: 'Tracker ciudadano de promesas de IA del gobierno mexicano. 10 anuncios, 0 productos.',
+    url: 'https://observatorio-ia-mexico.vercel.app',
+    siteName: 'Observatorio IA México',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Observatorio IA México - 10 anuncios, 0 productos funcionando',
+      },
+    ],
+    locale: 'es_MX',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Observatorio IA México - 10 anuncios, 0 productos funcionando',
+    description: 'Tracker ciudadano de promesas de IA del gobierno mexicano.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

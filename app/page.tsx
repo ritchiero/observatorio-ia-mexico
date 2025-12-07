@@ -1,8 +1,17 @@
 import Link from 'next/link';
 
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 export default function Home() {
+  const router = useRouter();
+  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const anuncios = [
+    // Mapeo: título hardcodeado → ID de Firestore
     {
+      id: 'UfSnLrpDhXrNnqy0BKC1',
       fecha: 'Abril',
       anuncio: 'Laboratorio Nacional de IA',
       responsable: 'Sheinbaum',
@@ -13,6 +22,7 @@ export default function Home() {
       detalle: 'Prometido para octubre por la presidenta Sheinbaum. Octubre llegó y el laboratorio no.',
     },
     {
+      id: 'vfAcJmOlrgAVbwrwU9bA',
       fecha: 'Julio',
       anuncio: 'Modelo de lenguaje propio',
       responsable: 'Ebrard',
@@ -21,6 +31,7 @@ export default function Home() {
       detalle: 'Anunciado en julio por Marcelo Ebrard. Sin documentación técnica ni código público.',
     },
     {
+      id: 'fpQIXV5So7Df0Y0TYqaW',
       fecha: 'Julio',
       anuncio: 'Plataforma México IA+',
       responsable: 'Economía + CCE',
@@ -29,6 +40,7 @@ export default function Home() {
       detalle: 'Evento realizado. Sin productos concretos.',
     },
     {
+      id: 'zSmTpbbyDUtKxc3bhT3a',
       fecha: 'Sept',
       anuncio: 'Inversión CloudHQ $4.8B USD',
       responsable: 'Sheinbaum / Ebrard',
@@ -37,6 +49,7 @@ export default function Home() {
       detalle: 'Anunciado. En planeación.',
     },
     {
+      id: 'BUqQ3xZSWblpv5Qb46vB',
       fecha: 'Oct',
       anuncio: 'Marco normativo de IA',
       responsable: 'Senado',
@@ -45,6 +58,7 @@ export default function Home() {
       detalle: 'Propuesta publicada. Sin aprobación.',
     },
     {
+      id: 'ADyLAhTng95KSjFPUzfO',
       fecha: 'Nov',
       anuncio: 'Centro Público de Formación en IA',
       responsable: 'ATDT + Infotec + TecNM',
@@ -53,6 +67,7 @@ export default function Home() {
       detalle: 'Convocatoria cerrada. Las clases inician en enero de 2026.',
     },
     {
+      id: 'VqNqNJqNGIWqHMsQYGHV',
       fecha: 'Nov',
       anuncio: 'KAL - Modelo de lenguaje mexicano',
       responsable: 'Saptiva + SE',
@@ -61,6 +76,7 @@ export default function Home() {
       detalle: 'Presentado sin documentación técnica, sin código público, sin benchmarks.',
     },
     {
+      id: 'zzNvFLxYWkQrFMZhXOxo',
       fecha: 'Nov',
       anuncio: 'Coatlicue - Supercomputadora',
       responsable: 'Sheinbaum',
@@ -69,6 +85,7 @@ export default function Home() {
       detalle: 'Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.',
     },
     {
+      id: 'bfPbGHMxbgHOxNgMJzpH',
       fecha: 'Nov',
       anuncio: 'Regulación regional IA (APEC)',
       responsable: 'Marcelo Ebrard',
@@ -77,6 +94,7 @@ export default function Home() {
       detalle: 'Propuesta diplomática. Sin acuerdo vinculante.',
     },
     {
+      id: 'RNMzXVQQOJZZZBHhxlbV',
       fecha: 'Dic',
       anuncio: '15 carreras de bachillerato con IA',
       responsable: 'SEP',
@@ -154,8 +172,8 @@ export default function Home() {
               </div>
               <div className="h-4 w-px bg-gray-300" />
               <div>
-                <span className="font-medium text-green-700">Operando:</span>{' '}
-                <span className="text-gray-600">{stats.operando}</span>
+                <span className="font-medium text-red-700">Operando:</span>{' '}
+                <span className="font-bold text-red-600">{stats.operando}</span>
               </div>
               <div className="h-4 w-px bg-gray-300" />
               <div>
@@ -183,7 +201,25 @@ export default function Home() {
       {/* Tabla de anuncios */}
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold mb-8 text-gray-900">Anuncios de IA en 2025</h2>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Anuncios de IA en 2025</h2>
+            
+            {/* Filtro por status */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Filtrar:</label>
+              <select
+                value={filtroStatus}
+                onChange={(e) => setFiltroStatus(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="todos">Todos ({stats.total})</option>
+                <option value="incumplido">🔴 Incumplido ({stats.incumplido})</option>
+                <option value="en_desarrollo">🟡 En desarrollo ({stats.enDesarrollo})</option>
+                <option value="prometido">⚪ Prometido ({stats.prometido})</option>
+                <option value="operando">🟢 Operando ({stats.operando})</option>
+              </select>
+            </div>
+          </div>
           
           <div className="overflow-x-auto">
             <table className="w-full border border-gray-200">
@@ -196,10 +232,13 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                {anuncios.map((item, index) => (
+                {anuncios
+                  .filter(item => filtroStatus === 'todos' || item.status === filtroStatus)
+                  .map((item, index) => (
                   <tr 
                     key={index}
-                    className={`border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors ${
+                    onClick={() => router.push(`/anuncio/${item.id}`)}
+                    className={`border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors ${
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     }`}
                   >
