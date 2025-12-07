@@ -46,7 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${jakarta.className} min-h-screen flex flex-col bg-gray-50 antialiased`}>
+      <body className={`${jakarta.className} min-h-screen flex flex-col bg-gray-950 antialiased`}>
         <Header />
         <main className="flex-1">
           {children}

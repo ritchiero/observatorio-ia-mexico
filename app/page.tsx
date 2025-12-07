@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
 
@@ -120,11 +119,11 @@ export default function Home() {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      incumplido: 'bg-red-50 text-red-700 border-red-200',
-      en_desarrollo: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-      prometido: 'bg-gray-100 text-gray-700 border-gray-300',
-      operando: 'bg-green-50 text-green-700 border-green-200',
-      abandonado: 'bg-black text-white border-black',
+      incumplido: 'bg-red-950/50 text-red-400 border-red-800/50',
+      en_desarrollo: 'bg-amber-950/50 text-amber-400 border-amber-800/50',
+      prometido: 'bg-gray-800/50 text-gray-400 border-gray-700',
+      operando: 'bg-emerald-950/50 text-emerald-400 border-emerald-800/50',
+      abandonado: 'bg-gray-950 text-gray-300 border-gray-700',
     };
     return colors[status as keyof typeof colors] || colors.prometido;
   };
@@ -141,54 +140,79 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero con impacto - Fondo oscuro */}
-      <section className="bg-gray-900 text-white py-12 sm:py-16 md:py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-baseline justify-center gap-6 sm:gap-8 md:gap-12 mb-6 sm:mb-8">
-            <div className="text-center">
-              <div className="text-5xl sm:text-6xl md:text-8xl font-bold mb-1 sm:mb-2">10</div>
-              <div className="text-xs sm:text-sm text-gray-400">anuncios principales<br />en 2025</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl sm:text-6xl md:text-8xl font-bold text-red-600 mb-1 sm:mb-2">0</div>
-              <div className="text-xs sm:text-sm text-gray-400">productos funcionando<br />a escala</div>
+    <div className="min-h-screen bg-gray-950">
+      {/* Hero con impacto - Estilo Tech */}
+      <section className="relative bg-gray-950 text-white py-12 sm:py-16 md:py-20 px-4 overflow-hidden">
+        {/* Fondo con patrón de grid tech */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+        
+        {/* Gradiente de acento */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40rem] h-[20rem] bg-gradient-to-b from-cyan-500/20 via-blue-500/10 to-transparent blur-3xl" />
+        
+        <div className="relative max-w-4xl mx-auto">
+          {/* Badge de IA */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-800/50 border border-gray-700 text-xs sm:text-sm">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+              </span>
+              <span className="text-gray-300">Monitoreo en tiempo real</span>
+              <span className="text-cyan-400">🤖</span>
             </div>
           </div>
           
-          <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-6 sm:mb-8 text-gray-300 text-center px-2">
+          <div className="flex items-baseline justify-center gap-6 sm:gap-8 md:gap-12 mb-6 sm:mb-8">
+            <div className="text-center">
+              <div className="text-5xl sm:text-6xl md:text-8xl font-bold mb-1 sm:mb-2 bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">10</div>
+              <div className="text-xs sm:text-sm text-gray-500">anuncios principales<br />en 2025</div>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl sm:text-6xl md:text-8xl font-bold mb-1 sm:mb-2 bg-gradient-to-b from-red-500 to-red-700 bg-clip-text text-transparent">0</div>
+              <div className="text-xs sm:text-sm text-gray-500">productos funcionando<br />a escala</div>
+            </div>
+          </div>
+          
+          <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-6 sm:mb-8 text-gray-400 text-center px-2">
             El gobierno mexicano prometió laboratorios nacionales, modelos de lenguaje soberanos, 
             supercomputadoras con nombres aztecas. A diciembre de 2025, el inventario de lo que 
             realmente funciona cabe en una servilleta.
           </p>
 
-
+          {/* Badge México + IA */}
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-xl bg-gradient-to-r from-gray-800/80 to-gray-900/80 border border-gray-700/50">
+              <span className="text-2xl">🇲🇽</span>
+              <div className="h-6 w-px bg-gray-700" />
+              <span className="text-sm font-medium text-gray-300">Observatorio ciudadano de <span className="text-cyan-400 font-semibold">Inteligencia Artificial</span></span>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Barra de estadísticas */}
-      <section className="bg-gray-50 border-y border-gray-200 py-3 sm:py-4 px-4">
+      <section className="bg-gray-900 border-y border-gray-800 py-3 sm:py-4 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Vista móvil: grid compacto */}
           <div className="grid grid-cols-5 gap-2 text-center sm:hidden">
-            <div className="bg-white rounded-lg py-2 px-1 border border-gray-200">
-              <div className="text-lg font-bold text-gray-900">{stats.total}</div>
+            <div className="bg-gray-800/50 rounded-lg py-2 px-1 border border-gray-700">
+              <div className="text-lg font-bold text-white">{stats.total}</div>
               <div className="text-[10px] text-gray-500">Total</div>
             </div>
-            <div className="bg-white rounded-lg py-2 px-1 border border-green-200">
-              <div className="text-lg font-bold text-green-600">{stats.operando}</div>
+            <div className="bg-gray-800/50 rounded-lg py-2 px-1 border border-emerald-800/50">
+              <div className="text-lg font-bold text-emerald-400">{stats.operando}</div>
               <div className="text-[10px] text-gray-500">Operando</div>
             </div>
-            <div className="bg-white rounded-lg py-2 px-1 border border-yellow-200">
-              <div className="text-lg font-bold text-yellow-600">{stats.enDesarrollo}</div>
+            <div className="bg-gray-800/50 rounded-lg py-2 px-1 border border-amber-800/50">
+              <div className="text-lg font-bold text-amber-400">{stats.enDesarrollo}</div>
               <div className="text-[10px] text-gray-500">Desarrollo</div>
             </div>
-            <div className="bg-white rounded-lg py-2 px-1 border border-red-200">
-              <div className="text-lg font-bold text-red-600">{stats.incumplido}</div>
+            <div className="bg-gray-800/50 rounded-lg py-2 px-1 border border-red-800/50">
+              <div className="text-lg font-bold text-red-400">{stats.incumplido}</div>
               <div className="text-[10px] text-gray-500">Incumplido</div>
             </div>
-            <div className="bg-white rounded-lg py-2 px-1 border border-gray-200">
-              <div className="text-lg font-bold text-gray-600">{stats.prometido}</div>
+            <div className="bg-gray-800/50 rounded-lg py-2 px-1 border border-gray-700">
+              <div className="text-lg font-bold text-gray-400">{stats.prometido}</div>
               <div className="text-[10px] text-gray-500">Prometido</div>
             </div>
           </div>
@@ -197,55 +221,61 @@ export default function Home() {
           <div className="hidden sm:flex flex-wrap items-center justify-between gap-4 text-sm">
             <div className="flex flex-wrap items-center gap-4 md:gap-6">
               <div>
-                <span className="font-medium text-gray-900">Total:</span>{' '}
-                <span className="text-gray-600">{stats.total}</span>
+                <span className="font-medium text-gray-400">Total:</span>{' '}
+                <span className="text-white font-semibold">{stats.total}</span>
               </div>
-              <div className="h-4 w-px bg-gray-300 hidden md:block" />
+              <div className="h-4 w-px bg-gray-700 hidden md:block" />
               <div>
-                <span className="font-medium text-green-700">Operando:</span>{' '}
-                <span className="font-bold text-green-600">{stats.operando}</span>
+                <span className="font-medium text-emerald-500">Operando:</span>{' '}
+                <span className="font-bold text-emerald-400">{stats.operando}</span>
               </div>
-              <div className="h-4 w-px bg-gray-300 hidden md:block" />
+              <div className="h-4 w-px bg-gray-700 hidden md:block" />
               <div>
-                <span className="font-medium text-yellow-700">En desarrollo:</span>{' '}
-                <span className="text-gray-600">{stats.enDesarrollo}</span>
+                <span className="font-medium text-amber-500">En desarrollo:</span>{' '}
+                <span className="text-amber-400">{stats.enDesarrollo}</span>
               </div>
-              <div className="h-4 w-px bg-gray-300 hidden md:block" />
+              <div className="h-4 w-px bg-gray-700 hidden md:block" />
               <div>
-                <span className="font-medium text-red-700">Incumplido:</span>{' '}
-                <span className="text-gray-600">{stats.incumplido}</span>
+                <span className="font-medium text-red-500">Incumplido:</span>{' '}
+                <span className="text-red-400">{stats.incumplido}</span>
               </div>
-              <div className="h-4 w-px bg-gray-300 hidden md:block" />
+              <div className="h-4 w-px bg-gray-700 hidden md:block" />
               <div>
-                <span className="font-medium text-gray-700">Prometido:</span>{' '}
-                <span className="text-gray-600">{stats.prometido}</span>
+                <span className="font-medium text-gray-500">Prometido:</span>{' '}
+                <span className="text-gray-400">{stats.prometido}</span>
               </div>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-600 flex items-center gap-1.5">
+              <svg className="w-3 h-3 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               Última actualización: 6 dic 2025
             </div>
           </div>
           
           {/* Fecha de actualización móvil */}
           <div className="sm:hidden text-center mt-2">
-            <span className="text-[10px] text-gray-400">Última actualización: 6 dic 2025</span>
+            <span className="text-[10px] text-gray-500">Última actualización: 6 dic 2025</span>
           </div>
         </div>
       </section>
 
       {/* Tabla de anuncios */}
-      <section className="py-8 sm:py-12 md:py-16 px-4">
+      <section className="py-8 sm:py-12 md:py-16 px-4 bg-gray-950">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Anuncios de IA en 2025</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+              <span className="text-cyan-400">📊</span>
+              Anuncios de IA en 2025
+            </h2>
             
             {/* Filtro por status */}
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700 hidden sm:inline">Filtrar:</label>
+              <label className="text-sm font-medium text-gray-400 hidden sm:inline">Filtrar:</label>
               <select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value)}
-                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-gray-800 text-gray-200"
               >
                 <option value="todos">Todos ({stats.total})</option>
                 <option value="incumplido">🔴 Incumplido ({stats.incumplido})</option>
@@ -262,16 +292,16 @@ export default function Home() {
               <div
                 key={index}
                 onClick={() => router.push(`/anuncio/${item.id}`)}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm cursor-pointer transition-all active:bg-blue-50"
+                className="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-cyan-700 hover:shadow-lg hover:shadow-cyan-900/20 cursor-pointer transition-all active:bg-gray-800"
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{item.fecha}</span>
-                      <span className="text-xs text-gray-500">·</span>
-                      <span className="text-xs text-gray-600">{item.responsable}</span>
+                      <span className="text-xs text-gray-400 bg-gray-800 px-2 py-0.5 rounded">{item.fecha}</span>
+                      <span className="text-xs text-gray-600">·</span>
+                      <span className="text-xs text-gray-500">{item.responsable}</span>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-900">{item.anuncio}</h3>
+                    <h3 className="text-sm font-semibold text-white">{item.anuncio}</h3>
                   </div>
                   <div className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded ${getStatusColor(item.status)}`}>
                     <span>{getStatusEmoji(item.status)}</span>
@@ -280,7 +310,7 @@ export default function Home() {
                 </div>
                 <p className="text-xs text-gray-500 line-clamp-2">{item.detalle}</p>
                 {item.fechaPrometida && !item.cumplida && (
-                  <div className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                  <div className="text-xs text-red-400 mt-2 flex items-center gap-1">
                     <span>📅</span> Prometido: {item.fechaPrometida} ❌
                   </div>
                 )}
@@ -289,14 +319,14 @@ export default function Home() {
           </div>
 
           {/* Vista desktop: Tabla */}
-          <div className="hidden md:block overflow-x-auto">
-            <table key={filtroStatus} className="w-full border border-gray-200">
-              <thead className="bg-gray-900 text-white">
+          <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-800">
+            <table key={filtroStatus} className="w-full">
+              <thead className="bg-gray-800 text-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Fecha</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Anuncio</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Responsable</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Estado</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Fecha</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Anuncio</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Responsable</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -304,23 +334,23 @@ export default function Home() {
                   <tr 
                     key={index}
                     onClick={() => router.push(`/anuncio/${item.id}`)}
-                    className={`border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    className={`border-b border-gray-800 hover:bg-cyan-950/30 cursor-pointer transition-colors ${
+                      index % 2 === 0 ? 'bg-gray-900' : 'bg-gray-900/50'
                     }`}
                   >
-                    <td className="px-4 py-4 text-sm text-gray-600 whitespace-nowrap">{item.fecha}</td>
+                    <td className="px-4 py-4 text-sm text-gray-400 whitespace-nowrap">{item.fecha}</td>
                     <td className="px-4 py-4">
-                      <div className="text-sm font-medium text-gray-900">{item.anuncio}</div>
+                      <div className="text-sm font-medium text-white">{item.anuncio}</div>
                       <div className="text-xs text-gray-500 mt-1">{item.detalle}</div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-600">{item.responsable}</td>
+                    <td className="px-4 py-4 text-sm text-gray-400">{item.responsable}</td>
                     <td className="px-4 py-4">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-medium border ${getStatusColor(item.status)}`}>
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-medium border rounded ${getStatusColor(item.status)}`}>
                         <span>{getStatusEmoji(item.status)}</span>
                         <span>{item.statusLabel}</span>
                       </div>
                       {item.fechaPrometida && !item.cumplida && (
-                        <div className="text-xs text-red-600 mt-1">
+                        <div className="text-xs text-red-400 mt-1">
                           Fecha prometida: {item.fechaPrometida} ❌
                         </div>
                       )}
