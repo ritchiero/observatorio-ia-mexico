@@ -139,7 +139,7 @@ export default function HeroSection({ stats }: HeroSectionProps) {
           <div className="flex flex-col sm:flex-row gap-5 mt-12 animate-reveal delay-500">
             <button 
               onClick={scrollToContent}
-              className="group relative px-8 py-4 bg-amber-600/90 text-gray-900 font-sans-tech text-sm uppercase tracking-widest overflow-hidden hover:bg-blue-500 transition-colors duration-300"
+              className="group relative px-8 py-4 bg-blue-600 text-white font-sans-tech text-sm uppercase tracking-widest overflow-hidden hover:bg-blue-700 transition-colors duration-300"
             >
               <span className="relative z-10 flex items-center gap-2 font-semibold">
                 Ver Dashboard
