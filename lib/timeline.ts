@@ -27,7 +27,7 @@ export async function crearEventoTimeline(params: {
     fechaPublicacion: fuente.fechaPublicacion instanceof Date 
       ? Timestamp.fromDate(fuente.fechaPublicacion)
       : fuente.fechaPublicacion,
-  })) as any as Fuente[];
+  })) as unknown as Fuente[];
 
   const eventoRef = db.collection('eventos_timeline').doc();
   const evento = {
@@ -42,7 +42,7 @@ export async function crearEventoTimeline(params: {
     responsable: params.responsable,
     impacto: params.impacto,
     createdAt: Timestamp.now(),
-  } as any as EventoTimeline;
+  } as unknown as EventoTimeline;
 
   await eventoRef.set(evento);
   return eventoRef.id;

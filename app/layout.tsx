@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://observatorio-ia-mexico.vercel.app'),
   title: 'Observatorio IA México - 10 anuncios, 0 productos funcionando',
   description: 'Tracker ciudadano de promesas de IA del gobierno mexicano. 10 anuncios en 2025, 0 productos funcionando a escala. Seguimiento con fuentes verificables.',
   keywords: ['inteligencia artificial', 'México', 'gobierno', 'accountability', 'promesas', 'IA', 'tecnología'],

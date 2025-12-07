@@ -3,8 +3,24 @@
 import { useState } from 'react';
 import { EventoTimeline, TipoEvento, ImpactoEvento } from '@/types';
 
+// Tipo para manejar timestamps de Firestore (pueden venir serializados de diferentes formas)
+interface FirestoreTimestamp {
+  _seconds?: number;
+  seconds?: number;
+  toDate?: () => Date;
+}
+
 interface TimelineInteractivoProps {
   eventos: EventoTimeline[];
+}
+
+// Helper para convertir timestamps de Firestore a Date
+function parseFirestoreTimestamp(timestamp: FirestoreTimestamp | Date | string): Date {
+  if (timestamp instanceof Date) return timestamp;
+  if (typeof timestamp === 'string') return new Date(timestamp);
+  if (timestamp._seconds) return new Date(timestamp._seconds * 1000);
+  if (timestamp.seconds) return new Date(timestamp.seconds * 1000);
+  return new Date();
 }
 
 // Iconos y colores según tipo de evento
@@ -29,15 +45,8 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
   const config = tipoEventoConfig[evento.tipo];
   const impacto = impactoConfig[evento.impacto];
 
-  // Convertir timestamp a fecha - FIX para Invalid Date
-  let fecha: Date;
-  if ((evento.fecha as any)._seconds) {
-    fecha = new Date((evento.fecha as any)._seconds * 1000);
-  } else if ((evento.fecha as any).seconds) {
-    fecha = new Date((evento.fecha as any).seconds * 1000);
-  } else {
-    fecha = new Date(evento.fecha as any);
-  }
+  // Convertir timestamp a fecha
+  const fecha = parseFirestoreTimestamp(evento.fecha as unknown as FirestoreTimestamp);
   
   const fechaFormateada = fecha.toLocaleDateString('es-MX', {
     year: 'numeric',
@@ -86,7 +95,7 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
         {evento.citaTextual && (
           <blockquote className="border-l-2 sm:border-l-4 border-blue-500 pl-3 sm:pl-4 py-2 mb-3 bg-blue-50 rounded-r">
             <p className="text-gray-700 italic text-xs sm:text-sm">
-              "{evento.citaTextual}"
+              &ldquo;{evento.citaTextual}&rdquo;
             </p>
             {evento.responsable && (
               <footer className="text-xs text-gray-600 mt-1">
@@ -104,15 +113,7 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
             </h4>
             <div className="space-y-2">
               {evento.fuentes.map((fuente) => {
-                let fechaFuente: Date;
-                if ((fuente.fechaPublicacion as any)._seconds) {
-                  fechaFuente = new Date((fuente.fechaPublicacion as any)._seconds * 1000);
-                } else if ((fuente.fechaPublicacion as any).seconds) {
-                  fechaFuente = new Date((fuente.fechaPublicacion as any).seconds * 1000);
-                } else {
-                  fechaFuente = new Date(fuente.fechaPublicacion as any);
-                }
-                
+                const fechaFuente = parseFirestoreTimestamp(fuente.fechaPublicacion as unknown as FirestoreTimestamp);
                 const fechaFuenteFormateada = fechaFuente.toLocaleDateString('es-MX', {
                   year: 'numeric',
                   month: 'short',

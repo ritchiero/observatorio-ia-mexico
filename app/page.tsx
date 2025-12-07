@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 
 export default function Home() {
   const router = useRouter();
@@ -104,10 +103,9 @@ export default function Home() {
   ];
 
   // Filtrar anuncios
-  const anunciosFiltrados = useMemo(() => {
-    if (filtroStatus === 'todos') return anuncios;
-    return anuncios.filter(item => item.status === filtroStatus);
-  }, [filtroStatus]);
+  const anunciosFiltrados = filtroStatus === 'todos' 
+    ? anuncios 
+    : anuncios.filter(item => item.status === filtroStatus);
 
   // Calcular estadísticas
   const stats = {
