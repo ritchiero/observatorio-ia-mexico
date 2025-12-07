@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 export default function Home() {
   const router = useRouter();
@@ -102,6 +102,12 @@ export default function Home() {
       detalle: 'Aprobadas. Implementación: próximo ciclo escolar.',
     },
   ];
+
+  // Filtrar anuncios
+  const anunciosFiltrados = useMemo(() => {
+    if (filtroStatus === 'todos') return anuncios;
+    return anuncios.filter(item => item.status === filtroStatus);
+  }, [filtroStatus]);
 
   // Calcular estadísticas
   const stats = {
@@ -231,9 +237,7 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                {anuncios
-                  .filter(item => filtroStatus === 'todos' || item.status === filtroStatus)
-                  .map((item, index) => (
+                {anunciosFiltrados.map((item, index) => (
                   <tr 
                     key={index}
                     onClick={() => router.push(`/anuncio/${item.id}`)}
