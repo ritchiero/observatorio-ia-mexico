@@ -177,9 +177,9 @@ export default function Home() {
           </div>
           
           <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-6 sm:mb-8 text-gray-600 text-center px-2">
-            El gobierno mexicano prometió laboratorios nacionales, modelos de lenguaje soberanos, 
-            supercomputadoras con nombres aztecas. A diciembre de 2025, el inventario de lo que 
-            realmente funciona cabe en una servilleta.
+            México ha anunciado ambiciosas metas en IA: laboratorios nacionales, modelos de lenguaje 
+            soberanos, supercomputadoras. A diciembre de 2025, los avances verificables y operativos 
+            siguen siendo limitados.
           </p>
 
           {/* Badge México + IA */}
