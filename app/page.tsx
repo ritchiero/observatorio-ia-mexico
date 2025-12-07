@@ -176,7 +176,7 @@ export default function Home() {
       <HeroSection stats={stats} />
 
       {/* Sección: Cómo funciona - Observatorio Automatizado */}
-      <section id="metodologia" className="bg-[#0a0a0a] border-y border-gray-300/5 py-10 sm:py-14 px-4">
+      <section id="metodologia" className="bg-gray-50 border-y border-gray-300/5 py-10 sm:py-14 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 sm:mb-10">
             <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 mb-3">
@@ -256,7 +256,7 @@ export default function Home() {
       </section>
 
       {/* Barra de estadísticas */}
-      <section className="bg-[#0a0a0a] border-b border-gray-300/5 py-3 sm:py-4 px-4">
+      <section className="bg-gray-50 border-b border-gray-300/5 py-3 sm:py-4 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Vista móvil: grid compacto */}
           <div className="grid grid-cols-5 gap-2 text-center sm:hidden">
@@ -341,11 +341,11 @@ export default function Home() {
                 onChange={(e) => setFiltroStatus(e.target.value)}
                 className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-gray-900 font-sans-tech backdrop-blur-sm"
               >
-                <option value="todos" className="bg-[#0a0a0a]">Todos ({stats.total})</option>
-                <option value="incumplido" className="bg-[#0a0a0a]">🔴 Incumplido ({stats.incumplido})</option>
-                <option value="en_desarrollo" className="bg-[#0a0a0a]">🟡 En desarrollo ({stats.enDesarrollo})</option>
-                <option value="prometido" className="bg-[#0a0a0a]">⚪ Prometido ({stats.prometido})</option>
-                <option value="operando" className="bg-[#0a0a0a]">🟢 Operando ({stats.operando})</option>
+                <option value="todos" className="bg-gray-50">Todos ({stats.total})</option>
+                <option value="incumplido" className="bg-gray-50">🔴 Incumplido ({stats.incumplido})</option>
+                <option value="en_desarrollo" className="bg-gray-50">🟡 En desarrollo ({stats.enDesarrollo})</option>
+                <option value="prometido" className="bg-gray-50">⚪ Prometido ({stats.prometido})</option>
+                <option value="operando" className="bg-gray-50">🟢 Operando ({stats.operando})</option>
               </select>
             </div>
           </div>

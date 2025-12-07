@@ -12,7 +12,7 @@ export default function AnuncioCard({ anuncio }: AnuncioCardProps) {
 
   return (
     <Link href={`/anuncio/${anuncio.id}`}>
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-cyan-800/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-cyan-900/10">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 hover:border-blue-300/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-cyan-900/10">
         <div className="flex justify-between items-start gap-3 mb-2">
           <h3 className="text-sm font-semibold text-gray-900 flex-1 line-clamp-2">
             {anuncio.titulo}

@@ -84,7 +84,7 @@ export default function DashboardPage() {
           </div>
 
           {filteredAnuncios.length === 0 ? (
-            <div className="text-center py-8 sm:py-12 bg-gray-900 rounded-xl border border-gray-800">
+            <div className="text-center py-8 sm:py-12 bg-white rounded-xl border border-gray-200">
               <p className="text-xs sm:text-sm text-gray-500">No hay anuncios registrados aún.</p>
             </div>
           ) : (

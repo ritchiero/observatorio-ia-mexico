@@ -31,7 +31,7 @@ export default function StatsOverview({ anuncios }: StatsOverviewProps) {
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="bg-gray-900 border border-gray-800 rounded-xl p-3 sm:p-4 hover:border-cyan-800/50 transition-colors"
+          className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:border-blue-300/50 transition-colors"
         >
           <div className="flex flex-col items-center text-center">
             <stat.Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color} mb-1.5 sm:mb-2`} />

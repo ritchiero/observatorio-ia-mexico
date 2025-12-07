@@ -90,7 +90,7 @@ function AdminContent() {
         </h1>
 
         {/* Ejecutar agentes */}
-        <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <section className="bg-white border border-gray-200 rounded-xl p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-cyan-400">🤖</span>
             Ejecutar Agentes Manualmente
@@ -119,7 +119,7 @@ function AdminContent() {
         </section>
 
         {/* Agregar anuncio manualmente */}
-        <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <section className="bg-white border border-gray-200 rounded-xl p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-cyan-400">📝</span>
             Agregar Anuncio Manualmente
