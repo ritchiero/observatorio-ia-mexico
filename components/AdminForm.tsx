@@ -196,7 +196,7 @@ export default function AdminForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-gray-900 py-3 rounded-lg font-medium hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       >
         {loading ? 'Guardando...' : '✨ Agregar Anuncio'}
       </button>

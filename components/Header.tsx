@@ -13,7 +13,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-14 sm:h-16">
           <Link href="/" className="hover:opacity-80 transition-opacity group">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-lg sm:text-xl">
+              <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-gray-900 text-lg sm:text-xl">
                 🇲🇽
               </div>
               <div>

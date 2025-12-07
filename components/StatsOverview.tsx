@@ -21,7 +21,7 @@ export default function StatsOverview({ anuncios }: StatsOverviewProps) {
   const stats = [
     { label: 'Total', value: total, Icon: ChartBarIcon, color: 'text-cyan-400' },
     { label: 'Operando', value: operando, Icon: CheckCircleIcon, color: 'text-emerald-400' },
-    { label: 'En Desarrollo', value: enDesarrollo, Icon: WrenchScrewdriverIcon, color: 'text-amber-400' },
+    { label: 'En Desarrollo', value: enDesarrollo, Icon: WrenchScrewdriverIcon, color: 'text-blue-400' },
     { label: 'Prometido', value: prometido, Icon: DocumentTextIcon, color: 'text-gray-400' },
     { label: 'Incumplido', value: incumplido, Icon: XCircleIcon, color: 'text-red-400' },
   ];
@@ -35,7 +35,7 @@ export default function StatsOverview({ anuncios }: StatsOverviewProps) {
         >
           <div className="flex flex-col items-center text-center">
             <stat.Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color} mb-1.5 sm:mb-2`} />
-            <p className="text-xl sm:text-2xl font-bold text-white">
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">
               {stat.value}
             </p>
             <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{stat.label}</p>

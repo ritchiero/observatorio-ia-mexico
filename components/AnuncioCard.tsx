@@ -14,7 +14,7 @@ export default function AnuncioCard({ anuncio }: AnuncioCardProps) {
     <Link href={`/anuncio/${anuncio.id}`}>
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-cyan-800/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-cyan-900/10">
         <div className="flex justify-between items-start gap-3 mb-2">
-          <h3 className="text-sm font-semibold text-white flex-1 line-clamp-2">
+          <h3 className="text-sm font-semibold text-gray-900 flex-1 line-clamp-2">
             {anuncio.titulo}
           </h3>
           <StatusBadge status={anuncio.status} />

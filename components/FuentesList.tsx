@@ -23,13 +23,13 @@ export function FuentesList({ fuentes, fuenteOriginal }: FuentesListProps) {
     if (fuenteOriginal) {
       return (
         <div className="space-y-3">
-          <div className="border-l-2 border-white/20 pl-4">
-            <p className="font-medium font-sans-tech text-white/70">Fuente original</p>
+          <div className="border-l-2 border-gray-300/20 pl-4">
+            <p className="font-medium font-sans-tech text-gray-900/70">Fuente original</p>
             <a 
               href={fuenteOriginal} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-amber-400 hover:text-amber-300 text-sm break-all inline-flex items-center gap-1 font-mono transition-colors"
+              className="text-blue-400 hover:text-blue-300 text-sm break-all inline-flex items-center gap-1 font-mono transition-colors"
             >
               {fuenteOriginal}
               <span className="text-xs">↗</span>
@@ -40,7 +40,7 @@ export function FuentesList({ fuentes, fuenteOriginal }: FuentesListProps) {
     }
     
     return (
-      <p className="text-white/50 italic text-sm font-sans-tech">
+      <p className="text-gray-900/50 italic text-sm font-sans-tech">
         No hay fuentes registradas para este anuncio.
       </p>
     );
@@ -49,13 +49,13 @@ export function FuentesList({ fuentes, fuenteOriginal }: FuentesListProps) {
   return (
     <div className="space-y-4">
       {fuentes.map((fuente, index) => (
-        <div key={index} className="border-l-2 border-amber-500/30 pl-4 py-1">
+        <div key={index} className="border-l-2 border-blue-500/30 pl-4 py-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs text-white/50 font-mono">
+            <span className="text-xs text-gray-900/50 font-mono">
               {formatDate(fuente.fecha)}
             </span>
             {fuente.tipo === 'anuncio_original' && (
-              <span className="text-xs bg-amber-900/30 text-amber-400 px-2 py-0.5 rounded font-sans-tech">
+              <span className="text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded font-sans-tech">
                 Original
               </span>
             )}
@@ -79,13 +79,13 @@ export function FuentesList({ fuentes, fuenteOriginal }: FuentesListProps) {
             )}
           </div>
           
-          <p className="font-medium font-sans-tech text-white mb-1">{fuente.titulo}</p>
+          <p className="font-medium font-sans-tech text-gray-900 mb-1">{fuente.titulo}</p>
           
           <a 
             href={fuente.url} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-amber-400 hover:text-amber-300 text-sm break-all inline-flex items-center gap-1 font-mono transition-colors"
+            className="text-blue-400 hover:text-blue-300 text-sm break-all inline-flex items-center gap-1 font-mono transition-colors"
           >
             {fuente.url.length > 80 ? fuente.url.substring(0, 80) + '...' : fuente.url}
             <span className="text-xs">↗</span>
@@ -97,7 +97,7 @@ export function FuentesList({ fuentes, fuenteOriginal }: FuentesListProps) {
                 href={fuente.waybackUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white/60 hover:text-white/80 text-xs inline-flex items-center gap-1 font-sans-tech transition-colors"
+                className="text-gray-900/60 hover:text-gray-900/80 text-xs inline-flex items-center gap-1 font-sans-tech transition-colors"
               >
                 📦 Ver en Internet Archive
                 <span className="text-xs">↗</span>
@@ -106,7 +106,7 @@ export function FuentesList({ fuentes, fuenteOriginal }: FuentesListProps) {
           )}
           
           {fuente.extracto && (
-            <blockquote className="mt-2 text-white/60 text-sm italic border-l-2 border-white/20 pl-3 py-1 font-serif-display">
+            <blockquote className="mt-2 text-gray-900/60 text-sm italic border-l-2 border-gray-300/20 pl-3 py-1 font-serif-display">
               "{fuente.extracto}"
             </blockquote>
           )}

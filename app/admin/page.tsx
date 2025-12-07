@@ -64,7 +64,7 @@ function AdminContent() {
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
         <div className="max-w-md text-center">
           <div className="text-5xl mb-4">🔐</div>
-          <h1 className="text-3xl font-bold text-white mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
             Acceso Restringido
           </h1>
           <p className="text-gray-400 mb-6">
@@ -84,14 +84,14 @@ function AdminContent() {
   return (
     <div className="min-h-screen bg-gray-950 py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <span className="text-cyan-400">⚙️</span>
           Panel de Administración
         </h1>
 
         {/* Ejecutar agentes */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-cyan-400">🤖</span>
             Ejecutar Agentes Manualmente
           </h2>
@@ -99,14 +99,14 @@ function AdminContent() {
             <button
               onClick={ejecutarDeteccion}
               disabled={detectLoading}
-              className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 text-gray-900 py-3 rounded-lg font-medium hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {detectLoading ? 'Ejecutando...' : '🔍 Ejecutar Detección'}
             </button>
             <button
               onClick={ejecutarMonitoreo}
               disabled={monitorLoading}
-              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-gray-900 py-3 rounded-lg font-medium hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {monitorLoading ? 'Ejecutando...' : '📡 Ejecutar Monitoreo'}
             </button>
@@ -120,7 +120,7 @@ function AdminContent() {
 
         {/* Agregar anuncio manualmente */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-cyan-400">📝</span>
             Agregar Anuncio Manualmente
           </h2>
