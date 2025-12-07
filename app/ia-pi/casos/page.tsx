@@ -4,8 +4,15 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { CasoJudicial } from '@/types';
 
+// Tipo serializado para casos que vienen de la API (Timestamps convertidos a strings)
+type CasoJudicialSerializado = Omit<CasoJudicial, 'fecha' | 'createdAt' | 'updatedAt'> & {
+  fecha: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export default function CasosJudicialesPage() {
-  const [casos, setCasos] = useState<CasoJudicial[]>([]);
+  const [casos, setCasos] = useState<CasoJudicialSerializado[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -141,7 +148,7 @@ export default function CasosJudicialesPage() {
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">Fecha:</span>
-                      <span className="text-gray-600 ml-2">{caso.fecha && typeof caso.fecha === 'object' && 'toDate' in caso.fecha ? caso.fecha.toDate().toLocaleDateString('es-MX') : new Date(caso.fecha).toLocaleDateString('es-MX')}</span>
+                      <span className="text-gray-600 ml-2">{new Date(caso.fecha).toLocaleDateString('es-MX')}</span>
                     </div>
                     {caso.expediente && (
                       <div>
