@@ -409,7 +409,7 @@ export default function Home() {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <img src={getLogo(item.responsable)} alt="" className="w-5 h-5 rounded-full object-cover" />
+                      <img src={getLogo(item.responsable)} alt="" className="w-5 h-5 object-contain" />
                       <span className="text-xs text-gray-500">{item.fecha}</span>
                       <span className="text-xs text-gray-300">·</span>
                       <span className="text-xs text-gray-500">{item.responsable}</span>
@@ -458,7 +458,7 @@ export default function Home() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <img src={getLogo(item.responsable)} alt="" className="w-6 h-6 rounded-full object-cover" />
+                        <img src={getLogo(item.responsable)} alt="" className="w-6 h-6 object-contain" />
                         <span className="text-sm text-gray-600">{item.responsable}</span>
                       </div>
                     </td>
