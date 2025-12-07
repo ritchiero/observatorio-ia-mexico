@@ -6,11 +6,11 @@ interface StatusBadgeProps {
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
   const statusConfig = {
-    prometido: { label: 'Prometido', emoji: '⚪', colors: 'bg-gray-800/50 text-gray-400 border-gray-700' },
-    en_desarrollo: { label: 'En Desarrollo', emoji: '🟡', colors: 'bg-amber-950/50 text-amber-400 border-amber-800/50' },
-    operando: { label: 'Operando', emoji: '🟢', colors: 'bg-emerald-950/50 text-emerald-400 border-emerald-800/50' },
-    incumplido: { label: 'Incumplido', emoji: '🔴', colors: 'bg-red-950/50 text-red-400 border-red-800/50' },
-    abandonado: { label: 'Abandonado', emoji: '⚫', colors: 'bg-gray-950 text-gray-300 border-gray-700' },
+    prometido: { label: 'Prometido', emoji: '⚪', colors: 'bg-gray-100 text-gray-600 border-gray-300' },
+    en_desarrollo: { label: 'En Desarrollo', emoji: '🟡', colors: 'bg-amber-50 text-amber-600 border-amber-200' },
+    operando: { label: 'Operando', emoji: '🟢', colors: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+    incumplido: { label: 'Incumplido', emoji: '🔴', colors: 'bg-red-50 text-red-600 border-red-200' },
+    abandonado: { label: 'Abandonado', emoji: '⚫', colors: 'bg-gray-200 text-gray-700 border-gray-300' },
   };
 
   const config = statusConfig[status];
