@@ -61,64 +61,72 @@ function AdminContent() {
 
   if (!authorized) {
     return (
-      <div className="max-w-md mx-auto mt-20 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Acceso Restringido
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Necesitas una clave de acceso para ver esta página.
-        </p>
-        <button
-          onClick={() => router.push('/')}
-          className="text-blue-600 hover:underline"
-        >
-          ← Volver al inicio
-        </button>
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="max-w-md text-center">
+          <div className="text-5xl mb-4">🔐</div>
+          <h1 className="text-3xl font-bold text-white mb-4">
+            Acceso Restringido
+          </h1>
+          <p className="text-gray-400 mb-6">
+            Necesitas una clave de acceso para ver esta página.
+          </p>
+          <button
+            onClick={() => router.push('/')}
+            className="text-cyan-400 hover:text-cyan-300 transition-colors"
+          >
+            ← Volver al inicio
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold text-gray-900">
-        Panel de Administración
-      </h1>
+    <div className="min-h-screen bg-gray-950 py-8 px-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <span className="text-cyan-400">⚙️</span>
+          Panel de Administración
+        </h1>
 
-      {/* Ejecutar agentes */}
-      <section className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          Ejecutar Agentes Manualmente
-        </h2>
-        <div className="flex gap-4">
-          <button
-            onClick={ejecutarDeteccion}
-            disabled={detectLoading}
-            className="flex-1 bg-gray-900 text-white py-3 rounded-md font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {detectLoading ? 'Ejecutando...' : 'Ejecutar Detección'}
-          </button>
-          <button
-            onClick={ejecutarMonitoreo}
-            disabled={monitorLoading}
-            className="flex-1 bg-gray-900 text-white py-3 rounded-md font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {monitorLoading ? 'Ejecutando...' : 'Ejecutar Monitoreo'}
-          </button>
-        </div>
-        {message && (
-          <div className="mt-4 p-3 rounded-md bg-gray-100 text-gray-900">
-            {message}
+        {/* Ejecutar agentes */}
+        <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-cyan-400">🤖</span>
+            Ejecutar Agentes Manualmente
+          </h2>
+          <div className="flex gap-4">
+            <button
+              onClick={ejecutarDeteccion}
+              disabled={detectLoading}
+              className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {detectLoading ? 'Ejecutando...' : '🔍 Ejecutar Detección'}
+            </button>
+            <button
+              onClick={ejecutarMonitoreo}
+              disabled={monitorLoading}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {monitorLoading ? 'Ejecutando...' : '📡 Ejecutar Monitoreo'}
+            </button>
           </div>
-        )}
-      </section>
+          {message && (
+            <div className="mt-4 p-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-200">
+              {message}
+            </div>
+          )}
+        </section>
 
-      {/* Agregar anuncio manualmente */}
-      <section className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          Agregar Anuncio Manualmente
-        </h2>
-        <AdminForm />
-      </section>
+        {/* Agregar anuncio manualmente */}
+        <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-cyan-400">📝</span>
+            Agregar Anuncio Manualmente
+          </h2>
+          <AdminForm />
+        </section>
+      </div>
     </div>
   );
 }
@@ -126,8 +134,14 @@ function AdminContent() {
 export default function AdminPage() {
   return (
     <Suspense fallback={
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-xl text-gray-600">Cargando...</div>
+      <div className="flex justify-center items-center min-h-[400px] bg-gray-950">
+        <div className="text-xl text-gray-400 flex items-center gap-2">
+          <svg className="animate-spin h-5 w-5 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Cargando...
+        </div>
       </div>
     }>
       <AdminContent />

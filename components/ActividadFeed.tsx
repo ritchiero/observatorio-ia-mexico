@@ -40,19 +40,19 @@ export default function ActividadFeed({ actividad }: ActividadFeedProps) {
         return (
           <div
             key={item.id}
-            className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 hover:border-gray-300 transition-colors"
+            className="bg-gray-900 rounded-lg border border-gray-800 p-3 sm:p-4 hover:border-cyan-800/50 transition-colors"
           >
             <div className="flex items-start gap-2 sm:gap-3">
-              <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0 mt-0.5" />
+              <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <div className="text-xs sm:text-sm text-gray-500 mb-1">
                   {formatDate(fecha)}
                 </div>
-                <p className="text-sm sm:text-base text-gray-700">{item.descripcion}</p>
+                <p className="text-sm sm:text-base text-gray-300">{item.descripcion}</p>
                 {item.anuncioId && item.anuncioTitulo && (
                   <Link
                     href={`/anuncio/${item.anuncioId}`}
-                    className="text-gray-900 hover:underline text-xs sm:text-sm mt-2 inline-block font-medium"
+                    className="text-cyan-400 hover:text-cyan-300 text-xs sm:text-sm mt-2 inline-block font-medium transition-colors"
                   >
                     Ver anuncio: {item.anuncioTitulo} →
                   </Link>

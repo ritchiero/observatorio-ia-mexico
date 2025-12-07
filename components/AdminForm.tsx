@@ -54,10 +54,13 @@ export default function AdminForm() {
     }
   };
 
+  const inputClasses = "w-full px-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-transparent placeholder-gray-500";
+  const labelClasses = "block text-sm font-medium text-gray-300 mb-1";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className={labelClasses}>
           Título *
         </label>
         <input
@@ -65,12 +68,13 @@ export default function AdminForm() {
           required
           value={formData.titulo}
           onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          className={inputClasses}
+          placeholder="Ej: Laboratorio Nacional de IA"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className={labelClasses}>
           Descripción *
         </label>
         <textarea
@@ -78,13 +82,14 @@ export default function AdminForm() {
           rows={3}
           value={formData.descripcion}
           onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          className={inputClasses}
+          placeholder="Descripción del anuncio..."
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClasses}>
             Fecha de Anuncio *
           </label>
           <input
@@ -92,26 +97,26 @@ export default function AdminForm() {
             required
             value={formData.fechaAnuncio}
             onChange={(e) => setFormData({ ...formData, fechaAnuncio: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            className={inputClasses}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClasses}>
             Fecha Prometida
           </label>
           <input
             type="date"
             value={formData.fechaPrometida}
             onChange={(e) => setFormData({ ...formData, fechaPrometida: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            className={inputClasses}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClasses}>
             Responsable *
           </label>
           <input
@@ -119,12 +124,13 @@ export default function AdminForm() {
             required
             value={formData.responsable}
             onChange={(e) => setFormData({ ...formData, responsable: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            className={inputClasses}
+            placeholder="Ej: Sheinbaum"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className={labelClasses}>
             Dependencia *
           </label>
           <input
@@ -132,54 +138,57 @@ export default function AdminForm() {
             required
             value={formData.dependencia}
             onChange={(e) => setFormData({ ...formData, dependencia: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            className={inputClasses}
+            placeholder="Ej: Presidencia"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className={labelClasses}>
           Fuente Original (URL)
         </label>
         <input
           type="url"
           value={formData.fuenteOriginal}
           onChange={(e) => setFormData({ ...formData, fuenteOriginal: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          className={inputClasses}
+          placeholder="https://..."
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className={labelClasses}>
           Cita de la Promesa
         </label>
         <textarea
           rows={2}
           value={formData.citaPromesa}
           onChange={(e) => setFormData({ ...formData, citaPromesa: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          className={inputClasses}
+          placeholder="Cita textual de la promesa..."
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className={labelClasses}>
           Status
         </label>
         <select
           value={formData.status}
           onChange={(e) => setFormData({ ...formData, status: e.target.value as StatusType })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          className={inputClasses}
         >
-          <option value="prometido">Prometido</option>
-          <option value="en_desarrollo">En Desarrollo</option>
-          <option value="operando">Operando</option>
-          <option value="incumplido">Incumplido</option>
-          <option value="abandonado">Abandonado</option>
+          <option value="prometido">⚪ Prometido</option>
+          <option value="en_desarrollo">🟡 En Desarrollo</option>
+          <option value="operando">🟢 Operando</option>
+          <option value="incumplido">🔴 Incumplido</option>
+          <option value="abandonado">⚫ Abandonado</option>
         </select>
       </div>
 
       {message && (
-        <div className="p-3 rounded-md bg-gray-100 text-gray-900">
+        <div className="p-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-200">
           {message}
         </div>
       )}
@@ -187,9 +196,9 @@ export default function AdminForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-gray-900 text-white py-3 rounded-md font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       >
-        {loading ? 'Guardando...' : 'Agregar Anuncio'}
+        {loading ? 'Guardando...' : '✨ Agregar Anuncio'}
       </button>
     </form>
   );
