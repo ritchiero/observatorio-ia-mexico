@@ -7,11 +7,11 @@ import {
 } from './prompts-ia-pi';
 import {
   crearCasoJudicial,
-  crearCriterioPrecedente,
+  crearCriterioJuridico,
   crearPropuestaLegislativa,
   crearProblematica
 } from './firestore-ia-pi';
-import type { CasoJudicial, CriterioPrecedente, PropuestaLegislativa, ProblematicaIA } from '@/types';
+import type { CasoJudicial, CriterioJuridico, PropuestaLegislativa, Problematica } from '@/types';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -98,7 +98,7 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
   const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
   
   try {
-    const criterios = JSON.parse(responseText) as Array<Omit<CriterioPrecedente, 'id'>>;
+    const criterios = JSON.parse(responseText) as Array<Omit<CriterioJuridico, 'id'>>;
     
     const resultados = {
       encontrados: criterios.length,
@@ -108,7 +108,7 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
     
     for (const criterio of criterios) {
       try {
-        await crearCriterioPrecedente(criterio);
+        await crearCriterioJuridico(criterio);
         resultados.guardados++;
       } catch (error) {
         console.error('Error al guardar criterio:', error);
@@ -202,7 +202,7 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
   const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
   
   try {
-    const problematicas = JSON.parse(responseText) as Array<Omit<ProblematicaIA, 'id'>>;
+    const problematicas = JSON.parse(responseText) as Array<Omit<Problematica, 'id'>>;
     
     const resultados = {
       encontrados: problematicas.length,

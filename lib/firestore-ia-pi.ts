@@ -1,9 +1,9 @@
 import { getAdminDb } from './firebase-admin';
 import type { 
   CasoJudicial, 
-  CriterioPrecedente, 
+  CriterioJuridico, 
   PropuestaLegislativa, 
-  ProblematicaIA 
+  Problematica 
 } from '@/types';
 
 /**
@@ -48,7 +48,7 @@ export async function obtenerCasoPorId(id: string) {
 
 // ============= CRITERIOS Y PRECEDENTES =============
 
-export async function crearCriterioPrecedente(criterio: Omit<CriterioPrecedente, 'id'>) {
+export async function crearCriterioJuridico(criterio: Omit<CriterioJuridico, 'id'>) {
   const db = getAdminDb();
   const docRef = await db.collection('criterios_precedentes').add({
     ...criterio,
@@ -58,7 +58,7 @@ export async function crearCriterioPrecedente(criterio: Omit<CriterioPrecedente,
   return docRef.id;
 }
 
-export async function obtenerCriteriosPrecedentes() {
+export async function obtenerCriteriosJuridicos() {
   const db = getAdminDb();
   const snapshot = await db.collection('criterios_precedentes')
     .orderBy('fechaPublicacion', 'desc')
@@ -67,7 +67,7 @@ export async function obtenerCriteriosPrecedentes() {
   return snapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
-  })) as CriterioPrecedente[];
+  })) as CriterioJuridico[];
 }
 
 export async function obtenerCriterioPorId(id: string) {
@@ -79,7 +79,7 @@ export async function obtenerCriterioPorId(id: string) {
   return {
     id: doc.id,
     ...doc.data()
-  } as CriterioPrecedente;
+  } as CriterioJuridico;
 }
 
 // ============= PROPUESTAS LEGISLATIVAS =============
@@ -120,7 +120,7 @@ export async function obtenerPropuestaPorId(id: string) {
 
 // ============= PROBLEMÁTICAS =============
 
-export async function crearProblematica(problematica: Omit<ProblematicaIA, 'id'>) {
+export async function crearProblematica(problematica: Omit<Problematica, 'id'>) {
   const db = getAdminDb();
   const docRef = await db.collection('problematicas_ia').add({
     ...problematica,
@@ -139,7 +139,7 @@ export async function obtenerProblematicas() {
   return snapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
-  })) as ProblematicaIA[];
+  })) as Problematica[];
 }
 
 export async function obtenerProblematicaPorId(id: string) {
@@ -151,7 +151,7 @@ export async function obtenerProblematicaPorId(id: string) {
   return {
     id: doc.id,
     ...doc.data()
-  } as ProblematicaIA;
+  } as Problematica;
 }
 
 export async function obtenerProblematicasPorCategoria(categoria: string) {
@@ -164,7 +164,7 @@ export async function obtenerProblematicasPorCategoria(categoria: string) {
   return snapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
-  })) as ProblematicaIA[];
+  })) as Problematica[];
 }
 
 // ============= ESTADÍSTICAS =============
