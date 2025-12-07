@@ -29,8 +29,16 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
   const config = tipoEventoConfig[evento.tipo];
   const impacto = impactoConfig[evento.impacto];
 
-  // Convertir timestamp a fecha
-  const fecha = new Date((evento.fecha as any).seconds * 1000);
+  // Convertir timestamp a fecha - FIX para Invalid Date
+  let fecha: Date;
+  if ((evento.fecha as any)._seconds) {
+    fecha = new Date((evento.fecha as any)._seconds * 1000);
+  } else if ((evento.fecha as any).seconds) {
+    fecha = new Date((evento.fecha as any).seconds * 1000);
+  } else {
+    fecha = new Date(evento.fecha as any);
+  }
+  
   const fechaFormateada = fecha.toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'long',
@@ -38,33 +46,33 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
   });
 
   return (
-    <div className="relative pl-8 pb-8 last:pb-0">
+    <div className="relative pl-6 sm:pl-8 pb-6 sm:pb-8 last:pb-0">
       {/* Línea vertical */}
-      <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200 last:hidden" />
+      <div className="absolute left-2 sm:left-3 top-0 bottom-0 w-0.5 bg-gray-200 last:hidden" />
       
       {/* Punto del timeline */}
-      <div className={`absolute left-0 top-1 w-6 h-6 rounded-full ${config.bgColor} ${config.color} flex items-center justify-center text-sm`}>
+      <div className={`absolute left-0 top-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full ${config.bgColor} ${config.color} flex items-center justify-center text-xs sm:text-sm`}>
         {config.icon}
       </div>
 
       {/* Contenido del evento */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+      <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
         {/* Header */}
-        <div className="flex justify-between items-start mb-2">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-medium text-gray-500">{fechaFormateada}</span>
-              <span className={`text-xs px-2 py-0.5 rounded ${impacto.color} bg-opacity-10`}>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="text-xs sm:text-sm font-medium text-gray-500">{fechaFormateada}</span>
+              <span className={`text-xs px-1.5 sm:px-2 py-0.5 rounded ${impacto.color} bg-opacity-10`}>
                 {impacto.label}
               </span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">{evento.titulo}</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight">{evento.titulo}</h3>
           </div>
           
           {evento.fuentes.length > 0 && (
             <button
               onClick={() => setExpandido(!expandido)}
-              className="ml-4 text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="sm:ml-4 text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium px-2 py-1 sm:px-0 sm:py-0 rounded hover:bg-blue-50 sm:hover:bg-transparent self-start"
             >
               {expandido ? 'Ocultar' : `${evento.fuentes.length} fuente${evento.fuentes.length > 1 ? 's' : ''}`}
             </button>
@@ -72,12 +80,12 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
         </div>
 
         {/* Descripción */}
-        <p className="text-gray-700 mb-3">{evento.descripcion}</p>
+        <p className="text-sm sm:text-base text-gray-700 mb-3">{evento.descripcion}</p>
 
         {/* Cita textual */}
         {evento.citaTextual && (
-          <blockquote className="border-l-4 border-blue-500 pl-4 py-2 mb-3 bg-blue-50 rounded-r">
-            <p className="text-gray-700 italic text-sm">
+          <blockquote className="border-l-2 sm:border-l-4 border-blue-500 pl-3 sm:pl-4 py-2 mb-3 bg-blue-50 rounded-r">
+            <p className="text-gray-700 italic text-xs sm:text-sm">
               "{evento.citaTextual}"
             </p>
             {evento.responsable && (
@@ -96,7 +104,15 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
             </h4>
             <div className="space-y-2">
               {evento.fuentes.map((fuente) => {
-                const fechaFuente = new Date((fuente.fechaPublicacion as any).seconds * 1000);
+                let fechaFuente: Date;
+                if ((fuente.fechaPublicacion as any)._seconds) {
+                  fechaFuente = new Date((fuente.fechaPublicacion as any)._seconds * 1000);
+                } else if ((fuente.fechaPublicacion as any).seconds) {
+                  fechaFuente = new Date((fuente.fechaPublicacion as any).seconds * 1000);
+                } else {
+                  fechaFuente = new Date(fuente.fechaPublicacion as any);
+                }
+                
                 const fechaFuenteFormateada = fechaFuente.toLocaleDateString('es-MX', {
                   year: 'numeric',
                   month: 'short',
@@ -104,10 +120,10 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
                 });
 
                 return (
-                  <div key={fuente.id} className="bg-gray-50 rounded p-3">
+                  <div key={fuente.id} className="bg-gray-50 rounded p-2 sm:p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className="text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded">
                             {fuente.tipo.replace('_', ' ')}
                           </span>
@@ -126,7 +142,7 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
                           href={fuente.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          className="text-xs text-blue-600 hover:text-blue-800 underline inline-block py-1"
                         >
                           Ver fuente →
                         </a>
