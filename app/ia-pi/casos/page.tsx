@@ -12,7 +12,7 @@ type CasoJudicialSerializado = Omit<CasoJudicial, 'fecha' | 'createdAt' | 'updat
 };
 
 export default function CasosJudicialesPage() {
-  const [casos, setCasos] = useState<CasoJudicialSerializado[]>([]);
+  const [casos, setCasos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function CasosJudicialesPage() {
                       caso.estado === 'apelacion' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {caso.estado.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      {caso.estadoActual ? caso.estadoActual.replace('_', ' ').split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : 'N/A'}
                     </span>
                   </div>
 
@@ -148,7 +148,7 @@ export default function CasosJudicialesPage() {
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">Fecha:</span>
-                      <span className="text-gray-600 ml-2">{new Date(caso.fecha).toLocaleDateString('es-MX')}</span>
+                      <span className="text-gray-600 ml-2">{caso.fechaPresentacion ? new Date(caso.fechaPresentacion).toLocaleDateString('es-MX') : 'N/A'}</span>
                     </div>
                     {caso.expediente && (
                       <div>
@@ -168,7 +168,7 @@ export default function CasosJudicialesPage() {
                     <div className="pt-4 border-t border-gray-200">
                       <span className="font-medium text-gray-700 text-sm">Fuentes:</span>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {caso.fuentes.map((fuente, idx) => (
+                        {caso.fuentes.map((fuente: any, idx: number) => (
                           <a
                             key={idx}
                             href={fuente.url}
