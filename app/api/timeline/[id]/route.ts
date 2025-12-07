@@ -3,10 +3,11 @@ import { obtenerEventosTimeline } from '@/lib/timeline';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const eventos = await obtenerEventosTimeline(params.id);
+    const { id } = await params;
+    const eventos = await obtenerEventosTimeline(id);
     
     return NextResponse.json({
       eventos,

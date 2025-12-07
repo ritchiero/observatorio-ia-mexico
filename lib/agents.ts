@@ -1,7 +1,7 @@
 import { getAdminDb } from './firebase-admin';
 import { searchWithClaude } from './claude';
 import { getDeteccionPrompt, getMonitoreoPrompt } from './prompts';
-import { DeteccionResponse, MonitoreoResponse, TriggerTipo, DeteccionResponseConFuentes, MonitoreoResponseConFuentes } from '@/types';
+import { DeteccionResponse, MonitoreoResponse, TriggerTipo, DeteccionResponseConFuentes, MonitoreoResponseConFuentes, TipoFuente } from '@/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { crearEventoInicial, crearEventoTimeline } from './timeline';
 
@@ -60,11 +60,11 @@ export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
         // Crear evento inicial en el timeline
         try {
           const fuentesAdicionales = (anuncio.fuentes_adicionales || []).map(f => ({
-            tipo: f.tipo as any,
+            tipo: f.tipo as TipoFuente,
             url: f.url,
             titulo: f.titulo,
             medio: f.medio,
-            fechaPublicacion: Timestamp.fromDate(new Date(anuncio.fecha_anuncio)),
+            fechaPublicacion: new Date(anuncio.fecha_anuncio),
           }));
 
           await crearEventoInicial({
@@ -247,11 +247,11 @@ export async function ejecutarAgenteMonitoreo(trigger: TriggerTipo = 'manual') {
           // Crear evento en el timeline
           try {
             const fuentesAdicionales = (monitoreo.actualizacion.fuentes_adicionales || []).map(f => ({
-              tipo: f.tipo as any,
+              tipo: f.tipo as TipoFuente,
               url: f.url,
               titulo: f.titulo,
               medio: f.medio,
-              fechaPublicacion: Timestamp.now(),
+              fechaPublicacion: new Date(),
             }));
 
             await crearEventoTimeline({
@@ -264,10 +264,10 @@ export async function ejecutarAgenteMonitoreo(trigger: TriggerTipo = 'manual') {
               descripcion: monitoreo.actualizacion.descripcion,
               fuentes: [
                 {
-                  tipo: 'nota_prensa' as any,
+                  tipo: 'nota_prensa' as TipoFuente,
                   url: monitoreo.actualizacion.fuente_url,
                   titulo: monitoreo.actualizacion.descripcion,
-                  fechaPublicacion: Timestamp.now(),
+                  fechaPublicacion: new Date(),
                 },
                 ...fuentesAdicionales,
               ],

@@ -5,27 +5,32 @@ import { Timestamp } from 'firebase-admin/firestore';
 /**
  * Crear un nuevo evento en el timeline de un anuncio
  */
+type FuenteInput = Omit<Fuente, 'id' | 'fechaPublicacion'> & { fechaPublicacion: Date | Timestamp };
+
 export async function crearEventoTimeline(params: {
   anuncioId: string;
   fecha: Date;
   tipo: TipoEvento;
   titulo: string;
   descripcion: string;
-  fuentes: Omit<Fuente, 'id'>[];
+  fuentes: FuenteInput[];
   citaTextual?: string;
   responsable?: string;
   impacto: ImpactoEvento;
 }): Promise<string> {
   const db = getAdminDb();
   
-  // Crear fuentes con IDs
-  const fuentesConId: Fuente[] = params.fuentes.map(fuente => ({
+  // Crear fuentes con IDs y convertir Date a Timestamp
+  const fuentesConId = params.fuentes.map(fuente => ({
     ...fuente,
     id: db.collection('_temp').doc().id, // Generar ID único
-  }));
+    fechaPublicacion: fuente.fechaPublicacion instanceof Date 
+      ? Timestamp.fromDate(fuente.fechaPublicacion)
+      : fuente.fechaPublicacion,
+  })) as any as Fuente[];
 
   const eventoRef = db.collection('eventos_timeline').doc();
-  const evento: EventoTimeline = {
+  const evento = {
     id: eventoRef.id,
     anuncioId: params.anuncioId,
     fecha: Timestamp.fromDate(params.fecha),
@@ -37,7 +42,7 @@ export async function crearEventoTimeline(params: {
     responsable: params.responsable,
     impacto: params.impacto,
     createdAt: Timestamp.now(),
-  };
+  } as any as EventoTimeline;
 
   await eventoRef.set(evento);
   return eventoRef.id;
@@ -97,15 +102,15 @@ export async function crearEventoInicial(params: {
   responsable: string;
   citaPromesa: string;
   fuenteOriginal: string;
-  fuentesAdicionales?: Omit<Fuente, 'id'>[];
+  fuentesAdicionales?: FuenteInput[];
 }): Promise<string> {
   // Preparar fuentes
-  const fuentes: Omit<Fuente, 'id'>[] = [
+  const fuentes: FuenteInput[] = [
     {
       tipo: 'nota_prensa',
       url: params.fuenteOriginal,
       titulo: `Anuncio de ${params.titulo}`,
-      fechaPublicacion: Timestamp.fromDate(params.fechaAnuncio),
+      fechaPublicacion: params.fechaAnuncio,
     },
     ...(params.fuentesAdicionales || []),
   ];

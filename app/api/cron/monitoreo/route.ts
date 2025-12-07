@@ -21,7 +21,6 @@ export async function GET(request: Request) {
     console.log('[CRON] Agente de monitoreo completado:', resultado);
     
     return NextResponse.json({
-      success: true,
       mensaje: `Monitoreo completado. ${resultado.actualizacionesDetectadas} actualización(es) detectada(s).`,
       ...resultado,
     });

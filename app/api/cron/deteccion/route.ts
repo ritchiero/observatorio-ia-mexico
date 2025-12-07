@@ -21,7 +21,6 @@ export async function GET(request: Request) {
     console.log('[CRON] Agente de detección completado:', resultado);
     
     return NextResponse.json({
-      success: true,
       mensaje: `Detección completada. ${resultado.anunciosEncontrados} nuevo(s) anuncio(s) encontrado(s).`,
       ...resultado,
     });
