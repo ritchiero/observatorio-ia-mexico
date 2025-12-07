@@ -11,6 +11,7 @@ import {
   crearPropuestaLegislativa,
   crearProblematica
 } from './firestore-ia-pi';
+import { extractJSON } from './json-parser';
 import type { CasoJudicial, CriterioJuridico, PropuestaLegislativa, Problematica } from '@/types';
 
 const anthropic = new Anthropic({
@@ -46,7 +47,8 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
   const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
   
   try {
-    const casos = JSON.parse(responseText) as Array<Omit<CasoJudicial, 'id'>>;
+    console.log('📝 Respuesta de Claude:', responseText.substring(0, 200));
+    const casos = extractJSON(responseText) as Array<Omit<CasoJudicial, 'id'>>;
     
     const resultados = {
       encontrados: casos.length,
@@ -69,7 +71,8 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
     
   } catch (error) {
     console.error('Error al parsear respuesta del agente de casos:', error);
-    throw new Error('Error al procesar casos judiciales');
+    console.error('Respuesta completa:', responseText);
+    throw error;
   }
 }
 
@@ -98,7 +101,8 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
   const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
   
   try {
-    const criterios = JSON.parse(responseText) as Array<Omit<CriterioJuridico, 'id'>>;
+    console.log('📝 Respuesta de Claude:', responseText.substring(0, 200));
+    const criterios = extractJSON(responseText) as Array<Omit<CriterioJuridico, 'id'>>;
     
     const resultados = {
       encontrados: criterios.length,
@@ -121,7 +125,8 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
     
   } catch (error) {
     console.error('Error al parsear respuesta del agente de criterios:', error);
-    throw new Error('Error al procesar criterios y precedentes');
+    console.error('Respuesta completa:', responseText);
+    throw error;
   }
 }
 
@@ -150,7 +155,8 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
   const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
   
   try {
-    const propuestas = JSON.parse(responseText) as Array<Omit<PropuestaLegislativa, 'id'>>;
+    console.log('📝 Respuesta de Claude:', responseText.substring(0, 200));
+    const propuestas = extractJSON(responseText) as Array<Omit<PropuestaLegislativa, 'id'>>;
     
     const resultados = {
       encontrados: propuestas.length,
@@ -173,7 +179,8 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
     
   } catch (error) {
     console.error('Error al parsear respuesta del agente de propuestas:', error);
-    throw new Error('Error al procesar propuestas legislativas');
+    console.error('Respuesta completa:', responseText);
+    throw error;
   }
 }
 
@@ -202,7 +209,8 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
   const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
   
   try {
-    const problematicas = JSON.parse(responseText) as Array<Omit<Problematica, 'id'>>;
+    console.log('📝 Respuesta de Claude:', responseText.substring(0, 200));
+    const problematicas = extractJSON(responseText) as Array<Omit<Problematica, 'id'>>;
     
     const resultados = {
       encontrados: problematicas.length,
@@ -225,6 +233,7 @@ IMPORTANTE: Devuelve SOLO un JSON array válido, sin texto adicional.`
     
   } catch (error) {
     console.error('Error al parsear respuesta del agente de problemáticas:', error);
-    throw new Error('Error al procesar problemáticas');
+    console.error('Respuesta completa:', responseText);
+    throw error;
   }
 }
