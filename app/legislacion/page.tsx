@@ -70,7 +70,36 @@ export default function LegislacionPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Cargando iniciativas...</div>
+        <div className="text-center">
+          <div className="text-gray-600 mb-2">Cargando iniciativas...</div>
+          <div className="text-sm text-gray-400">Esto puede tardar unos segundos</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje si no hay iniciativas
+  if (!loading && iniciativas.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <section className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-6 py-16">
+            <h1 className="font-serif text-4xl text-gray-900 mb-4">Legislación en IA</h1>
+            <p className="text-gray-600">Seguimiento de iniciativas legislativas relacionadas con inteligencia artificial</p>
+          </div>
+        </section>
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="bg-blue-50 border border-blue-200 rounded-sm p-8 text-center">
+            <div className="text-6xl mb-4">📋</div>
+            <h2 className="font-serif text-2xl text-gray-900 mb-2">Base de datos en preparación</h2>
+            <p className="text-gray-600 mb-4">
+              Estamos importando las 69 iniciativas legislativas documentadas.
+              <br />
+              Esta sección estará disponible próximamente.
+            </p>
+            <a href="/" className="text-blue-500 hover:underline">Volver al inicio</a>
+          </div>
+        </div>
       </div>
     );
   }
