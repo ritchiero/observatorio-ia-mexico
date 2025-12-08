@@ -17,8 +17,7 @@ export default function LegislacionPage() {
     const fetchIniciativas = async () => {
       try {
         const q = query(
-          collection(db, 'iniciativas'),
-          orderBy('fecha', 'desc')
+          collection(db, 'iniciativas')
         );
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({
