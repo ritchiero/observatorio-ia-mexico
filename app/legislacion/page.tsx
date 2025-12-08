@@ -20,6 +20,13 @@ export default async function LegislacionPage() {
       ...doc.data()
     })) as IniciativaLegislativa[];
     
+    // Ordenar por fecha descendente (más recientes primero)
+    iniciativas.sort((a, b) => {
+      const dateA = typeof a.fecha === 'string' ? new Date(a.fecha).getTime() : a.fecha.toDate().getTime();
+      const dateB = typeof b.fecha === 'string' ? new Date(b.fecha).getTime() : b.fecha.toDate().getTime();
+      return dateB - dateA; // Descendente
+    });
+    
     console.log('[SERVER] Iniciativas fetched:', iniciativas.length);
   } catch (e: any) {
     console.error('[SERVER] Error fetching iniciativas:', e);
