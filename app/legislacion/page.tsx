@@ -1,8 +1,6 @@
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { IniciativaLegislativa, IniciativaStatus } from '@/types';
-import { FileText, Scale, TrendingUp, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { IniciativaLegislativa } from '@/types';
+import { AlertCircle } from 'lucide-react';
 import LegislacionClient from './LegislacionClient';
 
 export const revalidate = 0; // Deshabilitar cache
@@ -12,13 +10,16 @@ export default async function LegislacionPage() {
   let error: string | null = null;
 
   try {
-    console.log('[SERVER] Fetching iniciativas...');
-    const snapshot = await getDocs(collection(db, 'iniciativas'));
+    console.log('[SERVER] Fetching iniciativas from Firestore...');
+    const db = getAdminDb();
+    const snapshot = await db.collection('iniciativas').get();
     console.log('[SERVER] Snapshot size:', snapshot.size);
+    
     iniciativas = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as IniciativaLegislativa[];
+    
     console.log('[SERVER] Iniciativas fetched:', iniciativas.length);
   } catch (e: any) {
     console.error('[SERVER] Error fetching iniciativas:', e);
@@ -28,9 +29,15 @@ export default async function LegislacionPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 mb-2">Error cargando iniciativas</div>
-          <div className="text-sm text-gray-600">{error}</div>
+        <div className="text-center max-w-md mx-auto p-8">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2">
+            Error cargando iniciativas
+          </h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-sm text-gray-500">
+            Por favor contacta al administrador del sitio.
+          </p>
         </div>
       </div>
     );
