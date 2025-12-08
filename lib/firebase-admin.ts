@@ -1,8 +1,10 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getStorage, Storage } from 'firebase-admin/storage';
 
 let adminApp: App;
 let adminDb: Firestore;
+let adminStorage: Storage;
 
 function initializeFirebaseAdmin() {
   if (getApps().length === 0) {
@@ -25,6 +27,7 @@ function initializeFirebaseAdmin() {
           privateKey,
         }),
         databaseURL: `https://${projectId}.firebaseio.com`,
+        storageBucket: `${projectId}.appspot.com`,
       });
     } catch (error: any) {
       console.error('[FIREBASE_ADMIN] Initialization error:', error);
@@ -36,6 +39,7 @@ function initializeFirebaseAdmin() {
   
   try {
     adminDb = getFirestore(adminApp);
+    adminStorage = getStorage(adminApp);
   } catch (error: any) {
     console.error('[FIREBASE_ADMIN] Firestore initialization error:', error);
     throw new Error(`Failed to get Firestore instance: ${error.message}`);
@@ -49,4 +53,11 @@ export function getAdminDb(): Firestore {
     return initializeFirebaseAdmin();
   }
   return adminDb;
+}
+
+export function getAdminStorage(): Storage {
+  if (!adminStorage) {
+    initializeFirebaseAdmin();
+  }
+  return adminStorage;
 }
