@@ -61,8 +61,10 @@ export default function LegislacionPage() {
     return badges[status] || badges['en_comisiones'];
   };
 
-  const formatFecha = (timestamp: Timestamp) => {
-    const date = timestamp.toDate();
+  const formatFecha = (fecha: any) => {
+    if (!fecha) return 'N/A';
+    // Manejar tanto Timestamp de Firestore como strings ISO
+    const date = fecha.toDate ? fecha.toDate() : new Date(fecha);
     return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
