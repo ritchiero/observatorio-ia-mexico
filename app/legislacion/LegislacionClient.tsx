@@ -86,6 +86,35 @@ export default function LegislacionClient({ iniciativas }: Props) {
     return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
+  const formatDate = formatFecha; // Alias para consistencia
+
+  const getTipoLabel = (tipo: string): string => {
+    const labels: Record<string, string> = {
+      'ley_federal': 'Ley Federal',
+      'reforma_codigo_penal': 'Reforma Código Penal',
+      'reforma_constitucional': 'Reforma Constitucional',
+      'reforma_educacion': 'Reforma Educación',
+      'reforma_salud': 'Reforma Salud',
+      'reforma_violencia_mujer': 'Reforma Violencia contra la Mujer',
+      'reforma_telecomunicaciones': 'Reforma Telecomunicaciones',
+      'reforma_otra': 'Otra Reforma'
+    };
+    return labels[tipo] || tipo.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const getCamaraLabel = (camara: string): string => {
+    const labels: Record<string, string> = {
+      'diputados': 'Cámara de Diputados',
+      'senadores': 'Senado',
+      'congreso_cdmx': 'Congreso CDMX'
+    };
+    return labels[camara] || camara;
+  };
+
+  const getStatusLabel = (status: IniciativaStatus): string => {
+    return getStatusBadge(status).text;
+  };
+
   if (iniciativas.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -240,6 +269,36 @@ export default function LegislacionClient({ iniciativas }: Props) {
                       <tr key={`${iniciativa.id}-expanded`}>
                         <td colSpan={6} className="px-8 py-6 bg-gray-50 border-t border-gray-200">
                           <div className="max-w-4xl">
+                            {/* Metadatos Clave */}
+                            <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div>
+                                <h5 className="text-xs font-semibold text-gray-500 uppercase mb-1">Tipo</h5>
+                                <p className="text-sm text-gray-900">{getTipoLabel(iniciativa.tipo)}</p>
+                              </div>
+                              <div>
+                                <h5 className="text-xs font-semibold text-gray-500 uppercase mb-1">Cámara</h5>
+                                <p className="text-sm text-gray-900">{getCamaraLabel(iniciativa.camara)}</p>
+                              </div>
+                              <div>
+                                <h5 className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha</h5>
+                                <p className="text-sm text-gray-900">{formatDate(iniciativa.fecha)}</p>
+                              </div>
+                              <div>
+                                <h5 className="text-xs font-semibold text-gray-500 uppercase mb-1">Estado</h5>
+                                <p className="text-sm text-gray-900">{getStatusLabel(iniciativa.status)}</p>
+                              </div>
+                            </div>
+                            
+                            {/* Descripción */}
+                            {iniciativa.descripcion && (
+                              <div className="mb-4">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Descripción</h4>
+                                <p className="text-sm text-gray-700 leading-relaxed">
+                                  {iniciativa.descripcion}
+                                </p>
+                              </div>
+                            )}
+                            
                             {/* Resumen */}
                             {iniciativa.resumen && (
                               <div className="mb-4">
@@ -264,15 +323,6 @@ export default function LegislacionClient({ iniciativas }: Props) {
                                     </span>
                                   ))}
                                 </div>
-                              </div>
-                            )}
-                            
-                            {/* Mensaje cuando no hay datos */}
-                            {!iniciativa.resumen && (!iniciativa.categoriasImpacto || iniciativa.categoriasImpacto.length === 0) && (
-                              <div className="mb-4">
-                                <p className="text-sm text-gray-500 italic">
-                                  Esta iniciativa aún no cuenta con resumen detallado ni categorías de impacto.
-                                </p>
                               </div>
                             )}
                             
