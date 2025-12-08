@@ -267,6 +267,15 @@ export default function LegislacionClient({ iniciativas }: Props) {
                               </div>
                             )}
                             
+                            {/* Mensaje cuando no hay datos */}
+                            {!iniciativa.resumen && (!iniciativa.categoriasImpacto || iniciativa.categoriasImpacto.length === 0) && (
+                              <div className="mb-4">
+                                <p className="text-sm text-gray-500 italic">
+                                  Esta iniciativa aún no cuenta con resumen detallado ni categorías de impacto.
+                                </p>
+                              </div>
+                            )}
+                            
                             {/* Enlaces */}
                             <div className="flex gap-4 mt-4">
                               <Link 
