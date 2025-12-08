@@ -333,3 +333,82 @@ export interface AgenteProblematicasResponse {
 // Tipos extendidos de AgenteTipo y ActividadTipo
 export type AgenteTipoExtendido = AgenteTipo | 'casos_judiciales' | 'criterios_juridicos' | 'propuestas_legislativas' | 'problematicas';
 export type ActividadTipoExtendido = ActividadTipo | 'nuevo_caso' | 'nuevo_criterio' | 'nueva_propuesta' | 'nueva_problematica' | 'actualizacion_caso' | 'actualizacion_propuesta' | 'actualizacion_problematica';
+
+// ============================================
+// TIPOS PARA SECCIÓN LEGISLATIVA
+// ============================================
+
+export type IniciativaStatus = 
+  | 'en_comisiones'           // Activas en legislatura actual
+  | 'desechada_termino'       // Desechadas por término de legislatura
+  | 'archivada'               // Archivadas explícitamente
+  | 'aprobada'                // Aprobadas
+  | 'rechazada'               // Rechazadas explícitamente
+  | 'turnada'                 // Turnada a comisión
+  | 'dictaminada';            // Con dictamen emitido
+
+export type IniciativaTipo =
+  | 'ley_federal'             // Ley Federal específica de IA
+  | 'reforma_constitucional'  // Reforma constitucional
+  | 'reforma_codigo_penal'    // Código Penal Federal
+  | 'reforma_educacion'       // Ley General de Educación
+  | 'reforma_salud'           // Ley General de Salud
+  | 'reforma_derechos_autor'  // Ley Federal del Derecho de Autor
+  | 'reforma_violencia_mujer' // Ley de Acceso de Mujeres a Vida Libre de Violencia
+  | 'reforma_trabajo'         // Ley Federal del Trabajo
+  | 'reforma_telecomunicaciones' // Ley de Telecomunicaciones
+  | 'reforma_otra';           // Otras leyes
+
+export type Legislatura = 'LXIV' | 'LXV' | 'LXVI' | 'III_CDMX';
+
+export type Camara = 'diputados' | 'senadores' | 'congreso_cdmx';
+
+export interface EventoLegislativo {
+  fecha: Timestamp;
+  tipo: 'presentacion' | 'turnado_comision' | 'dictamen' | 'votacion' | 'aprobacion' | 'rechazo' | 'archivado' | 'desechado';
+  descripcion: string;
+  resultado?: string; // Ej: "Aprobada 350-120"
+  fuente?: string;
+}
+
+export interface IniciativaLegislativa {
+  id: string;
+  numero: number; // Número de iniciativa en el listado (1-69+)
+  titulo: string;
+  proponente: string;
+  partido: string;
+  fecha: Timestamp; // Fecha de presentación
+  legislatura: Legislatura;
+  camara: Camara;
+  descripcion: string;
+  status: IniciativaStatus;
+  
+  // Categorización
+  tipo: IniciativaTipo;
+  tematicas: string[]; // ['deepfakes', 'educacion', 'salud', etc.]
+  
+  // Fuentes
+  urlGaceta: string;
+  urlPDF?: string;
+  fuentes?: Fuente[];
+  
+  // Timeline de eventos
+  eventos: EventoLegislativo[];
+  
+  // Resumen del agente
+  resumenAgente?: string;
+  
+  // Metadata
+  creadoManualmente: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface ActividadLegislativa {
+  id: string;
+  fecha: Timestamp;
+  tipo: 'nueva_iniciativa' | 'cambio_status' | 'dictamen_emitido' | 'votacion' | 'agente_ejecutado';
+  iniciativaId?: string;
+  iniciativaTitulo?: string;
+  descripcion: string;
+}
