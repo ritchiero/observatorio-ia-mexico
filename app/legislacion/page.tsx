@@ -12,6 +12,7 @@ export default async function LegislacionPage() {
   try {
     console.log('[SERVER] Fetching iniciativas from Firestore...');
     const db = getAdminDb();
+    console.log('[SERVER] DB initialized');
     const snapshot = await db.collection('iniciativas').get();
     console.log('[SERVER] Snapshot size:', snapshot.size);
     
@@ -21,11 +22,16 @@ export default async function LegislacionPage() {
     })) as IniciativaLegislativa[];
     
     // Ordenar por fecha descendente (más recientes primero)
-    iniciativas.sort((a, b) => {
-      const dateA = typeof a.fecha === 'string' ? new Date(a.fecha).getTime() : a.fecha.toDate().getTime();
-      const dateB = typeof b.fecha === 'string' ? new Date(b.fecha).getTime() : b.fecha.toDate().getTime();
-      return dateB - dateA; // Descendente
-    });
+    try {
+      iniciativas.sort((a, b) => {
+        const dateA = typeof a.fecha === 'string' ? new Date(a.fecha).getTime() : a.fecha.toDate().getTime();
+        const dateB = typeof b.fecha === 'string' ? new Date(b.fecha).getTime() : b.fecha.toDate().getTime();
+        return dateB - dateA; // Descendente
+      });
+    } catch (sortError: any) {
+      console.error('[SERVER] Error sorting iniciativas:', sortError);
+      // Continuar sin ordenar si hay error
+    }
     
     console.log('[SERVER] Iniciativas fetched:', iniciativas.length);
   } catch (e: any) {
