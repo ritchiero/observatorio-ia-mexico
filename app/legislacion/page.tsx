@@ -16,22 +16,30 @@ export default function LegislacionPage() {
   useEffect(() => {
     const fetchIniciativas = async () => {
       try {
+        console.log('[DEBUG] Iniciando fetching de iniciativas...');
+        console.log('[DEBUG] Firebase DB:', db);
         const q = query(
           collection(db, 'iniciativas')
         );
+        console.log('[DEBUG] Query creada:', q);
         const snapshot = await getDocs(q);
+        console.log('[DEBUG] Snapshot obtenido:', snapshot.size, 'documentos');
         const data = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as IniciativaLegislativa[];
+        console.log('[DEBUG] Datos mapeados:', data.length, 'iniciativas');
         setIniciativas(data);
+        console.log('[DEBUG] Estado actualizado');
       } catch (error) {
-        console.error('Error fetching iniciativas:', error);
+        console.error('[ERROR] Error fetching iniciativas:', error);
       } finally {
+        console.log('[DEBUG] Finalizando, setLoading(false)');
         setLoading(false);
       }
     };
 
+    console.log('[DEBUG] useEffect ejecutándose');
     fetchIniciativas();
   }, []);
 
