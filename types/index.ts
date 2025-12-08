@@ -371,6 +371,22 @@ export interface EventoLegislativo {
   fuente?: string;
 }
 
+export type CategoriaImpacto = 
+  | 'propiedad_intelectual'
+  | 'responsabilidad'
+  | 'etica'
+  | 'ciberseguridad'
+  | 'seguridad_nacional'
+  | 'justicia'
+  | 'educacion'
+  | 'salud'
+  | 'privacidad'
+  | 'derechos_autor'
+  | 'violencia_genero'
+  | 'transparencia'
+  | 'trabajo'
+  | 'economia';
+
 export interface IniciativaLegislativa {
   id: string;
   numero: number; // Número de iniciativa en el listado (1-69+)
@@ -397,6 +413,10 @@ export interface IniciativaLegislativa {
   
   // Resumen del agente
   resumenAgente?: string;
+  
+  // Resumen y análisis
+  resumen?: string; // Resumen de qué propone la iniciativa
+  categoriasImpacto?: CategoriaImpacto[]; // Categorías afectadas
   
   // Metadata
   creadoManualmente: boolean;

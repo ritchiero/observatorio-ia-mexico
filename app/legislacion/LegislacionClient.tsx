@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { IniciativaLegislativa, IniciativaStatus } from '@/types';
-import { FileText, Scale, TrendingUp, AlertCircle } from 'lucide-react';
+import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto } from '@/types';
+import { FileText, Scale, TrendingUp, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
 export default function LegislacionClient({ iniciativas }: Props) {
   const [filtroStatus, setFiltroStatus] = useState<IniciativaStatus | 'todos'>('todos');
   const [filtroLegislatura, setFiltroLegislatura] = useState<string>('todos');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const iniciativasFiltradas = iniciativas.filter(i => {
     if (filtroStatus !== 'todos' && i.status !== filtroStatus) return false;
@@ -37,6 +38,46 @@ export default function LegislacionClient({ iniciativas }: Props) {
       'dictaminada': { text: 'Dictaminada', color: 'bg-orange-100 text-orange-700 border-orange-200' }
     };
     return badges[status] || badges['en_comisiones'];
+  };
+
+  const getCategoriaLabel = (categoria: CategoriaImpacto): string => {
+    const labels: Record<CategoriaImpacto, string> = {
+      'propiedad_intelectual': 'Propiedad Intelectual',
+      'responsabilidad': 'Responsabilidad',
+      'etica': 'Ética',
+      'ciberseguridad': 'Ciberseguridad',
+      'seguridad_nacional': 'Seguridad Nacional',
+      'justicia': 'Justicia',
+      'educacion': 'Educación',
+      'salud': 'Salud',
+      'privacidad': 'Privacidad',
+      'derechos_autor': 'Derechos de Autor',
+      'violencia_genero': 'Violencia de Género',
+      'transparencia': 'Transparencia',
+      'trabajo': 'Trabajo',
+      'economia': 'Economía'
+    };
+    return labels[categoria];
+  };
+
+  const getCategoriaColor = (categoria: CategoriaImpacto): string => {
+    const colors: Record<CategoriaImpacto, string> = {
+      'propiedad_intelectual': 'bg-purple-100 text-purple-700 border-purple-200',
+      'responsabilidad': 'bg-red-100 text-red-700 border-red-200',
+      'etica': 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      'ciberseguridad': 'bg-cyan-100 text-cyan-700 border-cyan-200',
+      'seguridad_nacional': 'bg-orange-100 text-orange-700 border-orange-200',
+      'justicia': 'bg-blue-100 text-blue-700 border-blue-200',
+      'educacion': 'bg-green-100 text-green-700 border-green-200',
+      'salud': 'bg-pink-100 text-pink-700 border-pink-200',
+      'privacidad': 'bg-violet-100 text-violet-700 border-violet-200',
+      'derechos_autor': 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
+      'violencia_genero': 'bg-rose-100 text-rose-700 border-rose-200',
+      'transparencia': 'bg-teal-100 text-teal-700 border-teal-200',
+      'trabajo': 'bg-amber-100 text-amber-700 border-amber-200',
+      'economia': 'bg-emerald-100 text-emerald-700 border-emerald-200'
+    };
+    return colors[categoria];
   };
 
   const formatFecha = (fecha: any) => {
@@ -136,6 +177,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="w-8 px-2 py-3"></th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Iniciativa
                 </th>
@@ -156,35 +198,101 @@ export default function LegislacionClient({ iniciativas }: Props) {
             <tbody className="bg-white divide-y divide-gray-200">
               {iniciativasFiltradas.map((iniciativa) => {
                 const badge = getStatusBadge(iniciativa.status);
+                const isExpanded = expandedId === iniciativa.id;
+                
                 return (
-                  <tr key={iniciativa.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <Link 
-                        href={`/legislacion/${iniciativa.id}`}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        {iniciativa.titulo}
-                      </Link>
-                      <div className="text-sm text-gray-500 mt-1">
-                        {iniciativa.tipo} · {iniciativa.camara}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {iniciativa.proponente}
-                      <div className="text-xs text-gray-500">{iniciativa.partido}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {formatFecha(iniciativa.fecha)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.color}`}>
-                        {badge.text}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {iniciativa.legislatura}
-                    </td>
-                  </tr>
+                  <>
+                    <tr 
+                      key={iniciativa.id} 
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => setExpandedId(isExpanded ? null : iniciativa.id)}
+                    >
+                      <td className="px-2 py-4 text-gray-400">
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-blue-600 font-medium">
+                          {iniciativa.titulo}
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {iniciativa.tipo} · {iniciativa.camara}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {iniciativa.proponente}
+                        <div className="text-xs text-gray-500">{iniciativa.partido}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {formatFecha(iniciativa.fecha)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.color}`}>
+                          {badge.text}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {iniciativa.legislatura}
+                      </td>
+                    </tr>
+                    
+                    {/* Expanded Row */}
+                    {isExpanded && (
+                      <tr key={`${iniciativa.id}-expanded`}>
+                        <td colSpan={6} className="px-8 py-6 bg-gray-50 border-t border-gray-200">
+                          <div className="max-w-4xl">
+                            {/* Resumen */}
+                            {iniciativa.resumen && (
+                              <div className="mb-4">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Resumen de la propuesta</h4>
+                                <p className="text-sm text-gray-700 leading-relaxed">
+                                  {iniciativa.resumen}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {/* Categorías de Impacto */}
+                            {iniciativa.categoriasImpacto && iniciativa.categoriasImpacto.length > 0 && (
+                              <div className="mb-4">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Categorías de impacto</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {iniciativa.categoriasImpacto.map((categoria) => (
+                                    <span 
+                                      key={categoria}
+                                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getCategoriaColor(categoria)}`}
+                                    >
+                                      {getCategoriaLabel(categoria)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Enlaces */}
+                            <div className="flex gap-4 mt-4">
+                              <Link 
+                                href={`/legislacion/${iniciativa.id}`}
+                                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Ver detalles completos →
+                              </Link>
+                              {iniciativa.urlPDF && (
+                                <a 
+                                  href={iniciativa.urlPDF}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:text-blue-800"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Ver PDF oficial ↗
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 );
               })}
             </tbody>
