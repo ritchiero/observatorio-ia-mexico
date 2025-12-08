@@ -40,7 +40,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
     return badges[status] || badges['en_comisiones'];
   };
 
-  const getCategoriaLabel = (categoria: CategoriaImpacto): string => {
+  const getCategoriaLabel = (categoria: CategoriaImpacto | string): string => {
     const labels: Record<CategoriaImpacto, string> = {
       'propiedad_intelectual': 'Propiedad Intelectual',
       'responsabilidad': 'Responsabilidad',
@@ -57,10 +57,10 @@ export default function LegislacionClient({ iniciativas }: Props) {
       'trabajo': 'Trabajo',
       'economia': 'Economía'
     };
-    return labels[categoria];
+    return labels[categoria as CategoriaImpacto] || categoria;
   };
 
-  const getCategoriaColor = (categoria: CategoriaImpacto): string => {
+  const getCategoriaColor = (categoria: CategoriaImpacto | string): string => {
     const colors: Record<CategoriaImpacto, string> = {
       'propiedad_intelectual': 'bg-purple-100 text-purple-700 border-purple-200',
       'responsabilidad': 'bg-red-100 text-red-700 border-red-200',
@@ -77,7 +77,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
       'trabajo': 'bg-amber-100 text-amber-700 border-amber-200',
       'economia': 'bg-emerald-100 text-emerald-700 border-emerald-200'
     };
-    return colors[categoria];
+    return colors[categoria as CategoriaImpacto] || 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const formatFecha = (fecha: any) => {
