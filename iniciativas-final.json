@@ -1,0 +1,1584 @@
+[
+  {
+    "numero": 1,
+    "titulo": "Reforma y adición a Ley de Ciencia y Tecnología y Ley General de Salud",
+    "proponente": "Carlos Humberto Castaños Valenzuela",
+    "partido": "PAN",
+    "fecha": "2020-04-01T04:00:00.000Z",
+    "legislatura": "LXIV",
+    "camara": "diputados",
+    "descripcion": "Promover proyectos de investigación orientados a la Salud usando IA en contexto de pandemia COVID-19. Coordinación entre Secretaría de Salud y Conacyt",
+    "status": "desechada_termino",
+    "tipo": "reforma_salud",
+    "tematicas": [
+      "salud"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2020/04/asun_4035539_20200428_1588107479.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2020/04/asun_4035539_20200428_1588107479.pdf",
+    "eventos": [
+      {
+        "fecha": "2020-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Carlos Humberto Castaños Valenzuela"
+      }
+    ]
+  },
+  {
+    "numero": 2,
+    "titulo": "Ley que crea la Universidad de Tecnologías de la Información, Comunicaciones e Innovación",
+    "proponente": "Carlos Iván Ayala Bobadilla",
+    "partido": "Morena",
+    "fecha": "2020-08-01T04:00:00.000Z",
+    "legislatura": "LXIV",
+    "camara": "diputados",
+    "descripcion": "Creación de universidad especializada en TI con incidencia en promoción de IA",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2020/08/asun_4059591_20200812_1597257015.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2020/08/asun_4059591_20200812_1597257015.pdf",
+    "eventos": [
+      {
+        "fecha": "2020-08-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Carlos Iván Ayala Bobadilla"
+      }
+    ]
+  },
+  {
+    "numero": 3,
+    "titulo": "Reforma y adición a Ley de Ciencia y Tecnología",
+    "proponente": "Mario Alberto Rodríguez Carrillo",
+    "partido": "MC",
+    "fecha": "2021-01-01T05:00:00.000Z",
+    "legislatura": "LXIV",
+    "camara": "diputados",
+    "descripcion": "Reformas a la Ley de Ciencia y Tecnología para incorporar desarrollo de IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "https://www.diputados.gob.mx/LeyesBiblio/iniclave/65/CD-LXV-I-1P-016/02_dictamen_016_15dic21.pdf",
+    "urlPDF": "https://www.diputados.gob.mx/LeyesBiblio/iniclave/65/CD-LXV-I-1P-016/02_dictamen_016_15dic21.pdf",
+    "eventos": [
+      {
+        "fecha": "2021-01-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Mario Alberto Rodríguez Carrillo"
+      }
+    ]
+  },
+  {
+    "numero": 4,
+    "titulo": "Adición artículo 77 Bis a Ley General de Salud",
+    "proponente": "Nuvia Magdalena Mayorga Delgado",
+    "partido": "PRI",
+    "fecha": "2021-01-01T05:00:00.000Z",
+    "legislatura": "LXIV",
+    "camara": "senadores",
+    "descripcion": "Incorporación de IA en servicios y sistemas de salud",
+    "status": "desechada_termino",
+    "tipo": "reforma_salud",
+    "tematicas": [
+      "salud"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2021/01/asun_4129756_20210113_1610551834.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2021/01/asun_4129756_20210113_1610551834.pdf",
+    "eventos": [
+      {
+        "fecha": "2021-01-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Nuvia Magdalena Mayorga Delgado"
+      }
+    ]
+  },
+  {
+    "numero": 5,
+    "titulo": "Adición a Ley Federal del Trabajo - trabajadores de plataformas digitales",
+    "proponente": "Isaías González Cuevas",
+    "partido": "PRI",
+    "fecha": "2021-03-01T05:00:00.000Z",
+    "legislatura": "LXIV",
+    "camara": "diputados",
+    "descripcion": "Regulación de derechos laborales de trabajadores de plataformas digitales que usan IA",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "derechos_laborales",
+      "plataformas_digitales"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2021/03/asun_4153688_20210317_1616022619.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2021/03/asun_4153688_20210317_1616022619.pdf",
+    "eventos": [
+      {
+        "fecha": "2021-03-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Isaías González Cuevas"
+      }
+    ]
+  },
+  {
+    "numero": 6,
+    "titulo": "Reforma artículo 30 de Ley General de Educación",
+    "proponente": "Congreso de Jalisco",
+    "partido": "Pluripartidista",
+    "fecha": "2021-03-01T05:00:00.000Z",
+    "legislatura": "LXIV",
+    "camara": "diputados",
+    "descripcion": "Incorporación de IA en contenidos educativos",
+    "status": "desechada_termino",
+    "tipo": "reforma_educacion",
+    "tematicas": [
+      "educacion"
+    ],
+    "urlGaceta": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2021/03/asun_4155916_20210318_1685739911.pdf",
+    "urlPDF": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2021/03/asun_4155916_20210318_1685739911.pdf",
+    "eventos": [
+      {
+        "fecha": "2021-03-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Congreso de Jalisco"
+      }
+    ]
+  },
+  {
+    "numero": 7,
+    "titulo": "Adición artículo 39 de Ley Orgánica del Congreso",
+    "proponente": "Justino Eugenio Arriaga Rojas",
+    "partido": "PAN",
+    "fecha": "2023-01-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Creación de Comisión de Inteligencia Artificial y Ciberseguridad en Cámara de Diputados",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [
+      "ciberseguridad"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2021/09/asun_4186606_20210909_1631203834.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2021/09/asun_4186606_20210909_1631203834.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-01-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Justino Eugenio Arriaga Rojas"
+      }
+    ]
+  },
+  {
+    "numero": 8,
+    "titulo": "Ley para la Regulación Ética de la Inteligencia Artificial y la Robótica",
+    "proponente": "Ignacio Loyola Vera",
+    "partido": "PAN",
+    "fecha": "2023-05-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Crea Consejo Mexicano de Ética para IA y Robótica. Responde al Acuerdo Mundial sobre Ética de IA de UNESCO 2021. Enfoque en desarrollo ético sin mecanismos punitivos fuertes",
+    "status": "archivada",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "etica"
+    ],
+    "urlGaceta": "https://infosen.senado.gob.mx/sgsp/gaceta/64/3/2021-09-09-1/assets/documentos/Inic_Morena_Sen_Loyola_Ley_Regulacion_Etica_IA_Robotica.pdf",
+    "urlPDF": "https://infosen.senado.gob.mx/sgsp/gaceta/64/3/2021-09-09-1/assets/documentos/Inic_Morena_Sen_Loyola_Ley_Regulacion_Etica_IA_Robotica.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-05-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Ignacio Loyola Vera"
+      }
+    ]
+  },
+  {
+    "numero": 9,
+    "titulo": "Reforma artículo 5 y 20 Septies de Ley de Acceso de Mujeres a Vida Libre de Violencia",
+    "proponente": "Annia Sarahí Gómez Cárdenas",
+    "partido": "PAN",
+    "fecha": "2023-07-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación de violencia digital mediante IA contra mujeres",
+    "status": "desechada_termino",
+    "tipo": "reforma_violencia_mujer",
+    "tematicas": [
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-07-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Annia Sarahí Gómez Cárdenas"
+      }
+    ]
+  },
+  {
+    "numero": 10,
+    "titulo": "Reforma a Ley General de Salud",
+    "proponente": "Éctor Jaime Ramírez Barba",
+    "partido": "PAN",
+    "fecha": "2023-07-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Incorporación de IA en diagnóstico y tratamiento médico",
+    "status": "desechada_termino",
+    "tipo": "reforma_salud",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-07-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Éctor Jaime Ramírez Barba"
+      }
+    ]
+  },
+  {
+    "numero": 11,
+    "titulo": "Reforma artículo 199 Octies del Código Penal Federal",
+    "proponente": "Sayonara Vargas Rodríguez",
+    "partido": "PRI",
+    "fecha": "2023-07-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación de delitos de deepfakes con contenido sexual",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "deepfakes"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-07-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Sayonara Vargas Rodríguez"
+      }
+    ]
+  },
+  {
+    "numero": 12,
+    "titulo": "Reforma artículos 20 Quáter, 20 Sexies de Ley de Acceso de Mujeres a Vida Libre de Violencia y 199 Nonies del Código Penal Federal",
+    "proponente": "Melissa Estefanía Vargas Camacho",
+    "partido": "PRI",
+    "fecha": "2023-07-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Protección contra violencia digital y deepfakes dirigidos a mujeres",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "deepfakes",
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-07-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Melissa Estefanía Vargas Camacho"
+      }
+    ]
+  },
+  {
+    "numero": 13,
+    "titulo": "Reforma a Ley General de Salud",
+    "proponente": "Favio Castellanos Polanco",
+    "partido": "Morena",
+    "fecha": "2023-07-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Uso de IA en servicios de salud pública",
+    "status": "desechada_termino",
+    "tipo": "reforma_salud",
+    "tematicas": [
+      "salud"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-07-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Favio Castellanos Polanco"
+      }
+    ]
+  },
+  {
+    "numero": 14,
+    "titulo": "Adición fracción V al artículo 16 de Ley para Atención y Protección a Personas con Espectro Autista",
+    "proponente": "Dionicia Vázquez García",
+    "partido": "PT",
+    "fecha": "2023-08-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Uso de herramientas de IA para atención a personas con autismo",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-08-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Dionicia Vázquez García"
+      }
+    ]
+  },
+  {
+    "numero": 15,
+    "titulo": "Reforma artículos 199 Nonies del Código Penal Federal y 20 Quáter de Ley de Acceso de Mujeres a Vida Libre de Violencia",
+    "proponente": "Paulina Rubio Fernández",
+    "partido": "PAN",
+    "fecha": "2023-09-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación de deepfakes y violencia digital contra mujeres",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "deepfakes",
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-09-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Paulina Rubio Fernández"
+      }
+    ]
+  },
+  {
+    "numero": 16,
+    "titulo": "Reforma fracción XVII al artículo 73 de la Constitución - Variante PT",
+    "proponente": "Martha Cecilia Márquez Alvarado",
+    "partido": "PT",
+    "fecha": "2023-09-05T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Otorga al Congreso facultad para dictar leyes sobre IA, TIC, radiodifusión y telecomunicaciones. Solo menciona IA sin ciberseguridad ni neuroderechos",
+    "status": "archivada",
+    "tipo": "reforma_constitucional",
+    "tematicas": [
+      "ciberseguridad",
+      "neuroderechos"
+    ],
+    "urlGaceta": "https://infosen.senado.gob.mx/sgsp/gaceta/65/2/2023-09-05-1/assets/documentos/Inic_PT_Sen_Marquez_Reforma_Art_73_Constitucional_IA.pdf",
+    "urlPDF": "https://infosen.senado.gob.mx/sgsp/gaceta/65/2/2023-09-05-1/assets/documentos/Inic_PT_Sen_Marquez_Reforma_Art_73_Constitucional_IA.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-09-05T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Martha Cecilia Márquez Alvarado"
+      }
+    ]
+  },
+  {
+    "numero": 17,
+    "titulo": "Reforma fracción XVII al artículo 73 de la Constitución - Variante Pluripartidista",
+    "proponente": "Alejandra Lagunes Soto Ruíz (con apoyo PRD, PRI, PAN)",
+    "partido": "PVEM",
+    "fecha": "2023-09-20T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Incluye IA, ciberseguridad y neuroderechos. Protección de privacidad mental y autonomía cognitiva. Propuesta más amplia que la variante PT",
+    "status": "archivada",
+    "tipo": "reforma_constitucional",
+    "tematicas": [
+      "ciberseguridad",
+      "neuroderechos"
+    ],
+    "urlGaceta": "https://infosen.senado.gob.mx/sgsp/gaceta/65/2/2023-09-20-1/assets/documentos/Inic_Varios_Sen_Lagunes_Reforma_Art_73_Constitucional_IA.pdf",
+    "urlPDF": "https://infosen.senado.gob.mx/sgsp/gaceta/65/2/2023-09-20-1/assets/documentos/Inic_Varios_Sen_Lagunes_Reforma_Art_73_Constitucional_IA.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-09-20T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Alejandra Lagunes Soto Ruíz (con apoyo PRD, PRI, PAN)"
+      }
+    ]
+  },
+  {
+    "numero": 18,
+    "titulo": "Reforma artículos 30 y 70 de Ley General de Educación y 7° de Ley General de Educación Superior",
+    "proponente": "Carmen Patricia Armendáriz Guerra",
+    "partido": "Morena",
+    "fecha": "2023-10-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Incorporación de IA en planes y programas educativos",
+    "status": "desechada_termino",
+    "tipo": "reforma_educacion",
+    "tematicas": [
+      "educacion"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Carmen Patricia Armendáriz Guerra"
+      }
+    ]
+  },
+  {
+    "numero": 19,
+    "titulo": "Reforma y adición artículo 211 Bis del Código Penal Federal",
+    "proponente": "Francisco Javier Huacus Esquivel",
+    "partido": "PRD",
+    "fecha": "2023-10-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación de delitos cometidos mediante uso de IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Francisco Javier Huacus Esquivel"
+      }
+    ]
+  },
+  {
+    "numero": 20,
+    "titulo": "Modificación Título Noveno, adición Capítulo III y artículos del Código Penal Federal",
+    "proponente": "Arturo Bours Griffith",
+    "partido": "Morena",
+    "fecha": "2023-10-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Creación de nuevo capítulo sobre delitos relacionados con IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [],
+    "urlGaceta": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Arturo Bours Griffith"
+      }
+    ]
+  },
+  {
+    "numero": 21,
+    "titulo": "Adición Capítulo III al Título Séptimo Bis 'Violación a la Intimidad Sexual mediante IA' del Código Penal Federal",
+    "proponente": "Geovanna del Carmen Bañuelos de la Torre",
+    "partido": "PT",
+    "fecha": "2023-10-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Tipificación específica de violación a intimidad sexual mediante IA (deepfakes pornográficos)",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "deepfakes"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Geovanna del Carmen Bañuelos de la Torre"
+      }
+    ]
+  },
+  {
+    "numero": 22,
+    "titulo": "Reforma fracción IV del artículo 30 de Ley General de Educación",
+    "proponente": "Nancy Guadalupe Sánchez Arredondo",
+    "partido": "Morena",
+    "fecha": "2023-10-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Incorporación de IA en educación básica",
+    "status": "desechada_termino",
+    "tipo": "reforma_educacion",
+    "tematicas": [
+      "educacion"
+    ],
+    "urlGaceta": "https://gaceta.diputados.gob.mx/PDF/65/2023/oct/20231010-III-2.pdf",
+    "urlPDF": "https://gaceta.diputados.gob.mx/PDF/65/2023/oct/20231010-III-2.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Nancy Guadalupe Sánchez Arredondo"
+      }
+    ]
+  },
+  {
+    "numero": 23,
+    "titulo": "Reforma artículos 5°, 6° y 7° de Ley que Crea la Agencia de Noticias del Estado Mexicano",
+    "proponente": "Sayonara Vargas Rodríguez",
+    "partido": "PRI",
+    "fecha": "2023-10-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Regulación del uso de IA en medios de comunicación estatales y verificación de noticias",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Sayonara Vargas Rodríguez"
+      }
+    ]
+  },
+  {
+    "numero": 24,
+    "titulo": "Reforma Ley de Acceso de Mujeres a Vida Libre de Violencia y Código Penal Federal",
+    "proponente": "Joanna Alejandra Felipe Torres",
+    "partido": "PAN",
+    "fecha": "2023-10-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Protección integral contra violencia digital mediante IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Joanna Alejandra Felipe Torres"
+      }
+    ]
+  },
+  {
+    "numero": 25,
+    "titulo": "Reforma diversos artículos de Ley Federal de Telecomunicaciones y Radiodifusión",
+    "proponente": "Jesús Lucía Trasviña Waldenrath",
+    "partido": "Morena",
+    "fecha": "2023-11-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Regulación de IA en telecomunicaciones y radiodifusión",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-11-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Jesús Lucía Trasviña Waldenrath"
+      }
+    ]
+  },
+  {
+    "numero": 26,
+    "titulo": "Reforma artículos 199 Octies, 200 y 202 del Código Penal Federal",
+    "proponente": "Gloria Elizabeth Núñez Sánchez",
+    "partido": "MC",
+    "fecha": "2023-11-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Tipificación de delitos de deepfakes y pornografía infantil mediante IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "deepfakes",
+      "pornografia"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-11-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Gloria Elizabeth Núñez Sánchez"
+      }
+    ]
+  },
+  {
+    "numero": 27,
+    "titulo": "Reforma artículos 199 Septies y 202 del Código Penal Federal",
+    "proponente": "Ana Laura Valenzuela Sánchez",
+    "partido": "PAN",
+    "fecha": "2023-11-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación de deepfakes y pornografía",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "deepfakes",
+      "pornografia"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-11-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Ana Laura Valenzuela Sánchez"
+      }
+    ]
+  },
+  {
+    "numero": 28,
+    "titulo": "Adición artículos 11 y 13 de Ley de la Fiscalía General de la República",
+    "proponente": "Gerardo Peña Flores",
+    "partido": "PAN",
+    "fecha": "2023-11-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Facultades de la FGR para investigar delitos cometidos con IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-11-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Gerardo Peña Flores"
+      }
+    ]
+  },
+  {
+    "numero": 29,
+    "titulo": "Reforma diversas disposiciones del Código Penal Federal",
+    "proponente": "César Arnulfo Cravioto Romero",
+    "partido": "Morena",
+    "fecha": "2023-11-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Tipificación de diversos delitos cometidos mediante IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-11-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. César Arnulfo Cravioto Romero"
+      }
+    ]
+  },
+  {
+    "numero": 30,
+    "titulo": "Ley que Regula el Uso de la Inteligencia Artificial",
+    "proponente": "Gustavo Enrique Madero Muñoz",
+    "partido": "Independiente",
+    "fecha": "2023-11-28T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Prohíbe uso de IA con técnicas subliminales, trato discriminatorio, identificación biométrica remota en tiempo real, deepfakes. Basada en Ley de IA de UE. Supervisión por INDAUTOR",
+    "status": "archivada",
+    "tipo": "reforma_otra",
+    "tematicas": [
+      "deepfakes"
+    ],
+    "urlGaceta": "https://infosen.senado.gob.mx/sgsp/gaceta/65/2/2023-11-16-1/assets/documentos/Inic_PAN_Sen_Madero_Ley_Regula_Uso_IA.pdf",
+    "urlPDF": "https://infosen.senado.gob.mx/sgsp/gaceta/65/2/2023-11-16-1/assets/documentos/Inic_PAN_Sen_Madero_Ley_Regula_Uso_IA.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-11-28T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Gustavo Enrique Madero Muñoz"
+      }
+    ]
+  },
+  {
+    "numero": 31,
+    "titulo": "Ley de la Agencia Mexicana para el Desarrollo de la IA",
+    "proponente": "Jaime Bueno Zertuche",
+    "partido": "PRI",
+    "fecha": "2023-12-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Crea Agencia Mexicana para Desarrollo de IA como entidad descentralizada. Estrategia Nacional de IA alineada con PND. Inspirada en Grupo de Expertos de Alto Nivel de la CE",
+    "status": "archivada",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "https://infosen.senado.gob.mx/sgsp/gaceta/65/2/2023-11-28-1/assets/documentos/Inic_PRI_Sen_Bueno_Ley_Agencia_Mexicana_Desarrollo_IA.pdf",
+    "urlPDF": "https://infosen.senado.gob.mx/sgsp/gaceta/65/2/2023-11-28-1/assets/documentos/Inic_PRI_Sen_Bueno_Ley_Agencia_Mexicana_Desarrollo_IA.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-12-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Jaime Bueno Zertuche"
+      }
+    ]
+  },
+  {
+    "numero": 32,
+    "titulo": "Reforma Código Penal Federal - mal uso de IA",
+    "proponente": "Miguel Torruco Garza",
+    "partido": "Morena",
+    "fecha": "2023-12-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación del mal uso de tecnología de IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [],
+    "urlGaceta": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-12-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Miguel Torruco Garza"
+      }
+    ]
+  },
+  {
+    "numero": 33,
+    "titulo": "Reforma Ley Federal del Derecho de Autor - regulación de IA",
+    "proponente": "Miguel Torruco Garza",
+    "partido": "Morena",
+    "fecha": "2023-12-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Regulación de derechos de autor en obras generadas por IA",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "derechos_autor"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/12/asun_4685626_20231213_1700002664.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/12/asun_4685626_20231213_1700002664.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-12-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Miguel Torruco Garza"
+      }
+    ]
+  },
+  {
+    "numero": 34,
+    "titulo": "Adición a Ley General de Instituciones y Procedimientos Electorales - concepto de IA",
+    "proponente": "Raymundo Atanacio Luna",
+    "partido": "Morena",
+    "fecha": "2023-12-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Incorpora definición de IA en materia electoral y regula su uso en procesos electorales",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "urlPDF": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-12-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Raymundo Atanacio Luna"
+      }
+    ]
+  },
+  {
+    "numero": 35,
+    "titulo": "Reforma artículos 202, 199 Septies y 199 Octies del Código Penal Federal",
+    "proponente": "Teresita de Jesús Vargas Meraz",
+    "partido": "Morena",
+    "fecha": "2023-12-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación de deepfakes y pornografía mediante IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "deepfakes",
+      "pornografia"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-12-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Teresita de Jesús Vargas Meraz"
+      }
+    ]
+  },
+  {
+    "numero": 36,
+    "titulo": "Reforma Ley General de Educación y Ley General de Educación Superior - IA",
+    "proponente": "Favio Castellanos Polanco",
+    "partido": "Morena",
+    "fecha": "2023-12-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Incorporación transversal de IA en todos los niveles educativos",
+    "status": "desechada_termino",
+    "tipo": "reforma_educacion",
+    "tematicas": [
+      "educacion"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2023-12-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Favio Castellanos Polanco"
+      }
+    ]
+  },
+  {
+    "numero": 37,
+    "titulo": "Adición artículos 287 Bis, 287 Ter, 287 Quater y 287 Quintus al Código Penal Federal",
+    "proponente": "María Guadalupe Covarrubias Cervantes",
+    "partido": "Morena",
+    "fecha": "2023-12-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Creación de nuevos tipos penales relacionados con IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2023-12-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. María Guadalupe Covarrubias Cervantes"
+      }
+    ]
+  },
+  {
+    "numero": 38,
+    "titulo": "Adición a Ley General en Materia de Humanidades, Ciencias, Tecnologías e Innovación - ética y DDHH",
+    "proponente": "Mario Alberto Rodríguez Carrillo",
+    "partido": "MC",
+    "fecha": "2024-01-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Incorporación de principios éticos y de derechos humanos en desarrollo de IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-01-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Mario Alberto Rodríguez Carrillo"
+      }
+    ]
+  },
+  {
+    "numero": 39,
+    "titulo": "Adición artículo 430 al Código Penal Federal",
+    "proponente": "Miguel Ángel Pérez Navarrete",
+    "partido": "Morena",
+    "fecha": "2024-02-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación de delitos específicos cometidos con IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2024-02-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Miguel Ángel Pérez Navarrete"
+      }
+    ]
+  },
+  {
+    "numero": 40,
+    "titulo": "Reforma Ley de Acceso de Mujeres a Vida Libre de Violencia y Código Penal Federal",
+    "proponente": "Ruth Alejandra López Hernández",
+    "partido": "MC",
+    "fecha": "2024-02-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Protección contra violencia digital mediante IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-02-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Ruth Alejandra López Hernández"
+      }
+    ]
+  },
+  {
+    "numero": 41,
+    "titulo": "Reforma Ley de Acceso de Mujeres a Vida Libre de Violencia y Código Penal Federal",
+    "proponente": "Alejandro Armenta Mier",
+    "partido": "Morena",
+    "fecha": "2024-02-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Protección contra violencia digital y deepfakes contra mujeres",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "deepfakes",
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-02-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Alejandro Armenta Mier"
+      }
+    ]
+  },
+  {
+    "numero": 42,
+    "titulo": "Reforma Ley General en materia de Humanidades, Ciencias, Tecnologías e Innovación",
+    "proponente": "Ana Karina Rojo Pimentel",
+    "partido": "PT",
+    "fecha": "2024-02-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Fomento al desarrollo de IA en México",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "https://cronica.diputados.gob.mx/pdf/65/2023/oct/231030-6.pdf",
+    "urlPDF": "https://cronica.diputados.gob.mx/pdf/65/2023/oct/231030-6.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-02-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Ana Karina Rojo Pimentel"
+      }
+    ]
+  },
+  {
+    "numero": 43,
+    "titulo": "Reforma Ley General de los Derechos de Niñas, Niños y Adolescentes - salud mental e IA",
+    "proponente": "Karina Marlen Barrón Perales",
+    "partido": "PRI",
+    "fecha": "2024-02-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Protección de salud mental de menores ante uso de IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_salud",
+    "tematicas": [
+      "salud"
+    ],
+    "urlGaceta": "https://gaceta.diputados.gob.mx/Gaceta/65/2024/mar/20240320-II-2.html",
+    "urlPDF": "https://gaceta.diputados.gob.mx/Gaceta/65/2024/mar/20240320-II-2.html",
+    "eventos": [
+      {
+        "fecha": "2024-02-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Karina Marlen Barrón Perales"
+      }
+    ]
+  },
+  {
+    "numero": 44,
+    "titulo": "Adición fracción IV Bis al artículo 30 y artículo 86 de Ley General de Educación",
+    "proponente": "Geovanna del Carmen Bañuelos de la Torre",
+    "partido": "PT",
+    "fecha": "2024-02-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Incorporación de IA en educación",
+    "status": "desechada_termino",
+    "tipo": "reforma_educacion",
+    "tematicas": [
+      "educacion"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-02-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Geovanna del Carmen Bañuelos de la Torre"
+      }
+    ]
+  },
+  {
+    "numero": 45,
+    "titulo": "Reforma artículos 6° y 20 Quáter de Ley de Acceso de Mujeres a Vida Libre de Violencia",
+    "proponente": "Karla Ayala Villalobos",
+    "partido": "PRI",
+    "fecha": "2024-03-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Protección contra violencia digital mediante IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_violencia_mujer",
+    "tematicas": [
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-03-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Karla Ayala Villalobos"
+      }
+    ]
+  },
+  {
+    "numero": 46,
+    "titulo": "Reforma artículos 211 Ter y 211 Ter 1 del Código Penal Federal",
+    "proponente": "Armando Corona Arvizu",
+    "partido": "Morena",
+    "fecha": "2024-03-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Tipificación de delitos con IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [],
+    "urlGaceta": "https://gaceta.diputados.gob.mx/Gaceta/65/2024/mar/20240320-II-2.html",
+    "urlPDF": "https://gaceta.diputados.gob.mx/Gaceta/65/2024/mar/20240320-II-2.html",
+    "eventos": [
+      {
+        "fecha": "2024-03-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Armando Corona Arvizu"
+      }
+    ]
+  },
+  {
+    "numero": 47,
+    "titulo": "Adición fracción VIII Bis al artículo 11 de Ley General en Materia de Humanidades, Ciencias, Tecnologías e Innovación",
+    "proponente": "Geovanna del Carmen Bañuelos de la Torre",
+    "partido": "PT",
+    "fecha": "2024-03-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Promoción de investigación en IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "https://gaceta.diputados.gob.mx/PDF/65/2024/ene/20240117-II.pdf",
+    "urlPDF": "https://gaceta.diputados.gob.mx/PDF/65/2024/ene/20240117-II.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-03-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Geovanna del Carmen Bañuelos de la Torre"
+      }
+    ]
+  },
+  {
+    "numero": 48,
+    "titulo": "Adición a Ley General en materia de Humanidades, Ciencias, Tecnologías e Innovación - políticas públicas de IA",
+    "proponente": "Miguel Torruco Garza",
+    "partido": "Morena",
+    "fecha": "2024-03-01T05:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Lineamientos de políticas públicas para fomento y promoción del uso de IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-03-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Miguel Torruco Garza"
+      }
+    ]
+  },
+  {
+    "numero": 49,
+    "titulo": "Ley Federal que regula la Inteligencia Artificial",
+    "proponente": "Ricardo Monreal Ávila",
+    "partido": "Morena",
+    "fecha": "2024-04-02T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Enfoque basado en nivel de riesgo (inaceptable, alto, bajo) similar a UE. Regula identificación biométrica, generación de contenido digital, uso gubernamental. Protege derechos de PI. Supervisión por IFT con Comisión Nacional de IA",
+    "status": "archivada",
+    "tipo": "ley_federal",
+    "tematicas": [],
+    "urlGaceta": "https://infosen.senado.gob.mx/sgsp/gaceta/65/3/2024-04-02-1/assets/documentos/Inic_Morena_Sen_Monreal_Ley_Fed_Inteligencia_Artificial_02042024.pdf",
+    "urlPDF": "https://infosen.senado.gob.mx/sgsp/gaceta/65/3/2024-04-02-1/assets/documentos/Inic_Morena_Sen_Monreal_Ley_Fed_Inteligencia_Artificial_02042024.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-02T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Ricardo Monreal Ávila"
+      }
+    ]
+  },
+  {
+    "numero": 50,
+    "titulo": "Adición artículo 73 de la Constitución - IA (variante PRD)",
+    "proponente": "Jesús Alberto Velázquez Flores",
+    "partido": "PRD",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Adiciona fracción XXIX-Z Bis para facultar al Congreso a expedir leyes en materia de IA, estableciendo bases para federación, estados y municipios",
+    "status": "desechada_termino",
+    "tipo": "reforma_constitucional",
+    "tematicas": [],
+    "urlGaceta": "https://infosen.senado.gob.mx/sgsp/gaceta/65/3/2023-09-06-1/assets/documentos/Inic_PT_Sens_Inteligencia_Artificial.pdf",
+    "urlPDF": "https://infosen.senado.gob.mx/sgsp/gaceta/65/3/2023-09-06-1/assets/documentos/Inic_PT_Sens_Inteligencia_Artificial.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Jesús Alberto Velázquez Flores"
+      }
+    ]
+  },
+  {
+    "numero": 51,
+    "titulo": "Reforma artículo 1916 del Código Civil Federal y adición artículo 368 Sexties al Código Penal Federal",
+    "proponente": "Margarita García García",
+    "partido": "PT",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Responsabilidad civil y penal por daños causados con IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Margarita García García"
+      }
+    ]
+  },
+  {
+    "numero": 52,
+    "titulo": "Reforma artículos 153 C y 153 K de Ley Federal del Trabajo",
+    "proponente": "Luis Enrique Martínez Ventura",
+    "partido": "PT",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Capacitación laboral en IA",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "derechos_laborales"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Luis Enrique Martínez Ventura"
+      }
+    ]
+  },
+  {
+    "numero": 53,
+    "titulo": "Reforma Ley Federal del Derecho de Autor",
+    "proponente": "Margarita García García",
+    "partido": "PT",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Derechos de autor en obras generadas por IA",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "derechos_autor"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Margarita García García"
+      }
+    ]
+  },
+  {
+    "numero": 54,
+    "titulo": "Reforma artículos 21 y 24 de Ley Federal del Derecho de Autor",
+    "proponente": "Steve Esteban Del Razo Montiel",
+    "partido": "Morena",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Regulación de derechos de autor en contenido generado por IA",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "derechos_autor"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Steve Esteban Del Razo Montiel"
+      }
+    ]
+  },
+  {
+    "numero": 55,
+    "titulo": "Reforma amplia a Ley Federal del Derecho de Autor - IA",
+    "proponente": "Geovanna del Carmen Bañuelos de la Torre",
+    "partido": "PT",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "senadores",
+    "descripcion": "Reforma artículos 5, 11, 17, 24; adiciona párrafos al artículo 4, 13; adiciona fracción XI al artículo 14; y adiciona artículo 114 Bis. Regulación integral de IA en derechos de autor",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "derechos_autor"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Geovanna del Carmen Bañuelos de la Torre"
+      }
+    ]
+  },
+  {
+    "numero": 56,
+    "titulo": "Reforma artículos 20 Ter y 20 Quáter de Ley de Acceso de Mujeres a Vida Libre de Violencia",
+    "proponente": "Julieta Kristal Vences Valencia",
+    "partido": "Morena",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Protección contra violencia digital mediante IA",
+    "status": "desechada_termino",
+    "tipo": "reforma_violencia_mujer",
+    "tematicas": [
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Julieta Kristal Vences Valencia"
+      }
+    ]
+  },
+  {
+    "numero": 57,
+    "titulo": "Reforma Ley General en materia de Humanidades, Ciencias, Tecnologías e Innovación - IA",
+    "proponente": "María de los Angeles Gutiérrez Valdez",
+    "partido": "PAN",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Promoción integral del desarrollo de IA en México",
+    "status": "desechada_termino",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. María de los Angeles Gutiérrez Valdez"
+      }
+    ]
+  },
+  {
+    "numero": 58,
+    "titulo": "Reforma artículo 23 de Ley Federal de Cinematografía",
+    "proponente": "Claudia Lizeth Palos García",
+    "partido": "Morena",
+    "fecha": "2024-04-01T04:00:00.000Z",
+    "legislatura": "LXV",
+    "camara": "diputados",
+    "descripcion": "Regulación de IA en producción cinematográfica",
+    "status": "desechada_termino",
+    "tipo": "ley_federal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2023/10/asun_4642016_20231030_1696978847.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Claudia Lizeth Palos García"
+      }
+    ]
+  },
+  {
+    "numero": 59,
+    "titulo": "Ley Nacional que regula el uso de la IA",
+    "proponente": "Juanita Guerra Mena",
+    "partido": "PVEM",
+    "fecha": "2024-10-29T04:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "senadores",
+    "descripcion": "Enfoque basado en nivel de riesgo (similar a UE). Crea Centro Nacional de IA como coordinador de política nacional. Principios: ética, legalidad, transparencia, gobierno abierto, sin manipulación social ni sesgo ideológico",
+    "status": "en_comisiones",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "etica"
+    ],
+    "urlGaceta": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2024/12/asun_4896460_20241213_1734115806.pdf",
+    "urlPDF": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2024/12/asun_4896460_20241213_1734115806.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-10-29T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Juanita Guerra Mena"
+      }
+    ]
+  },
+  {
+    "numero": 60,
+    "titulo": "Reforma a Ley en Materia de Telecomunicaciones y Radiodifusión - identificación de contenido generado por IA",
+    "proponente": "Juan Antonio Martín Del Campo Martín Del Campo",
+    "partido": "PAN",
+    "fecha": "2024-12-04T05:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "senadores",
+    "descripcion": "Bases normativas para identificar y transparentar origen de contenido digital generado por IA. Distinguir entre información producida por persona y por sistemas automatizados. Incorpora definiciones legales de categoría emergente de producción informativa",
+    "status": "turnada",
+    "tipo": "reforma_telecomunicaciones",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2024-12-04T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Juan Antonio Martín Del Campo Martín Del Campo"
+      }
+    ]
+  },
+  {
+    "numero": 61,
+    "titulo": "Ley Federal para el Desarrollo Ético, Soberano e Inclusivo de la Inteligencia Artificial",
+    "proponente": "Diputados de Morena y PVEM",
+    "partido": "Morena-PVEM",
+    "fecha": "2024-04-22T04:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "diputados",
+    "descripcion": "Propuesta derivada del trabajo de la Comisión de IA del Senado. Busca promover desarrollo ético e inclusivo de IA. Evaluación de impacto social, económico, ambiental y cultural de IA en México",
+    "status": "en_comisiones",
+    "tipo": "ley_federal",
+    "tematicas": [],
+    "urlGaceta": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2024/04/asun_4896460_20240422_1713804000.pdf",
+    "urlPDF": "https://sil.gobernacion.gob.mx/Archivos/Documentos/2024/04/asun_4896460_20240422_1713804000.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-04-22T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Diputados de Morena y PVEM"
+      }
+    ]
+  },
+  {
+    "numero": 62,
+    "titulo": "Reforma a Ley General de Salud - IA aplicada a la salud",
+    "proponente": "(Múltiples diputados)",
+    "partido": "Pluripartidista",
+    "fecha": "2024-10-01T04:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "diputados",
+    "descripcion": "Adición de disposiciones sobre inteligencia artificial aplicada a la salud",
+    "status": "en_comisiones",
+    "tipo": "reforma_salud",
+    "tematicas": [
+      "salud"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2025/11/asun_4974113_20251112_1762993511.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2025/11/asun_4974113_20251112_1762993511.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. (Múltiples diputados)"
+      }
+    ]
+  },
+  {
+    "numero": 63,
+    "titulo": "Ley para el Uso de Inteligencia Artificial y el Tratamiento de Datos Personales por Sujetos Obligados de la Ciudad de México",
+    "proponente": "Congreso CDMX (Propuesta de INFO CDMX)",
+    "partido": "(Pluripartidista)",
+    "fecha": "2024-10-25T04:00:00.000Z",
+    "legislatura": "III_CDMX",
+    "camara": "congreso_cdmx",
+    "descripcion": "Ley del Uso de Inteligencia Artificial del Tratamiento de Datos Personales por Sujetos Obligados de la Ciudad de México. Regulación local de IA en gobierno capitalino",
+    "status": "en_comisiones",
+    "tipo": "ley_federal",
+    "tematicas": [
+      "datos_personales"
+    ],
+    "urlGaceta": "https://data.consejeria.cdmx.gob.mx/images/leyes/iniciativas/INICIATIVA_LEY_USO_IA_TRATAMIENTO_DATOS_PERSONALES.pdf",
+    "urlPDF": "https://data.consejeria.cdmx.gob.mx/images/leyes/iniciativas/INICIATIVA_LEY_USO_IA_TRATAMIENTO_DATOS_PERSONALES.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-10-25T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Congreso CDMX (Propuesta de INFO CDMX)"
+      }
+    ]
+  },
+  {
+    "numero": 64,
+    "titulo": "Adición artículos 211 Bis 8 y otros al Código Penal Federal - stickers y memes con IA",
+    "proponente": "Jorge Álvarez Máynez",
+    "partido": "MC",
+    "fecha": "2024-10-05T04:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "diputados",
+    "descripcion": "Tipificación de creación de stickers, memes y contenidos generados con IA sin consentimiento como forma de violencia digital",
+    "status": "en_comisiones",
+    "tipo": "reforma_codigo_penal",
+    "tematicas": [
+      "violencia_digital"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2024-10-05T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Jorge Álvarez Máynez"
+      }
+    ]
+  },
+  {
+    "numero": 65,
+    "titulo": "Reforma a Ley Federal del Derecho de Autor - sistemas de IA y programas de computación",
+    "proponente": "(Comisión de Ciencia y Tecnología)",
+    "partido": "Pluripartidista",
+    "fecha": "2024-09-01T04:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "diputados",
+    "descripcion": "Establecer en la definición de programa de computación los sistemas creados con asistencia de herramientas tecnológicas con base en inteligencia artificial",
+    "status": "en_comisiones",
+    "tipo": "ley_federal",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/portal/",
+    "eventos": [
+      {
+        "fecha": "2024-09-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. (Comisión de Ciencia y Tecnología)"
+      }
+    ]
+  },
+  {
+    "numero": 66,
+    "titulo": "Reforma constitucional al artículo 73 para facultar al Congreso en materia de IA",
+    "proponente": "Eruviel Ávila Villegas",
+    "partido": "PVEM",
+    "fecha": "2024-07-01T04:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "diputados",
+    "descripcion": "Nueva propuesta de reforma constitucional para otorgar facultades al Congreso en materia de inteligencia artificial",
+    "status": "en_comisiones",
+    "tipo": "reforma_constitucional",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2025/08/asun_4915920_20250806_1754492358.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2025/08/asun_4915920_20250806_1754492358.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-07-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Eruviel Ávila Villegas"
+      }
+    ]
+  },
+  {
+    "numero": 67,
+    "titulo": "Reforma sobre ciberseguridad relacionada con IA",
+    "proponente": "Alejandro Moreno Cárdenas",
+    "partido": "PRI",
+    "fecha": "2024-10-01T04:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "senadores",
+    "descripcion": "Propuestas sobre ciberseguridad relacionadas con inteligencia artificial",
+    "status": "en_comisiones",
+    "tipo": "reforma_otra",
+    "tematicas": [
+      "ciberseguridad"
+    ],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2025/04/asun_4869297_20250401_1742921767.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2025/04/asun_4869297_20250401_1742921767.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-10-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Alejandro Moreno Cárdenas"
+      }
+    ]
+  },
+  {
+    "numero": 68,
+    "titulo": "Reforma de etiquetado de contenido generado por IA",
+    "proponente": "Cuauhtémoc Ochoa Fernández",
+    "partido": "Morena",
+    "fecha": "2024-09-01T04:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "senadores",
+    "descripcion": "Reforma para establecer requisitos de etiquetado y transparencia de contenido generado por inteligencia artificial",
+    "status": "en_comisiones",
+    "tipo": "reforma_otra",
+    "tematicas": [],
+    "urlGaceta": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2025/09/asun_4921292_20250909_1756823351.pdf",
+    "urlPDF": "http://sil.gobernacion.gob.mx/Archivos/Documentos/2025/09/asun_4921292_20250909_1756823351.pdf",
+    "eventos": [
+      {
+        "fecha": "2024-09-01T04:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Sen. Cuauhtémoc Ochoa Fernández"
+      }
+    ]
+  },
+  {
+    "numero": 69,
+    "titulo": "Reforma constitucional al artículo 73 en materia de IA (Ricardo Monreal)",
+    "proponente": "Ricardo Monreal Ávila",
+    "partido": "Morena",
+    "fecha": "2024-02-01T05:00:00.000Z",
+    "legislatura": "LXVI",
+    "camara": "diputados",
+    "descripcion": "Nueva propuesta de reforma constitucional presentada por Ricardo Monreal en la LXVI Legislatura para facultar al Congreso en materia de IA",
+    "status": "en_comisiones",
+    "tipo": "reforma_constitucional",
+    "tematicas": [],
+    "urlGaceta": "https://gaceta.diputados.gob.mx/Gaceta/66/2025/feb/20250219-II-1.html",
+    "urlPDF": "https://gaceta.diputados.gob.mx/Gaceta/66/2025/feb/20250219-II-1.html",
+    "eventos": [
+      {
+        "fecha": "2024-02-01T05:00:00.000Z",
+        "tipo": "presentacion",
+        "descripcion": "Iniciativa presentada por Dip. Ricardo Monreal Ávila"
+      }
+    ]
+  }
+]
