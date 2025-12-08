@@ -267,85 +267,96 @@ export default function LegislacionClient({ iniciativas }: Props) {
                     {/* Expanded Row */}
                     {isExpanded && (
                       <tr key={`${iniciativa.id}-expanded`}>
-                        <td colSpan={6} className="px-8 py-6 bg-gray-50 border-t border-gray-200">
-                          <div className="max-w-4xl">
-                            {/* Metadatos Clave */}
-                            <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div>
-                                <h5 className="text-xs font-semibold text-gray-500 uppercase mb-1">Tipo</h5>
-                                <p className="text-sm text-gray-900">{getTipoLabel(iniciativa.tipo)}</p>
-                              </div>
-                              <div>
-                                <h5 className="text-xs font-semibold text-gray-500 uppercase mb-1">Cámara</h5>
-                                <p className="text-sm text-gray-900">{getCamaraLabel(iniciativa.camara)}</p>
-                              </div>
-                              <div>
-                                <h5 className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha</h5>
-                                <p className="text-sm text-gray-900">{formatDate(iniciativa.fecha)}</p>
-                              </div>
-                              <div>
-                                <h5 className="text-xs font-semibold text-gray-500 uppercase mb-1">Estado</h5>
-                                <p className="text-sm text-gray-900">{getStatusLabel(iniciativa.status)}</p>
-                              </div>
-                            </div>
+                        <td colSpan={6} className="p-0 bg-gray-50 border-t border-gray-200">
+                          <div className="flex">
+                            {/* Barra de color lateral */}
+                            <div className="w-1 bg-blue-500"></div>
                             
-                            {/* Descripción */}
-                            {iniciativa.descripcion && (
-                              <div className="mb-4">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Descripción</h4>
-                                <p className="text-sm text-gray-700 leading-relaxed">
-                                  {iniciativa.descripcion}
-                                </p>
-                              </div>
-                            )}
-                            
-                            {/* Resumen */}
-                            {iniciativa.resumen && (
-                              <div className="mb-4">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Resumen de la propuesta</h4>
-                                <p className="text-sm text-gray-700 leading-relaxed">
-                                  {iniciativa.resumen}
-                                </p>
-                              </div>
-                            )}
-                            
-                            {/* Categorías de Impacto */}
-                            {iniciativa.categoriasImpacto && iniciativa.categoriasImpacto.length > 0 && (
-                              <div className="mb-4">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Categorías de impacto</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {iniciativa.categoriasImpacto.map((categoria) => (
-                                    <span 
-                                      key={categoria}
-                                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getCategoriaColor(categoria)}`}
-                                    >
-                                      {getCategoriaLabel(categoria)}
-                                    </span>
-                                  ))}
+                            <div className="p-6 w-full pl-14">
+                              {/* Metadatos Clave */}
+                              <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+                                <div>
+                                  <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Tipo</span>
+                                  <span className="text-gray-800 font-medium">{getTipoLabel(iniciativa.tipo)}</span>
+                                </div>
+                                <div>
+                                  <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Cámara</span>
+                                  <span className="text-gray-800 font-medium">{getCamaraLabel(iniciativa.camara)}</span>
+                                </div>
+                                <div>
+                                  <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Fecha</span>
+                                  <span className="text-gray-800 font-medium">{formatDate(iniciativa.fecha)}</span>
+                                </div>
+                                <div>
+                                  <span className="block text-xs font-bold text-gray-400 uppercase mb-1">Estado</span>
+                                  <span className="text-gray-800 font-medium">{getStatusLabel(iniciativa.status)}</span>
                                 </div>
                               </div>
-                            )}
                             
-                            {/* Enlaces */}
-                            <div className="flex gap-4 mt-4">
-                              <Link 
-                                href={`/legislacion/${iniciativa.id}`}
-                                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Ver detalles completos →
-                              </Link>
-                              {iniciativa.urlPDF && (
-                                <a 
-                                  href={iniciativa.urlPDF}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-blue-600 hover:text-blue-800"
+                              {/* Descripción */}
+                              {iniciativa.descripcion && (
+                                <div className="mb-4">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-2">Descripción</h4>
+                                  <p className="text-gray-600 leading-relaxed max-w-4xl">
+                                    {iniciativa.descripcion}
+                                  </p>
+                                </div>
+                              )}
+                            
+                              {/* Resumen */}
+                              {iniciativa.resumen && (
+                                <div className="mb-4">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-2">Resumen de la propuesta</h4>
+                                  <p className="text-gray-600 leading-relaxed max-w-4xl">
+                                    {iniciativa.resumen}
+                                  </p>
+                                </div>
+                              )}
+                            
+                              {/* Categorías de Impacto */}
+                              {iniciativa.categoriasImpacto && iniciativa.categoriasImpacto.length > 0 && (
+                                <div className="mb-4">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-2">Categorías de impacto</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {iniciativa.categoriasImpacto.map((categoria) => (
+                                      <span 
+                                        key={categoria}
+                                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getCategoriaColor(categoria)}`}
+                                      >
+                                        {getCategoriaLabel(categoria)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            
+                              {/* Enlaces */}
+                              <div className="flex gap-4 mt-4">
+                                <Link 
+                                  href={`/legislacion/${iniciativa.id}`}
+                                  className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm transition-all hover:underline"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  Ver PDF oficial ↗
-                                </a>
-                              )}
+                                  Ver detalles completos
+                                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                  </svg>
+                                </Link>
+                                {iniciativa.urlPDF && (
+                                  <a 
+                                    href={iniciativa.urlPDF}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm transition-all hover:underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Ver PDF oficial
+                                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
