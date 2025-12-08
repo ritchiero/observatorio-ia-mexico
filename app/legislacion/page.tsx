@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { IniciativaLegislativa } from '@/types';
 import { AlertCircle } from 'lucide-react';
 import LegislacionClient from './LegislacionClient';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 export default function LegislacionPage() {
   const [iniciativas, setIniciativas] = useState<IniciativaLegislativa[]>([]);
@@ -15,26 +13,21 @@ export default function LegislacionPage() {
   useEffect(() => {
     async function fetchIniciativas() {
       try {
-        console.log('[CLIENT] Fetching iniciativas from Firestore...');
-        const q = query(collection(db, 'iniciativas'));
-        const snapshot = await getDocs(q);
+        console.log('[CLIENT] Fetching iniciativas from API...');
+        const response = await fetch('/api/iniciativas');
         
-        console.log('[CLIENT] Snapshot size:', snapshot.size);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as IniciativaLegislativa[];
+        const result = await response.json();
         
-        // Ordenar por fecha descendente (más recientes primero)
-        data.sort((a, b) => {
-          const dateA = typeof a.fecha === 'string' ? new Date(a.fecha).getTime() : a.fecha.toDate().getTime();
-          const dateB = typeof b.fecha === 'string' ? new Date(b.fecha).getTime() : b.fecha.toDate().getTime();
-          return dateB - dateA;
-        });
+        if (!result.success) {
+          throw new Error(result.error || 'Error fetching iniciativas');
+        }
         
-        console.log('[CLIENT] Iniciativas fetched:', data.length);
-        setIniciativas(data);
+        console.log('[CLIENT] Iniciativas fetched:', result.count);
+        setIniciativas(result.data);
       } catch (e: any) {
         console.error('[CLIENT] Error fetching iniciativas:', e);
         setError(e.message);
@@ -55,7 +48,7 @@ export default function LegislacionPage() {
             Cargando iniciativas...
           </h2>
           <p className="text-gray-600">
-            Obteniendo datos de Firestore
+            Obteniendo datos del servidor
           </p>
         </div>
       </div>
