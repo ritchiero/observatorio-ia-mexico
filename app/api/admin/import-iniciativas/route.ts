@@ -22,7 +22,9 @@ function parseDate(dateStr: string): Timestamp {
 }
 
 // Función para generar ID único
-function generateId(index: number): string {
+function generateId(index: number, customId?: string): string {
+  // Si se proporciona un ID personalizado, usarlo
+  if (customId) return customId;
   // Empezar desde iniciativa-70 (asumiendo que ya hay 69)
   return `iniciativa-${70 + index}`;
 }
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
     
     for (let i = 0; i < iniciativas.length; i++) {
       const init = iniciativas[i];
-      const id = generateId(i);
+      const id = generateId(i, init.id);
       
       try {
         const data = {
