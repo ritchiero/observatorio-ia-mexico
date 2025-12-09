@@ -402,6 +402,7 @@ export interface IniciativaLegislativa {
   // Categorización
   tipo: IniciativaTipo;
   tematicas: string[]; // ['deepfakes', 'educacion', 'salud', etc.]
+  temas?: string[]; // Temas detectados automáticamente
   
   // Fuentes
   urlGaceta: string;

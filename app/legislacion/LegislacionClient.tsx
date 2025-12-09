@@ -12,11 +12,23 @@ interface Props {
 export default function LegislacionClient({ iniciativas }: Props) {
   const [filtroStatus, setFiltroStatus] = useState<IniciativaStatus | 'todos'>('todos');
   const [filtroLegislatura, setFiltroLegislatura] = useState<string>('todos');
+  const [filtroCamara, setFiltroCamara] = useState<string>('todos');
+  const [filtroTema, setFiltroTema] = useState<string>('todos');
+  const [busqueda, setBusqueda] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const iniciativasFiltradas = iniciativas.filter(i => {
     if (filtroStatus !== 'todos' && i.status !== filtroStatus) return false;
     if (filtroLegislatura !== 'todos' && i.legislatura !== filtroLegislatura) return false;
+    if (filtroCamara !== 'todos' && i.camara !== filtroCamara) return false;
+    if (filtroTema !== 'todos' && !(i.temas || []).includes(filtroTema)) return false;
+    if (busqueda) {
+      const searchLower = busqueda.toLowerCase();
+      const matchTitulo = i.titulo?.toLowerCase().includes(searchLower);
+      const matchProponente = i.proponente?.toLowerCase().includes(searchLower);
+      const matchDescripcion = i.descripcion?.toLowerCase().includes(searchLower);
+      if (!matchTitulo && !matchProponente && !matchDescripcion) return false;
+    }
     return true;
   });
 
@@ -170,7 +182,20 @@ export default function LegislacionClient({ iniciativas }: Props) {
 
       {/* Filters */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Cámara</label>
+            <select
+              value={filtroCamara}
+              onChange={(e) => setFiltroCamara(e.target.value)}
+              className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="todos">Todas las cámaras</option>
+              <option value="Diputados">🏛️ Diputados</option>
+              <option value="Senado">🏢 Senado</option>
+              <option value="Local">🏙️ Local (CDMX)</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
             <select
@@ -179,10 +204,11 @@ export default function LegislacionClient({ iniciativas }: Props) {
               className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="todos">Todos</option>
-              <option value="en_comisiones">En comisiones</option>
-              <option value="desechada_termino">Desechadas</option>
-              <option value="archivada">Archivadas</option>
-              <option value="aprobada">Aprobadas</option>
+              <option value="en_comisiones">✅ En comisiones</option>
+              <option value="turnada">📋 Turnadas</option>
+              <option value="archivada">🗂️ Archivadas</option>
+              <option value="desechada_termino">❌ Desechadas</option>
+              <option value="aprobada">✅ Aprobadas</option>
             </select>
           </div>
           <div>
@@ -193,10 +219,60 @@ export default function LegislacionClient({ iniciativas }: Props) {
               className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="todos">Todas</option>
+              <option value="LXVI">LXVI (2024-2027) ⭐</option>
               <option value="LXV">LXV (2021-2024)</option>
-              <option value="LXVI">LXVI (2024-2027)</option>
+              <option value="LXIV">LXIV (2018-2021)</option>
+              <option value="III_CDMX">CDMX III</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tema</label>
+            <select
+              value={filtroTema}
+              onChange={(e) => setFiltroTema(e.target.value)}
+              className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="todos">Todos los temas</option>
+              <option value="Regulación General">📜 Regulación General</option>
+              <option value="Seguridad y Delitos">🔒 Seguridad y Delitos</option>
+              <option value="Privacidad y Datos">🛡️ Privacidad y Datos</option>
+              <option value="Deepfakes y Contenido">🎭 Deepfakes y Contenido</option>
+              <option value="Propiedad Intelectual">©️ Propiedad Intelectual</option>
+              <option value="Salud">🏥 Salud</option>
+              <option value="Laboral">💼 Laboral</option>
+              <option value="Educación">📚 Educación</option>
+              <option value="Sector Público">🏛️ Sector Público</option>
+              <option value="Otros">Otros</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="🔍 Buscar por título, proponente o descripción..."
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+          {(filtroStatus !== 'todos' || filtroLegislatura !== 'todos' || filtroCamara !== 'todos' || filtroTema !== 'todos' || busqueda) && (
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setFiltroStatus('todos');
+                  setFiltroLegislatura('todos');
+                  setFiltroCamara('todos');
+                  setFiltroTema('todos');
+                  setBusqueda('');
+                }}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                🔄 Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
