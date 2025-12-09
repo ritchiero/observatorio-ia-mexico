@@ -1,15 +1,45 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { IniciativaLegislativa, IniciativaStatus } from '@/types';
+import { IniciativaStatus } from '@/types';
 import { ArrowLeft, Scale, Calendar, User, Building, FileText, ExternalLink, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { FuentesList } from '@/components/FuentesList';
 
+// Tipo para la respuesta del API (fecha como string ISO)
+interface IniciativaAPI {
+  id: string;
+  numero: number;
+  titulo: string;
+  proponente: string;
+  partido: string;
+  fecha: string; // ISO string, no Timestamp
+  legislatura: string;
+  camara: string;
+  descripcion: string;
+  status: IniciativaStatus;
+  tipo: string;
+  tematicas?: string[];
+  urlGaceta: string;
+  urlPDF?: string;
+  resumenAgente?: string;
+  eventos?: Array<{
+    fecha: string; // ISO string
+    tipo: string;
+    descripcion: string;
+    resultado?: string;
+  }>;
+  fuentes?: Array<{
+    titulo: string;
+    url: string;
+    tipo: string;
+  }>;
+}
+
 export default function IniciativaDetallePage() {
   const params = useParams();
-  const [iniciativa, setIniciativa] = useState<IniciativaLegislativa | null>(null);
+  const [iniciativa, setIniciativa] = useState<IniciativaAPI | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +55,7 @@ export default function IniciativaDetallePage() {
         }
         
         const data = await response.json();
-        setIniciativa(data.iniciativa as any);
+        setIniciativa(data.iniciativa);
       } catch (error) {
         console.error('Error fetching iniciativa:', error);
         setError(error instanceof Error ? error.message : 'Error al cargar la iniciativa');
@@ -50,8 +80,8 @@ export default function IniciativaDetallePage() {
     return badges[status] || badges['en_comisiones'];
   };
 
-  const formatFecha = (fechaString: string) => {
-    const date = new Date(fechaString);
+  const formatFecha = (fechaISO: string) => {
+    const date = new Date(fechaISO);
     return date.toLocaleDateString('es-MX', { 
       year: 'numeric', 
       month: 'long', 
@@ -150,7 +180,7 @@ export default function IniciativaDetallePage() {
                 <div className="text-xs font-sans uppercase tracking-wider text-gray-500 mb-1">
                   Fecha de presentación
                 </div>
-                <div className="text-sm text-gray-900">{formatFecha(iniciativa.fecha as any)}</div>
+                <div className="text-sm text-gray-900">{formatFecha(iniciativa.fecha)}</div>
               </div>
             </div>
 
