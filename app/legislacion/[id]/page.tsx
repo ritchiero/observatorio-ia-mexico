@@ -150,7 +150,7 @@ export default function IniciativaDetallePage() {
                 <div className="text-xs font-sans uppercase tracking-wider text-gray-500 mb-1">
                   Fecha de presentación
                 </div>
-                <div className="text-sm text-gray-900">{formatFecha(iniciativa.fecha)}</div>
+                <div className="text-sm text-gray-900">{formatFecha(iniciativa.fecha as string)}</div>
               </div>
             </div>
 
