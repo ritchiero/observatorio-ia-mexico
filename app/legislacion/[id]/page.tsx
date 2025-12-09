@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { IniciativaLegislativa, IniciativaStatus } from '@/types';
 import { ArrowLeft, Scale, Calendar, User, Building, FileText, ExternalLink, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -13,23 +11,24 @@ export default function IniciativaDetallePage() {
   const params = useParams();
   const [iniciativa, setIniciativa] = useState<IniciativaLegislativa | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchIniciativa = async () => {
       if (!params.id) return;
       
       try {
-        const docRef = doc(db, 'iniciativas', params.id as string);
-        const docSnap = await getDoc(docRef);
+        const response = await fetch(`/api/iniciativas/${params.id}`);
         
-        if (docSnap.exists()) {
-          setIniciativa({
-            id: docSnap.id,
-            ...docSnap.data()
-          } as IniciativaLegislativa);
+        if (!response.ok) {
+          throw new Error('Iniciativa no encontrada');
         }
+        
+        const data = await response.json();
+        setIniciativa(data.iniciativa);
       } catch (error) {
         console.error('Error fetching iniciativa:', error);
+        setError(error instanceof Error ? error.message : 'Error al cargar la iniciativa');
       } finally {
         setLoading(false);
       }
@@ -51,8 +50,8 @@ export default function IniciativaDetallePage() {
     return badges[status] || badges['en_comisiones'];
   };
 
-  const formatFecha = (timestamp: Timestamp) => {
-    const date = timestamp.toDate();
+  const formatFecha = (fechaString: string) => {
+    const date = new Date(fechaString);
     return date.toLocaleDateString('es-MX', { 
       year: 'numeric', 
       month: 'long', 
@@ -84,12 +83,12 @@ export default function IniciativaDetallePage() {
     );
   }
 
-  if (!iniciativa) {
+  if (error || !iniciativa) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">Iniciativa no encontrada</p>
+          <p className="text-gray-600">{error || 'Iniciativa no encontrada'}</p>
           <Link href="/legislacion" className="text-blue-500 hover:underline mt-2 inline-block">
             Volver al listado
           </Link>
