@@ -47,8 +47,11 @@ async function uploadToStorage(
   return `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get('force') === 'true';
+    
     const db = getAdminDb();
     
     const snapshot = await db.collection('iniciativas')
@@ -67,11 +70,28 @@ export async function GET() {
       const data = doc.data();
       const id = doc.id;
 
-      // Saltar si ya tiene backup
-      if (data.urlPDFBackup) {
-        results.skipped++;
-        results.processed.push({ id, status: 'skipped', url: data.urlPDFBackup });
-        continue;
+      // Verificar si ya tiene backup y si el archivo no está vacío
+      if (data.urlPDFBackup && !force) {
+        try {
+          // Verificar tamaño del archivo en Storage
+          const storage = getAdminStorage();
+          const bucket = storage.bucket();
+          const filePath = `pdfs/iniciativas/${id}.pdf`;
+          const file = bucket.file(filePath);
+          const [metadata] = await file.getMetadata();
+          
+          // Si el archivo tiene contenido, saltarlo
+          const fileSize = typeof metadata.size === 'string' ? parseInt(metadata.size) : metadata.size;
+          if (fileSize && fileSize > 0) {
+            results.skipped++;
+            results.processed.push({ id, status: 'skipped', url: data.urlPDFBackup });
+            continue;
+          }
+          
+          console.log(`Archivo vacío detectado para ${id}, re-descargando...`);
+        } catch (error) {
+          console.log(`Error verificando archivo para ${id}, re-descargando...`);
+        }
       }
 
       try {
