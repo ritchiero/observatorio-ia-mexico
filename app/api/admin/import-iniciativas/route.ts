@@ -5,6 +5,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
+// Force deployment - support custom ID
 
 // Función para convertir fecha DD/MM/YYYY a Timestamp
 function parseDate(dateStr: string): Timestamp {
