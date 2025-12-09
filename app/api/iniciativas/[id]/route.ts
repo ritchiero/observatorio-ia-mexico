@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 
+// Asegura que se ejecute en runtime de Node (necesario para Admin SDK)
+export const runtime = 'nodejs';
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
-    
+    const { id } = await context.params;    
     if (!id) {
       return NextResponse.json(
         { error: 'ID de iniciativa requerido' },
@@ -25,8 +26,7 @@ export async function GET(
       );
     }
 
-    const data = doc.data();
-    
+    const data = doc.data() || {};    
     // Convertir Timestamps a strings
     const iniciativa = {
       id: doc.id,
