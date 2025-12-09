@@ -5,7 +5,7 @@ import { IniciativaStatus } from '@/types';
 import { ArrowLeft, Scale, Calendar, User, Building, FileText, ExternalLink, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { FuentesList } from '@/components/FuentesList';
+
 
 // Tipo para la respuesta del API (fecha como string ISO)
 interface IniciativaAPI {
@@ -275,7 +275,26 @@ export default function IniciativaDetallePage() {
 
         {/* Fuentes */}
         {iniciativa.fuentes && iniciativa.fuentes.length > 0 && (
-          <FuentesList fuentes={iniciativa.fuentes} />
+          <div className="bg-white border border-gray-200 rounded-sm p-6">
+            <h2 className="font-serif text-2xl text-gray-900 mb-4">Fuentes</h2>
+            <div className="space-y-3">
+              {iniciativa.fuentes.map((fuente, index) => (
+                <a
+                  key={index}
+                  href={fuente.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-2 text-blue-500 hover:text-blue-600 transition-colors"
+                >
+                  <ExternalLink size={16} className="flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-sans text-sm">{fuente.titulo}</span>
+                    <span className="text-xs text-gray-500 ml-2">({fuente.tipo})</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Enlaces oficiales */}
