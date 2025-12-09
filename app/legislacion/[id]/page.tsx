@@ -25,7 +25,7 @@ export default function IniciativaDetallePage() {
         }
         
         const data = await response.json();
-        setIniciativa(data.iniciativa);
+        setIniciativa(data.iniciativa as any);
       } catch (error) {
         console.error('Error fetching iniciativa:', error);
         setError(error instanceof Error ? error.message : 'Error al cargar la iniciativa');
