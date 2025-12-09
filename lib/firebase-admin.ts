@@ -27,7 +27,7 @@ function initializeFirebaseAdmin() {
           privateKey,
         }),
         databaseURL: `https://${projectId}.firebaseio.com`,
-        storageBucket: `${projectId}.appspot.com`,
+        storageBucket: 'observatorio-ia-mexico.firebasestorage.app',
       });
     } catch (error: any) {
       console.error('[FIREBASE_ADMIN] Initialization error:', error);
