@@ -24,22 +24,46 @@ interface ImportResponse {
 interface Iniciativa {
   id: string;
   titulo: string;
-  estatus: string;
+  estatus?: string;
+  status?: string;
   proponente: string;
-  categoria: string;
+  categoria?: string;
   fecha: string;
   descripcion?: string;
   camara?: string;
+  legislatura?: string;
+  tipo?: string;
+  entidadFederativa?: string;
+  ambito?: string;
+  urlGaceta?: string;
+  urlPDF?: string;
+  partido?: string;
+  temas?: string[];
+  resumen?: string;
 }
 
 const ESTATUS_OPTIONS = [
   'En comisiones',
   'Aprobada',
+  'Aprobado',
+  'aprobada',
   'Rechazada',
   'Pendiente',
   'En revisión',
   'Publicada',
   'Archivada',
+];
+
+const CAMARA_OPTIONS = [
+  'Diputados',
+  'Senado',
+  'Local',
+  'Congreso del Estado',
+];
+
+const AMBITO_OPTIONS = [
+  'Federal',
+  'Local',
 ];
 
 export default function DashboardPage() {
@@ -151,10 +175,19 @@ export default function DashboardPage() {
     setSelectedIniciativa(ini);
     setEditForm({
       titulo: ini.titulo,
-      estatus: ini.estatus,
+      estatus: ini.estatus || ini.status || '',
       proponente: ini.proponente,
-      categoria: ini.categoria,
+      categoria: ini.categoria || '',
       descripcion: ini.descripcion || '',
+      resumen: ini.resumen || '',
+      legislatura: ini.legislatura || '',
+      tipo: ini.tipo || '',
+      camara: ini.camara || '',
+      entidadFederativa: ini.entidadFederativa || '',
+      ambito: ini.ambito || '',
+      urlGaceta: ini.urlGaceta || '',
+      urlPDF: ini.urlPDF || '',
+      partido: ini.partido || '',
     });
     setSaveMessage(null);
   };
@@ -739,20 +772,20 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-5">
+                  <div className="space-y-4">
                     {/* ID (solo lectura) */}
                     <div>
-                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
                         ID
                       </label>
-                      <p className="font-mono text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                      <p className="font-mono text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
                         {selectedIniciativa.id}
                       </p>
                     </div>
 
                     {/* Título */}
                     <div>
-                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
                         Título
                       </label>
                       <textarea
@@ -763,25 +796,43 @@ export default function DashboardPage() {
                       />
                     </div>
 
-                    {/* Estatus */}
-                    <div>
-                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
-                        Estatus
-                      </label>
-                      <select
-                        value={editForm.estatus || ''}
-                        onChange={(e) => setEditForm({ ...editForm, estatus: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
-                      >
-                        {ESTATUS_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
+                    {/* Row: Estatus + Cámara */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          Estatus
+                        </label>
+                        <select
+                          value={editForm.estatus || ''}
+                          onChange={(e) => setEditForm({ ...editForm, estatus: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">Seleccionar...</option>
+                          {ESTATUS_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          Ámbito
+                        </label>
+                        <select
+                          value={editForm.ambito || ''}
+                          onChange={(e) => setEditForm({ ...editForm, ambito: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">Seleccionar...</option>
+                          {AMBITO_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     {/* Proponente */}
                     <div>
-                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
                         Proponente
                       </label>
                       <input
@@ -792,16 +843,133 @@ export default function DashboardPage() {
                       />
                     </div>
 
-                    {/* Categoría */}
+                    {/* Row: Cámara + Entidad */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          Cámara
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.camara || ''}
+                          onChange={(e) => setEditForm({ ...editForm, camara: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          Entidad Federativa
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.entidadFederativa || ''}
+                          onChange={(e) => setEditForm({ ...editForm, entidadFederativa: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row: Legislatura + Tipo */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          Legislatura
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.legislatura || ''}
+                          onChange={(e) => setEditForm({ ...editForm, legislatura: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          Tipo
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.tipo || ''}
+                          onChange={(e) => setEditForm({ ...editForm, tipo: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row: Categoría + Partido */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          Categoría
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.categoria || ''}
+                          onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          Partido
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.partido || ''}
+                          onChange={(e) => setEditForm({ ...editForm, partido: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Descripción */}
                     <div>
-                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
-                        Categoría
+                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        Descripción
+                      </label>
+                      <textarea
+                        value={editForm.descripcion || ''}
+                        onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })}
+                        rows={3}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500 resize-none"
+                      />
+                    </div>
+
+                    {/* Resumen */}
+                    <div>
+                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        Resumen
+                      </label>
+                      <textarea
+                        value={editForm.resumen || ''}
+                        onChange={(e) => setEditForm({ ...editForm, resumen: e.target.value })}
+                        rows={2}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500 resize-none"
+                      />
+                    </div>
+
+                    {/* URL Gaceta */}
+                    <div>
+                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        URL Gaceta
                       </label>
                       <input
-                        type="text"
-                        value={editForm.categoria || ''}
-                        onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                        type="url"
+                        value={editForm.urlGaceta || ''}
+                        onChange={(e) => setEditForm({ ...editForm, urlGaceta: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-mono text-xs focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    {/* URL PDF */}
+                    <div>
+                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        URL PDF
+                      </label>
+                      <input
+                        type="url"
+                        value={editForm.urlPDF || ''}
+                        onChange={(e) => setEditForm({ ...editForm, urlPDF: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-mono text-xs focus:outline-none focus:border-blue-500"
                       />
                     </div>
 
