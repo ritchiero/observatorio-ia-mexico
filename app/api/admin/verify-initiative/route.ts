@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { requireAdmin } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 export async function POST(request: NextRequest) {
@@ -17,17 +17,18 @@ export async function POST(request: NextRequest) {
   try {
     const initiative = await request.json();
     
-    // @ts-ignore - web_search tool type
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5-latest",
-      max_tokens: 4096,
-      tools: [{
-        type: "web_search_20250305",
-        name: "web_search",
-      }],
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      response_format: { type: "json_object" },
       messages: [{
+        role: "system",
+        content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. Tu tarea es verificar iniciativas legislativas mexicanas.
+
+IMPORTANTE: Debes responder ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o después.`
+      }, {
         role: "user",
-        content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. Verifica la siguiente iniciativa legislativa:
+        content: `Verifica la siguiente iniciativa legislativa:
 
 **ID:** ${initiative.id}
 **Título:** ${initiative.titulo}
@@ -48,74 +49,76 @@ export async function POST(request: NextRequest) {
 
 **TAREAS DE VERIFICACIÓN:**
 
-1. **Validar Título y Descripción:** Verifica si el título coincide con el contenido real de la iniciativa
-2. **Confirmar Estatus:** Busca el estatus actual en fuentes oficiales (aprobada/en comisiones/rechazada/publicada)
-3. **Verificar Proponente:** Confirma que el proponente y la legislatura sean correctos
-4. **Buscar Documentos Oficiales:** Encuentra la gaceta parlamentaria o PDF oficial si falta
-5. **Validar URLs:** Verifica que las URLs proporcionadas estén activas y sean correctas
-6. **Identificar Discrepancias:** Señala cualquier inconsistencia entre los datos y la información oficial
+1. **Validar Coherencia:** Verifica si el título, descripción y resumen son coherentes entre sí
+2. **Evaluar Completitud:** Identifica campos faltantes o información incompleta
+3. **Verificar Formato:** Revisa que los datos sigan el formato esperado
+4. **Detectar Inconsistencias:** Señala cualquier discrepancia en los datos
+5. **Sugerir Mejoras:** Proporciona recomendaciones para mejorar la información
 
-**DOMINIOS PRIORITARIOS PARA BÚSQUEDA:**
+**DOMINIOS OFICIALES DE REFERENCIA:**
 - diputados.gob.mx (Cámara de Diputados Federal)
 - senado.gob.mx (Senado)
-- ${initiative.entidadFederativa?.toLowerCase() || 'congreso'}.gob.mx (Congreso Estatal si aplica)
 - sil.gobernacion.gob.mx (Sistema de Información Legislativa)
 - dof.gob.mx (Diario Oficial de la Federación)
+- Congresos estatales: [estado].gob.mx
 
 **FORMATO DE RESPUESTA (JSON estricto):**
 {
   "verified": true/false,
   "confidence": "high" | "medium" | "low",
-  "statusMatch": true/false,
-  "currentStatus": "estatus verificado o 'no encontrado'",
-  "corrections": {
-    "titulo": "título correcto si difiere, o null",
-    "estatus": "estatus correcto si difiere, o null",
-    "proponente": "proponente correcto si difiere, o null",
-    "urlPDF": "URL oficial del PDF si se encontró, o null"
+  "completeness": {
+    "score": 0-100,
+    "missingFields": ["lista de campos faltantes"],
+    "incompleteFields": ["lista de campos incompletos"]
   },
-  "sources": [
-    "URL1 de fuente oficial",
-    "URL2 de fuente oficial"
+  "coherence": {
+    "titleDescriptionMatch": true/false,
+    "dataConsistency": true/false,
+    "issues": ["lista de problemas de coherencia"]
+  },
+  "recommendations": [
+    "Recomendación 1",
+    "Recomendación 2"
   ],
+  "suggestedCorrections": {
+    "titulo": "título sugerido si aplica, o null",
+    "estatus": "estatus sugerido si aplica, o null",
+    "descripcion": "descripción mejorada si aplica, o null"
+  },
   "flags": [
     "Lista de alertas o problemas encontrados"
   ],
-  "summary": "Resumen breve de la verificación en español"
+  "summary": "Resumen breve de la verificación en español (2-3 oraciones)"
 }
 
-**IMPORTANTE:** Responde ÚNICAMENTE con el JSON, sin texto adicional antes o después.`
+Responde ÚNICAMENTE con el JSON, sin texto adicional.`
       }]
     });
 
-    // Extraer el contenido de la respuesta
-    let responseText = '';
-    for (const block of message.content) {
-      if (block.type === 'text') {
-        responseText += block.text;
-      }
-    }
-
+    const responseText = completion.choices[0].message.content || '';
+    
     // Intentar parsear como JSON
     let verification;
     try {
-      // Buscar JSON en la respuesta (por si Claude agregó texto adicional)
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        verification = JSON.parse(jsonMatch[0]);
-      } else {
-        verification = JSON.parse(responseText);
-      }
+      verification = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('Error parsing Claude response:', parseError);
+      console.error('Error parsing OpenAI response:', parseError);
       verification = {
         verified: false,
         confidence: 'low',
-        statusMatch: false,
-        currentStatus: 'error al procesar',
-        corrections: {},
-        sources: [],
-        flags: ['Error al parsear la respuesta de Claude'],
+        completeness: {
+          score: 0,
+          missingFields: [],
+          incompleteFields: []
+        },
+        coherence: {
+          titleDescriptionMatch: false,
+          dataConsistency: false,
+          issues: ['Error al procesar la respuesta']
+        },
+        recommendations: [],
+        suggestedCorrections: {},
+        flags: ['Error al parsear la respuesta de IA'],
         summary: 'No se pudo completar la verificación. Respuesta raw: ' + responseText.substring(0, 500),
         rawResponse: responseText
       };
@@ -124,14 +127,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       verification,
-      usage: message.usage
+      usage: completion.usage
     });
 
   } catch (error: any) {
     console.error('Error en verificación:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: error.message || 'Error desconocido'
     }, { status: 500 });
   }
 }
