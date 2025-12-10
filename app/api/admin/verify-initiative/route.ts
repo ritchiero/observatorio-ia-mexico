@@ -17,13 +17,14 @@ export async function POST(request: NextRequest) {
   try {
     const initiative = await request.json();
     
+    // @ts-ignore - web_search tool type
     const message = await client.messages.create({
       model: "claude-haiku-4-5-20250516",
       max_tokens: 4096,
       tools: [{
         type: "web_search_20250305",
         name: "web_search",
-      } as any],
+      }],
       messages: [{
         role: "user",
         content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. Verifica la siguiente iniciativa legislativa:
