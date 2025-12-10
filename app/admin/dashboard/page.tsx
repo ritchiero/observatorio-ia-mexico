@@ -88,6 +88,10 @@ export default function DashboardPage() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Verification states
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<any>(null);
+
   useEffect(() => {
     setMounted(true);
     if (status === 'unauthenticated') {
@@ -190,6 +194,7 @@ export default function DashboardPage() {
       partido: ini.partido || '',
     });
     setSaveMessage(null);
+    setVerificationResult(null);
   };
 
   const handleSaveIniciativa = async () => {
@@ -238,6 +243,36 @@ export default function DashboardPage() {
     setEditForm({});
     setSaveMessage(null);
     setSearchTerm('');
+    setVerificationResult(null);
+  };
+
+  // Verificar iniciativa con Claude Haiku 4.5
+  const handleVerifyInitiative = async () => {
+    if (!selectedIniciativa) return;
+    
+    setIsVerifying(true);
+    setVerificationResult(null);
+    
+    try {
+      const response = await fetch('/api/admin/verify-initiative', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selectedIniciativa)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setVerificationResult(data.verification);
+      } else {
+        alert('Error al verificar: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al verificar iniciativa');
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const filteredIniciativas = iniciativas.filter(ini =>
@@ -694,12 +729,31 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={closeEditModal}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleVerifyInitiative}
+                  disabled={isVerifying || !selectedIniciativa}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-sans-tech text-sm font-medium"
+                >
+                  {isVerifying ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Verificando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🤖</span>
+                      <span>Verificar con IA</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={closeEditModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
             </div>
 
             {/* Body */}
@@ -972,6 +1026,99 @@ export default function DashboardPage() {
                         className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-mono text-xs focus:outline-none focus:border-blue-500"
                       />
                     </div>
+
+                    {/* Resultados de Verificación con Haiku 4.5 */}
+                    {verificationResult && (
+                      <div className={`p-4 border-2 rounded-lg transition-all ${
+                        verificationResult.verified 
+                          ? 'border-green-500 bg-green-50' 
+                          : 'border-yellow-500 bg-yellow-50'
+                      }`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="font-sans-tech font-semibold text-sm flex items-center gap-2">
+                            {verificationResult.verified ? '✅' : '⚠️'}
+                            <span>Verificación con Claude Haiku 4.5</span>
+                          </h3>
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-medium ${
+                            verificationResult.confidence === 'high' ? 'bg-green-200 text-green-800' :
+                            verificationResult.confidence === 'medium' ? 'bg-yellow-200 text-yellow-800' :
+                            'bg-red-200 text-red-800'
+                          }`}>
+                            {verificationResult.confidence === 'high' ? 'Alta confianza' :
+                             verificationResult.confidence === 'medium' ? 'Confianza media' : 'Baja confianza'}
+                          </span>
+                        </div>
+
+                        <p className="font-sans-tech text-xs text-gray-700 mb-3 leading-relaxed">
+                          {verificationResult.summary}
+                        </p>
+
+                        {verificationResult.currentStatus && verificationResult.currentStatus !== 'no encontrado' && (
+                          <div className="mb-3 p-2 bg-white rounded border text-xs">
+                            <span className="font-medium text-gray-700">Estatus Verificado: </span>
+                            <span className={`font-semibold ${
+                              verificationResult.statusMatch ? 'text-green-600' : 'text-orange-600'
+                            }`}>
+                              {verificationResult.currentStatus}
+                              {!verificationResult.statusMatch && ' ⚠️'}
+                            </span>
+                          </div>
+                        )}
+
+                        {verificationResult.corrections && 
+                         Object.values(verificationResult.corrections).some((v: any) => v !== null) && (
+                          <div className="mb-3 p-2 bg-white rounded border">
+                            <h4 className="font-sans-tech font-medium text-xs mb-2 flex items-center gap-1">
+                              📝 Correcciones Sugeridas:
+                            </h4>
+                            <div className="space-y-1 text-[11px]">
+                              {verificationResult.corrections.titulo && (
+                                <div><span className="font-medium text-gray-600">Título:</span> <span className="text-blue-700">{verificationResult.corrections.titulo}</span></div>
+                              )}
+                              {verificationResult.corrections.estatus && (
+                                <div><span className="font-medium text-gray-600">Estatus:</span> <span className="text-blue-700">{verificationResult.corrections.estatus}</span></div>
+                              )}
+                              {verificationResult.corrections.proponente && (
+                                <div><span className="font-medium text-gray-600">Proponente:</span> <span className="text-blue-700">{verificationResult.corrections.proponente}</span></div>
+                              )}
+                              {verificationResult.corrections.urlPDF && (
+                                <div><span className="font-medium text-gray-600">PDF:</span> <a href={verificationResult.corrections.urlPDF} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{verificationResult.corrections.urlPDF}</a></div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {verificationResult.sources && verificationResult.sources.length > 0 && (
+                          <div className="mb-3 p-2 bg-white rounded border">
+                            <h4 className="font-sans-tech font-medium text-xs mb-2 flex items-center gap-1">
+                              🔗 Fuentes Oficiales:
+                            </h4>
+                            <ul className="space-y-1 text-[11px]">
+                              {verificationResult.sources.map((url: string, idx: number) => (
+                                <li key={idx}>
+                                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                                    {url}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {verificationResult.flags && verificationResult.flags.length > 0 && (
+                          <div className="p-2 bg-orange-50 rounded border border-orange-200">
+                            <h4 className="font-sans-tech font-medium text-xs mb-1 text-orange-700 flex items-center gap-1">
+                              ⚠️ Alertas:
+                            </h4>
+                            <ul className="space-y-1 text-[11px] text-orange-700">
+                              {verificationResult.flags.map((flag: string, idx: number) => (
+                                <li key={idx}>• {flag}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Mensaje de guardado */}
                     {saveMessage && (
