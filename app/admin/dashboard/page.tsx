@@ -221,6 +221,8 @@ export default function DashboardPage() {
     if (!selectedIniciativa) return;
     
     setEditJsonError('');
+    setSaving(true);
+    setSaveMessage(null);
     
     // Validar JSON
     let parsedJson;
@@ -228,11 +230,9 @@ export default function DashboardPage() {
       parsedJson = JSON.parse(editJsonInput);
     } catch (e) {
       setEditJsonError('JSON inválido. Verifica el formato.');
+      setSaving(false);
       return;
     }
-
-    setSaving(true);
-    setSaveMessage(null);
 
     try {
       const response = await fetch('/api/admin/iniciativas', {
@@ -247,7 +247,12 @@ export default function DashboardPage() {
         }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: 'Respuesta inválida del servidor' };
+      }
 
       if (response.ok) {
         setSaveMessage({ type: 'success', text: 'Iniciativa actualizada desde JSON' });
@@ -983,7 +988,11 @@ export default function DashboardPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => setJsonEditMode(!jsonEditMode)}
+                        onClick={() => {
+                          setJsonEditMode(!jsonEditMode);
+                          setSaving(false);
+                          setSaveMessage(null);
+                        }}
                         className={`px-3 py-1.5 rounded-lg font-sans-tech text-xs transition-all ${
                           jsonEditMode 
                             ? 'bg-blue-500 text-white' 
@@ -1040,6 +1049,8 @@ export default function DashboardPage() {
                               delete (jsonData as any).id;
                               setEditJsonInput(JSON.stringify(jsonData, null, 2));
                               setEditJsonError('');
+                              setSaving(false);
+                              setSaveMessage(null);
                             }}
                             className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-sans-tech text-sm hover:bg-gray-200 transition-all"
                           >
