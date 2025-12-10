@@ -272,7 +272,24 @@ export default function DashboardPage() {
       const data = await response.json();
       
       if (data.success) {
-        setVerificationResult(data.verification);
+        setVerificationResult({
+          ...data.verification,
+          estadoVerificacion: data.estadoVerificacion,
+          fechaVerificacion: data.fechaVerificacion
+        });
+        
+        // Actualizar la iniciativa en la lista local
+        if (selectedIniciativa) {
+          const updatedIniciativa = {
+            ...selectedIniciativa,
+            estadoVerificacion: data.estadoVerificacion,
+            fechaVerificacion: data.fechaVerificacion
+          };
+          setSelectedIniciativa(updatedIniciativa);
+          setIniciativas(prev => prev.map(ini => 
+            ini.id === selectedIniciativa.id ? updatedIniciativa : ini
+          ));
+        }
       } else {
         alert('Error al verificar: ' + data.error);
       }
@@ -1100,19 +1117,34 @@ export default function DashboardPage() {
                           ? 'border-green-500 bg-green-50' 
                           : 'border-yellow-500 bg-yellow-50'
                       }`}>
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="font-sans-tech font-semibold text-sm flex items-center gap-2">
-                            {verificationResult.verified ? '✅' : '⚠️'}
-                            <span>Verificación con Claude Haiku 4.5</span>
-                          </h3>
-                          <span className={`px-2 py-1 rounded-full text-[10px] font-medium ${
-                            verificationResult.confidence === 'high' ? 'bg-green-200 text-green-800' :
-                            verificationResult.confidence === 'medium' ? 'bg-yellow-200 text-yellow-800' :
-                            'bg-red-200 text-red-800'
-                          }`}>
-                            {verificationResult.confidence === 'high' ? 'Alta confianza' :
-                             verificationResult.confidence === 'medium' ? 'Confianza media' : 'Baja confianza'}
-                          </span>
+                        {/* Estado de verificación */}
+                        <div className={`mb-3 p-3 rounded-lg ${
+                          verificationResult.estadoVerificacion === 'verificado' 
+                            ? 'bg-green-100 border border-green-300' 
+                            : 'bg-orange-100 border border-orange-300'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <span className={`font-sans-tech font-bold text-sm ${
+                              verificationResult.estadoVerificacion === 'verificado' ? 'text-green-800' : 'text-orange-800'
+                            }`}>
+                              {verificationResult.estadoVerificacion === 'verificado' 
+                                ? '✓ VERIFICADO' 
+                                : '⚠ REQUIERE REVISIÓN'}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-[10px] font-medium ${
+                              verificationResult.confidence === 'high' ? 'bg-green-200 text-green-800' :
+                              verificationResult.confidence === 'medium' ? 'bg-yellow-200 text-yellow-800' :
+                              'bg-red-200 text-red-800'
+                            }`}>
+                              {verificationResult.confidence === 'high' ? 'Alta confianza' :
+                               verificationResult.confidence === 'medium' ? 'Confianza media' : 'Baja confianza'}
+                            </span>
+                          </div>
+                          {verificationResult.fechaVerificacion && (
+                            <p className="font-mono text-[10px] text-gray-500 mt-1">
+                              Verificado: {new Date(verificationResult.fechaVerificacion).toLocaleString('es-MX')}
+                            </p>
+                          )}
                         </div>
 
                         <p className="font-sans-tech text-xs text-gray-700 mb-3 leading-relaxed">
