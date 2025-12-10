@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { requireAdmin } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY
 });
 
 export async function POST(request: NextRequest) {
@@ -17,18 +17,12 @@ export async function POST(request: NextRequest) {
   try {
     const initiative = await request.json();
     
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.3,
-      response_format: { type: "json_object" },
+    const message = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4096,
       messages: [{
-        role: "system",
-        content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. Tu tarea es verificar iniciativas legislativas mexicanas.
-
-IMPORTANTE: Debes responder ÚNICAMENTE con un objeto JSON válido, sin texto adicional antes o después.`
-      }, {
         role: "user",
-        content: `Verifica la siguiente iniciativa legislativa:
+        content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. Verifica la siguiente iniciativa legislativa:
 
 **ID:** ${initiative.id}
 **Título:** ${initiative.titulo}
@@ -88,18 +82,29 @@ IMPORTANTE: Debes responder ÚNICAMENTE con un objeto JSON válido, sin texto ad
   ]
 }
 
-Responde ÚNICAMENTE con el JSON, sin texto adicional.`
+**IMPORTANTE:** Responde ÚNICAMENTE con el JSON, sin texto adicional antes o después.`
       }]
     });
 
-    const responseText = completion.choices[0].message.content || '';
-    
+    // Extraer el contenido de la respuesta
+    let responseText = '';
+    for (const block of message.content) {
+      if (block.type === 'text') {
+        responseText += block.text;
+      }
+    }
+
     // Intentar parsear como JSON
     let verification;
     try {
-      verification = JSON.parse(responseText);
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        verification = JSON.parse(jsonMatch[0]);
+      } else {
+        verification = JSON.parse(responseText);
+      }
     } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
+      console.error('Error parsing Claude response:', parseError);
       verification = {
         verified: false,
         confidence: 'low',
@@ -108,7 +113,7 @@ Responde ÚNICAMENTE con el JSON, sin texto adicional.`
         statusMatch: false,
         corrections: {},
         sources: [],
-        flags: ['Error al parsear la respuesta de IA'],
+        flags: ['Error al parsear la respuesta de Claude'],
         recommendations: [],
         rawResponse: responseText.substring(0, 500)
       };
@@ -117,7 +122,7 @@ Responde ÚNICAMENTE con el JSON, sin texto adicional.`
     return NextResponse.json({
       success: true,
       verification,
-      usage: completion.usage
+      usage: message.usage
     });
 
   } catch (error: any) {
