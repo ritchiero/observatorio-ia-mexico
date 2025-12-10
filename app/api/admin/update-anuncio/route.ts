@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Fuente, FuenteTipo } from '@/types';
@@ -22,6 +23,10 @@ interface UpdateAnuncioRequest {
 }
 
 export async function POST(request: NextRequest) {
+  // Verificar autenticación de administrador
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const body: UpdateAnuncioRequest = await request.json();
     const { adminKey, anuncioId, fuentes, resumenAgente } = body;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -6,6 +7,10 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  // Verificar autenticación de administrador
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const { updates } = body;

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
+import { requireAdmin } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,10 @@ const tipoToCategoria: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
+  // Verificar autenticación de administrador
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const { iniciativas } = await request.json();
     

@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import SessionProvider from '@/components/SessionProvider';
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
@@ -47,11 +48,13 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${jakarta.className} min-h-screen flex flex-col bg-white antialiased`}>
-        <Header />
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <SessionProvider>
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </SessionProvider>
       </body>
     </html>
   );

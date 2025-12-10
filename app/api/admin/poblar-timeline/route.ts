@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { crearEventoInicial } from '@/lib/timeline';
 
 export const maxDuration = 300; // 5 minutos
 
 export async function POST(request: Request) {
+  // Verificar autenticación de administrador
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     // Verificar autenticación
     const { searchParams } = new URL(request.url);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
 import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -10,6 +11,10 @@ function verifyAdminKey(request: NextRequest) {
 
 // POST - Crear nueva iniciativa
 export async function POST(request: NextRequest) {
+  // Verificar autenticación de administrador
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   if (!verifyAdminKey(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
