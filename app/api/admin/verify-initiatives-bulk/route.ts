@@ -97,7 +97,8 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const initiative = { id, ...doc.data() };
+      const data = doc.data();
+      const initiative = { id, ...data } as any;
       const verification = await verifyInitiative(initiative);
       
       // Determinar estado: Verificado o Revisión
