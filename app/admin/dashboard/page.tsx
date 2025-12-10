@@ -220,6 +220,24 @@ export default function DashboardPage() {
   const handleSaveFromJson = async () => {
     if (!selectedIniciativa) return;
     
+    // 🔒 PROTECCIÓN: Impedir modificación de iniciativas verificadas
+    if (selectedIniciativa.estadoVerificacion === 'verificado') {
+      const confirmar = confirm(
+        '⚠️ ADVERTENCIA: Esta iniciativa está verificada por IA.\n\n' +
+        'No se puede modificar manualmente una iniciativa verificada.\n' +
+        'Si necesitas hacer cambios:\n' +
+        '1. Haz clic en "Verificar" para reverificar\n' +
+        '2. La IA actualizará los datos automáticamente\n\n' +
+        '¿Quieres reverificar ahora?'
+      );
+      
+      if (confirmar) {
+        // Llamar a la función de verificación
+        await handleVerifyInitiative();
+      }
+      return;
+    }
+    
     setEditJsonError('');
     setSaving(true);
     setSaveMessage(null);
