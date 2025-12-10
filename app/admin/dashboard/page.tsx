@@ -40,6 +40,8 @@ interface Iniciativa {
   partido?: string;
   temas?: string[];
   resumen?: string;
+  estadoVerificacion?: 'verificado' | 'revision' | 'pendiente';
+  fechaVerificacion?: string;
 }
 
 const ESTATUS_OPTIONS = [
@@ -91,6 +93,12 @@ export default function DashboardPage() {
   // Verification states
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
+
+  // Bulk verification states
+  const [isBulkVerifying, setIsBulkVerifying] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkResults, setBulkResults] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -272,6 +280,37 @@ export default function DashboardPage() {
       alert('Error de conexión al verificar iniciativa');
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  // Verificar todas las iniciativas
+  const handleBulkVerify = async () => {
+    setIsBulkVerifying(true);
+    setBulkResults(null);
+    setShowBulkModal(true);
+    setBulkProgress({ current: 0, total: iniciativas.length });
+
+    try {
+      const response = await fetch('/api/admin/verify-initiatives-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ iniciativaIds: iniciativas.map(i => i.id) })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setBulkResults(data);
+        // Recargar iniciativas para mostrar estados actualizados
+        loadIniciativas();
+      } else {
+        alert('Error: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión');
+    } finally {
+      setIsBulkVerifying(false);
     }
   };
 
@@ -743,7 +782,24 @@ export default function DashboardPage() {
                   ) : (
                     <>
                       <span>🤖</span>
-                      <span>Verificar con IA</span>
+                      <span>Verificar</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleBulkVerify}
+                  disabled={isBulkVerifying || iniciativas.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-sans-tech text-sm font-medium"
+                >
+                  {isBulkVerifying ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Verificando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🔄</span>
+                      <span>Verificar Todas</span>
                     </>
                   )}
                 </button>
@@ -794,9 +850,20 @@ export default function DashboardPage() {
                             selectedIniciativa?.id === ini.id ? 'bg-blue-50 border-l-2 border-blue-500' : ''
                           }`}
                         >
-                          <p className="font-mono text-[10px] text-gray-400 mb-1">{ini.id}</p>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-mono text-[10px] text-gray-400">{ini.id}</p>
+                            {ini.estadoVerificacion && (
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                                ini.estadoVerificacion === 'verificado' ? 'bg-green-100 text-green-700' :
+                                ini.estadoVerificacion === 'revision' ? 'bg-orange-100 text-orange-700' :
+                                'bg-gray-100 text-gray-500'
+                              }`}>
+                                {ini.estadoVerificacion === 'verificado' ? '✓ Verificado' : '⚠ Revisión'}
+                              </span>
+                            )}
+                          </div>
                           <p className="font-sans-tech text-sm text-gray-900 line-clamp-2 mb-1">{ini.titulo}</p>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                               ini.estatus === 'Aprobada' ? 'bg-green-100 text-green-700' :
                               ini.estatus === 'Rechazada' ? 'bg-red-100 text-red-700' :
@@ -806,6 +873,11 @@ export default function DashboardPage() {
                               {ini.estatus}
                             </span>
                             <span className="text-[10px] text-gray-400">{ini.categoria}</span>
+                            {ini.fechaVerificacion && (
+                              <span className="text-[9px] text-gray-400">
+                                Verificado: {new Date(ini.fechaVerificacion).toLocaleDateString('es-MX')}
+                              </span>
+                            )}
                           </div>
                         </button>
                       ))}
@@ -1160,6 +1232,113 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Resultados Verificación Bulk */}
+      {showBulkModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={() => !isBulkVerifying && setShowBulkModal(false)}
+          />
+          
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+                  <span className="text-xl">🔄</span>
+                </div>
+                <div>
+                  <h2 className="font-sans-tech font-semibold text-gray-900">
+                    Verificación Masiva
+                  </h2>
+                  <p className="font-sans-tech text-xs text-gray-500">
+                    {isBulkVerifying ? 'Verificando iniciativas...' : 'Resultados de la verificación'}
+                  </p>
+                </div>
+              </div>
+              {!isBulkVerifying && (
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              )}
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {isBulkVerifying ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+                  <p className="font-sans-tech text-gray-600">
+                    Verificando {iniciativas.length} iniciativas...
+                  </p>
+                  <p className="font-sans-tech text-sm text-gray-400 mt-2">
+                    Esto puede tomar varios minutos
+                  </p>
+                </div>
+              ) : bulkResults ? (
+                <div className="space-y-4">
+                  {/* Resumen */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <p className="font-sans-tech text-2xl font-bold text-gray-900">{bulkResults.total}</p>
+                      <p className="font-sans-tech text-xs text-gray-500">Total</p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <p className="font-sans-tech text-2xl font-bold text-green-600">{bulkResults.verificados}</p>
+                      <p className="font-sans-tech text-xs text-green-600">Verificados</p>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-4 text-center">
+                      <p className="font-sans-tech text-2xl font-bold text-orange-600">{bulkResults.revision}</p>
+                      <p className="font-sans-tech text-xs text-orange-600">Revisión</p>
+                    </div>
+                  </div>
+
+                  {/* Lista de resultados */}
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {bulkResults.results?.map((result: any, idx: number) => (
+                      <div 
+                        key={idx}
+                        className={`flex items-start gap-3 p-3 rounded-lg ${
+                          result.estadoVerificacion === 'verificado' ? 'bg-green-50' : 'bg-orange-50'
+                        }`}
+                      >
+                        <span className="text-lg">
+                          {result.estadoVerificacion === 'verificado' ? '✓' : '⚠'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-[10px] text-gray-500">{result.id}</p>
+                          <p className="font-sans-tech text-sm text-gray-900 truncate">{result.titulo}</p>
+                          <p className="font-sans-tech text-xs text-gray-500 mt-1">{result.summary}</p>
+                        </div>
+                        <span className={`shrink-0 px-2 py-1 rounded text-[10px] font-medium ${
+                          result.confidence === 'high' ? 'bg-green-200 text-green-800' :
+                          result.confidence === 'medium' ? 'bg-yellow-200 text-yellow-800' :
+                          'bg-red-200 text-red-800'
+                        }`}>
+                          {result.confidence}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {!isBulkVerifying && (
+              <div className="flex items-center justify-end px-6 py-4 border-t border-gray-200 bg-gray-50">
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  className="px-6 py-2 bg-indigo-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

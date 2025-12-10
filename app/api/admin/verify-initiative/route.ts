@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { requireAdmin } from '@/lib/auth';
+import { getAdminDb } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -127,9 +128,28 @@ Verifica la siguiente iniciativa legislativa:
       };
     }
 
+    // Guardar resultado en Firestore
+    const estadoVerificacion = verification.verified && verification.confidence !== 'low' 
+      ? 'verificado' 
+      : 'revision';
+    
+    try {
+      const db = getAdminDb();
+      await db.collection('iniciativas').doc(initiative.id).update({
+        estadoVerificacion,
+        fechaVerificacion: new Date().toISOString(),
+        resultadoVerificacion: verification,
+        updatedAt: new Date()
+      });
+    } catch (saveError) {
+      console.error('Error saving verification to Firestore:', saveError);
+    }
+
     return NextResponse.json({
       success: true,
       verification,
+      estadoVerificacion,
+      fechaVerificacion: new Date().toISOString(),
       usage: message.usage
     });
 
