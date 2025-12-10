@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     
     // @ts-ignore - web_search tool type
     const message = await client.messages.create({
-      model: "claude-haiku-4-5-20250516",
+      model: "claude-3-5-haiku-20241022",
       max_tokens: 4096,
       tools: [{
         type: "web_search_20250305",
