@@ -96,9 +96,10 @@ export default function DashboardPage() {
 
   // Bulk verification states
   const [isBulkVerifying, setIsBulkVerifying] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkResults, setBulkResults] = useState<any>(null);
+  const [bulkLimit, setBulkLimit] = useState(10);
+  const [excludeVerified, setExcludeVerified] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -283,18 +284,20 @@ export default function DashboardPage() {
     }
   };
 
-  // Verificar todas las iniciativas
+  // Verificar iniciativas (con opciones)
   const handleBulkVerify = async () => {
     setIsBulkVerifying(true);
     setBulkResults(null);
     setShowBulkModal(true);
-    setBulkProgress({ current: 0, total: iniciativas.length });
 
     try {
       const response = await fetch('/api/admin/verify-initiatives-bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ iniciativaIds: iniciativas.map(i => i.id) })
+        body: JSON.stringify({ 
+          excludeVerified,
+          limit: bulkLimit
+        })
       });
 
       const data = await response.json();
@@ -787,21 +790,12 @@ export default function DashboardPage() {
                   )}
                 </button>
                 <button
-                  onClick={handleBulkVerify}
-                  disabled={isBulkVerifying || iniciativas.length === 0}
+                  onClick={() => { setBulkResults(null); setShowBulkModal(true); }}
+                  disabled={iniciativas.length === 0}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-sans-tech text-sm font-medium"
                 >
-                  {isBulkVerifying ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Verificando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>🔄</span>
-                      <span>Verificar Todas</span>
-                    </>
-                  )}
+                  <span>🔄</span>
+                  <span>Verificar Lote</span>
                 </button>
                 <button
                   onClick={closeEditModal}
@@ -1270,14 +1264,60 @@ export default function DashboardPage() {
             </div>
 
             <div className="p-6 overflow-y-auto max-h-[60vh]">
-              {isBulkVerifying ? (
+              {!isBulkVerifying && !bulkResults ? (
+                /* Configuración antes de iniciar */
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                      Cantidad a verificar
+                    </label>
+                    <select
+                      value={bulkLimit}
+                      onChange={(e) => setBulkLimit(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm"
+                    >
+                      <option value={5}>5 iniciativas</option>
+                      <option value={10}>10 iniciativas</option>
+                      <option value={20}>20 iniciativas</option>
+                      <option value={50}>50 iniciativas</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="excludeVerified"
+                      checked={excludeVerified}
+                      onChange={(e) => setExcludeVerified(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300"
+                    />
+                    <label htmlFor="excludeVerified" className="font-sans-tech text-sm text-gray-700">
+                      Excluir las ya verificadas (solo pendientes)
+                    </label>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                    <p className="font-sans-tech text-sm text-blue-800">
+                      💡 La verificación se hace una por una con pausas para evitar errores. 
+                      Cada verificación toma ~10-15 segundos.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleBulkVerify}
+                    className="w-full py-3 bg-indigo-600 text-white font-sans-tech font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    🚀 Iniciar Verificación
+                  </button>
+                </div>
+              ) : isBulkVerifying ? (
                 <div className="text-center py-8">
                   <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
                   <p className="font-sans-tech text-gray-600">
-                    Verificando {iniciativas.length} iniciativas...
+                    Verificando hasta {bulkLimit} iniciativas...
                   </p>
                   <p className="font-sans-tech text-sm text-gray-400 mt-2">
-                    Esto puede tomar varios minutos
+                    Esto puede tomar varios minutos. No cierres esta ventana.
                   </p>
                 </div>
               ) : bulkResults ? (

@@ -4,53 +4,34 @@ import { requireAdmin } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300; // 5 minutos para bulk
+export const maxDuration = 300;
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY
 });
 
-async function verifyInitiative(initiative: any) {
+async function verifyInitiative(initiative: any): Promise<any> {
   try {
     const message = await client.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
+      max_tokens: 2048,
       tools: [{
         type: "web_search_20250305",
         name: "web_search",
       } as any],
       messages: [{
         role: "user",
-        content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. 
+        content: `Eres un experto en derecho mexicano. FECHA ACTUAL: ${new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
 
-**FECHA ACTUAL:** ${new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+Verifica esta iniciativa:
+- ID: ${initiative.id}
+- Título: ${initiative.titulo}
+- Proponente: ${initiative.proponente}
+- Estatus: ${initiative.estatus || initiative.status || 'No especificado'}
+- Entidad: ${initiative.entidadFederativa || 'Federal'}
 
-Verifica la siguiente iniciativa legislativa:
-
-**ID:** ${initiative.id}
-**Título:** ${initiative.titulo}
-**Proponente:** ${initiative.proponente}
-**Estatus Actual:** ${initiative.estatus || initiative.status || 'No especificado'}
-**Legislatura:** ${initiative.legislatura || 'No especificada'}
-**Entidad Federativa:** ${initiative.entidadFederativa || 'Federal'}
-**Cámara:** ${initiative.camara || 'No especificada'}
-**URL Gaceta:** ${initiative.urlGaceta || 'No disponible'}
-
-**Descripción:** ${initiative.descripcion || 'No disponible'}
-
----
-
-Busca en fuentes oficiales (diputados.gob.mx, senado.gob.mx, congresos estatales, dof.gob.mx) para verificar esta iniciativa.
-
-**RESPONDE ÚNICAMENTE CON JSON:**
-{
-  "verified": true/false,
-  "confidence": "high" | "medium" | "low",
-  "summary": "Resumen breve",
-  "flags": ["alertas si hay"]
-}
-
-Solo JSON, sin texto adicional.`
+Busca en fuentes oficiales y responde SOLO con JSON:
+{"verified": true/false, "confidence": "high"|"medium"|"low", "summary": "resumen breve", "flags": []}`
       }]
     });
 
@@ -65,9 +46,10 @@ Solo JSON, sin texto adicional.`
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }
-    return { verified: false, confidence: 'low', summary: 'Error al parsear', flags: [] };
+    return { verified: false, confidence: 'low', summary: 'Error al parsear', flags: ['Parse error'] };
   } catch (error: any) {
-    return { verified: false, confidence: 'low', summary: error.message, flags: ['Error en verificación'] };
+    console.error(`Error verificando ${initiative.id}:`, error.message);
+    return { verified: false, confidence: 'low', summary: 'Error: ' + error.message, flags: ['API error'] };
   }
 }
 
@@ -76,54 +58,86 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const { iniciativaIds } = await request.json();
+    const body = await request.json();
+    const { iniciativaIds, excludeVerified = true, limit = 10 } = body;
+    
     const db = getAdminDb();
     
-    // Si no se pasan IDs, obtener todas
-    let ids = iniciativaIds;
-    if (!ids || ids.length === 0) {
-      const snapshot = await db.collection('iniciativas').get();
-      ids = snapshot.docs.map(doc => doc.id);
+    // Obtener iniciativas
+    let query = db.collection('iniciativas');
+    const snapshot = await query.get();
+    
+    let docs = snapshot.docs;
+    
+    // Filtrar por IDs si se proporcionan
+    if (iniciativaIds && iniciativaIds.length > 0) {
+      docs = docs.filter(doc => iniciativaIds.includes(doc.id));
+    }
+    
+    // Excluir ya verificadas si se solicita
+    if (excludeVerified) {
+      docs = docs.filter(doc => {
+        const data = doc.data();
+        return !data.estadoVerificacion || data.estadoVerificacion === 'pendiente';
+      });
+    }
+    
+    // Limitar cantidad
+    docs = docs.slice(0, limit);
+    
+    if (docs.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: 'No hay iniciativas pendientes de verificar',
+        total: 0,
+        verificados: 0,
+        revision: 0,
+        results: []
+      });
     }
 
     const results = [];
     
-    for (const id of ids) {
-      const docRef = db.collection('iniciativas').doc(id);
-      const doc = await docRef.get();
-      
-      if (!doc.exists) {
-        results.push({ id, status: 'not_found' });
-        continue;
-      }
-
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+      const id = doc.id;
       const data = doc.data();
       const initiative = { id, ...data } as any;
+      
+      console.log(`[Bulk] Verificando ${i + 1}/${docs.length}: ${id}`);
+      
+      // Verificar con IA
       const verification = await verifyInitiative(initiative);
       
-      // Determinar estado: Verificado o Revisión
+      // Determinar estado
       const estadoVerificacion = verification.verified && verification.confidence !== 'low' 
         ? 'verificado' 
         : 'revision';
       
       // Guardar en Firestore
-      await docRef.update({
-        estadoVerificacion,
-        fechaVerificacion: new Date().toISOString(),
-        resultadoVerificacion: verification,
-        updatedAt: new Date()
-      });
+      try {
+        await db.collection('iniciativas').doc(id).update({
+          estadoVerificacion,
+          fechaVerificacion: new Date().toISOString(),
+          resultadoVerificacion: verification,
+          updatedAt: new Date()
+        });
+      } catch (saveError: any) {
+        console.error(`Error guardando ${id}:`, saveError.message);
+      }
 
       results.push({
         id,
-        titulo: initiative.titulo?.substring(0, 50),
+        titulo: initiative.titulo?.substring(0, 50) || 'Sin título',
         estadoVerificacion,
         confidence: verification.confidence,
         summary: verification.summary
       });
 
-      // Pequeña pausa entre verificaciones para no saturar la API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Pausa entre verificaciones para no saturar la API
+      if (i < docs.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
 
     const verificados = results.filter(r => r.estadoVerificacion === 'verificado').length;
@@ -134,6 +148,7 @@ export async function POST(request: NextRequest) {
       total: results.length,
       verificados,
       revision,
+      pendientes: snapshot.size - results.length,
       results
     });
 
