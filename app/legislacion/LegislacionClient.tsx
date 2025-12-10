@@ -24,7 +24,11 @@ export default function LegislacionClient({ iniciativas }: Props) {
     if (filtroCamara !== 'todos' && i.camara !== filtroCamara) return false;
     if (filtroTema !== 'todos' && !(i.temas || []).includes(filtroTema)) return false;
     if (filtroEstado !== 'todos') {
-      const estado = i.entidadFederativa || (i.camara === 'Local' && i.legislatura?.includes('CDMX') ? 'Ciudad de México' : (i.camara === 'Local' && i.legislatura?.includes('SLP') ? 'San Luis Potosí' : (i.camara === 'Diputados' || i.camara === 'Senado' ? 'Federal' : null)));
+      const camara = i.camara as string;
+      const estado = i.entidadFederativa || 
+        (camara === 'Local' && i.legislatura?.includes('CDMX') ? 'Ciudad de México' : 
+        (camara === 'Local' && i.legislatura?.includes('SLP') ? 'San Luis Potosí' : 
+        (camara === 'Diputados' || camara === 'Senado' ? 'Federal' : null)));
       if (estado !== filtroEstado) return false;
     }
     if (busqueda) {
