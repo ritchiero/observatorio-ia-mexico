@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle, Edit, Search, Save } from 'lucide-react';
+import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle, Edit, Search, Save, RefreshCw } from 'lucide-react';
 
 interface ImportResult {
   id: string;
@@ -103,8 +103,8 @@ export default function DashboardPage() {
 
   // JSON edit mode
   const [jsonEditMode, setJsonEditMode] = useState(false);
-  const [jsonInput, setJsonInput] = useState('');
-  const [jsonError, setJsonError] = useState('');
+  const [editJsonInput, setEditJsonInput] = useState('');
+  const [editJsonError, setEditJsonError] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -210,24 +210,24 @@ export default function DashboardPage() {
     setSaveMessage(null);
     setVerificationResult(null);
     setJsonEditMode(false);
-    setJsonError('');
+    setEditJsonError('');
     // Preparar JSON para edición
     const jsonData = { ...ini };
     delete (jsonData as any).id; // No editar el ID
-    setJsonInput(JSON.stringify(jsonData, null, 2));
+    setEditJsonInput(JSON.stringify(jsonData, null, 2));
   };
 
   const handleSaveFromJson = async () => {
     if (!selectedIniciativa) return;
     
-    setJsonError('');
+    setEditJsonError('');
     
     // Validar JSON
     let parsedJson;
     try {
-      parsedJson = JSON.parse(jsonInput);
+      parsedJson = JSON.parse(editJsonInput);
     } catch (e) {
-      setJsonError('JSON inválido. Verifica el formato.');
+      setEditJsonError('JSON inválido. Verifica el formato.');
       return;
     }
 
@@ -1002,17 +1002,17 @@ export default function DashboardPage() {
                             Editar JSON
                           </label>
                           <textarea
-                            value={jsonInput}
+                            value={editJsonInput}
                             onChange={(e) => {
-                              setJsonInput(e.target.value);
-                              setJsonError('');
+                              setEditJsonInput(e.target.value);
+                              setEditJsonError('');
                             }}
                             rows={20}
                             className="w-full px-3 py-2 bg-gray-900 text-green-400 border border-gray-700 rounded-lg font-mono text-xs focus:outline-none focus:border-blue-500 resize-none"
                             spellCheck={false}
                           />
-                          {jsonError && (
-                            <p className="mt-2 text-red-500 text-xs font-sans-tech">{jsonError}</p>
+                          {editJsonError && (
+                            <p className="mt-2 text-red-500 text-xs font-sans-tech">{editJsonError}</p>
                           )}
                         </div>
                         <div className="flex gap-3">
@@ -1038,8 +1038,8 @@ export default function DashboardPage() {
                               // Reset JSON to current state
                               const jsonData = { ...selectedIniciativa };
                               delete (jsonData as any).id;
-                              setJsonInput(JSON.stringify(jsonData, null, 2));
-                              setJsonError('');
+                              setEditJsonInput(JSON.stringify(jsonData, null, 2));
+                              setEditJsonError('');
                             }}
                             className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-sans-tech text-sm hover:bg-gray-200 transition-all"
                           >
@@ -1058,7 +1058,7 @@ export default function DashboardPage() {
                       </div>
                     ) : (
                       <>
-                    {/* Título */}
+                        {/* Título */}
                     <div>
                       <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
                         Título
@@ -1392,7 +1392,6 @@ export default function DashboardPage() {
                         </>
                       )}
                     </button>
-                  </div>
                       </>
                     )}
                   </div>
