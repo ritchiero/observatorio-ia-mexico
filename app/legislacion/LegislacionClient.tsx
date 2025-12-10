@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto } from '@/types';
-import { FileText, Scale, TrendingUp, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, Scale, TrendingUp, AlertCircle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 interface Props {
@@ -346,8 +346,16 @@ export default function LegislacionClient({ iniciativas }: Props) {
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-blue-600 font-medium">
-                          {iniciativa.titulo}
+                        <div className="flex items-start gap-2">
+                          <div className="text-blue-600 font-medium flex-1">
+                            {iniciativa.titulo}
+                          </div>
+                          {iniciativa.estadoVerificacion === 'verificado' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                              <ShieldCheck size={12} />
+                              IA Verificado
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500 mt-1">
                           {iniciativa.tipo} · {iniciativa.camara}
@@ -436,6 +444,30 @@ export default function LegislacionClient({ iniciativas }: Props) {
                                 </div>
                               )}
                             
+                              {/* Verificación con IA */}
+                              {iniciativa.estadoVerificacion === 'verificado' && (
+                                <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                                    <span className="font-bold text-emerald-800 text-sm">Verificado por AI Agent</span>
+                                  </div>
+                                  <p className="text-xs text-emerald-700">
+                                    Modelo: Claude Sonnet 4 (Anthropic)
+                                    {iniciativa.fechaVerificacion && (
+                                      <span className="ml-2">
+                                        • {new Date(iniciativa.fechaVerificacion).toLocaleDateString('es-MX', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })}
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                              )}
+
                               {/* Enlaces */}
                               <div className="flex gap-4 mt-4">
                                 <Link 

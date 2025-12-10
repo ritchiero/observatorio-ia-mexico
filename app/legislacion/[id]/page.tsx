@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { IniciativaStatus } from '@/types';
-import { ArrowLeft, Scale, Calendar, User, Building, FileText, ExternalLink, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Scale, Calendar, User, Building, FileText, ExternalLink, AlertCircle, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -35,6 +35,9 @@ interface IniciativaAPI {
     url: string;
     tipo: string;
   }>;
+  // Verificación con IA
+  estadoVerificacion?: 'verificado' | 'revision' | 'pendiente';
+  fechaVerificacion?: string;
 }
 
 export default function IniciativaDetallePage() {
@@ -155,11 +158,42 @@ export default function IniciativaDetallePage() {
           </h1>
 
           {/* Status badge */}
-          <div className="mb-6">
+          <div className="mb-6 flex flex-wrap gap-3">
             <span className={`inline-flex items-center px-4 py-2 rounded-sm text-sm font-sans border ${badge.color}`}>
               {badge.text}
             </span>
+            {iniciativa.estadoVerificacion === 'verificado' && (
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-sans border bg-emerald-50 text-emerald-700 border-emerald-200">
+                <ShieldCheck size={16} />
+                Verificado por AI Agent
+              </span>
+            )}
           </div>
+          
+          {/* Verificación con IA - Detalle */}
+          {iniciativa.estadoVerificacion === 'verificado' && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                <span className="font-sans font-bold text-emerald-800">Información Verificada por IA</span>
+              </div>
+              <p className="text-sm text-emerald-700">
+                Esta iniciativa ha sido verificada automáticamente utilizando <strong>Claude Sonnet 4</strong> de Anthropic, 
+                con búsqueda en fuentes oficiales del gobierno mexicano.
+              </p>
+              {iniciativa.fechaVerificacion && (
+                <p className="text-xs text-emerald-600 mt-2 font-mono">
+                  Última verificación: {new Date(iniciativa.fechaVerificacion).toLocaleDateString('es-MX', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Metadata grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 border border-gray-200 rounded-sm">

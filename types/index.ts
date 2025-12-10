@@ -420,6 +420,10 @@ export interface IniciativaLegislativa {
   resumen?: string; // Resumen de qué propone la iniciativa
   categoriasImpacto?: CategoriaImpacto[]; // Categorías afectadas
   
+  // Verificación con IA
+  estadoVerificacion?: 'verificado' | 'revision' | 'pendiente';
+  fechaVerificacion?: string;
+  
   // Metadata
   creadoManualmente: boolean;
   createdAt: Timestamp;
