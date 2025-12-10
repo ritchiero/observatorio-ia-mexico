@@ -220,8 +220,14 @@ export default function DashboardPage() {
   const handleSaveFromJson = async () => {
     if (!selectedIniciativa) return;
     
+    // 🔍 DEBUG: Verificar estado de la iniciativa
+    console.log('🔍 [PROTECCIÓN] Iniciativa seleccionada:', selectedIniciativa);
+    console.log('🔍 [PROTECCIÓN] Estado de verificación:', selectedIniciativa.estadoVerificacion);
+    console.log('🔍 [PROTECCIÓN] ¿Es verificado?:', selectedIniciativa.estadoVerificacion === 'verificado');
+    
     // 🔒 PROTECCIÓN: Impedir modificación de iniciativas verificadas
     if (selectedIniciativa.estadoVerificacion === 'verificado') {
+      console.log('⚠️ [PROTECCIÓN] Bloqueando edición de iniciativa verificada');
       const confirmar = confirm(
         '⚠️ ADVERTENCIA: Esta iniciativa está verificada por IA.\n\n' +
         'No se puede modificar manualmente una iniciativa verificada.\n' +
@@ -232,8 +238,11 @@ export default function DashboardPage() {
       );
       
       if (confirmar) {
+        console.log('🔄 [PROTECCIÓN] Usuario confirmó reverificación');
         // Llamar a la función de verificación
         await handleVerifyInitiative();
+      } else {
+        console.log('❌ [PROTECCIÓN] Usuario canceló la acción');
       }
       return;
     }
