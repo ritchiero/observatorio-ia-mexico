@@ -36,42 +36,65 @@ export default function DashboardPage() {
     return null;
   }
 
-  const adminActions = [
+  const sections = [
     {
-      title: 'Importar Iniciativas',
-      description: 'Importar nuevas iniciativas legislativas desde JSON',
-      icon: Upload,
-      href: '/api/admin/import-iniciativas',
-      method: 'POST',
-    },
-    {
-      title: 'Actualizar PDFs',
-      description: 'Actualizar URLs de documentos PDF',
-      icon: FileText,
-      href: '/api/admin/update-pdf-urls',
-      method: 'POST',
-    },
-    {
-      title: 'Poblar Timeline',
-      description: 'Generar timeline de eventos',
-      icon: Calendar,
-      href: '/api/admin/poblar-timeline',
-      method: 'POST',
-    },
-    {
-      title: 'Actualizar Anuncio',
-      description: 'Modificar anuncios existentes',
+      id: 'proyectos',
+      title: 'Proyectos Federales',
+      subtitle: 'Anuncios gubernamentales de IA',
       icon: Megaphone,
-      href: '/api/admin/update-anuncio',
-      method: 'POST',
+      actions: [
+        {
+          title: 'Ver Anuncios',
+          description: 'Lista de todos los proyectos federales anunciados',
+          icon: Eye,
+          href: '/api/anuncios',
+          method: 'GET',
+        },
+        {
+          title: 'Actualizar Anuncio',
+          description: 'Modificar información de un anuncio existente',
+          icon: Megaphone,
+          href: '/api/admin/update-anuncio',
+          method: 'POST',
+        },
+        {
+          title: 'Poblar Timeline',
+          description: 'Generar timeline de eventos para un anuncio',
+          icon: Calendar,
+          href: '/api/admin/poblar-timeline',
+          method: 'POST',
+        },
+      ]
     },
     {
-      title: 'Gestionar Iniciativas',
-      description: 'Ver y editar iniciativas',
+      id: 'iniciativas',
+      title: 'Iniciativas Legislativas',
+      subtitle: 'Propuestas de ley y regulación',
       icon: Scale,
-      href: '/api/admin/iniciativas',
-      method: 'GET',
-    }
+      actions: [
+        {
+          title: 'Ver Iniciativas',
+          description: 'Lista de todas las iniciativas legislativas',
+          icon: Scale,
+          href: '/api/iniciativas',
+          method: 'GET',
+        },
+        {
+          title: 'Importar Iniciativas',
+          description: 'Importar nuevas iniciativas desde JSON',
+          icon: Upload,
+          href: '/api/admin/import-iniciativas',
+          method: 'POST',
+        },
+        {
+          title: 'Actualizar PDFs',
+          description: 'Actualizar URLs de documentos PDF',
+          icon: FileText,
+          href: '/api/admin/update-pdf-urls',
+          method: 'POST',
+        },
+      ]
+    },
   ];
 
   return (
@@ -147,46 +170,68 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Actions Grid */}
-            <div className={`mb-12 ${mounted ? 'animate-reveal delay-100' : 'opacity-0'}`}>
-              <h2 className="font-sans-tech text-xs uppercase tracking-widest text-gray-900/40 mb-6">
-                Acciones disponibles
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {adminActions.map((action, index) => {
-                  const IconComponent = action.icon;
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
-                      }}
-                      className="group bg-gray-50 border border-gray-300/10 rounded-xl p-6 text-left hover:border-blue-500/30 hover:bg-white transition-all duration-300 backdrop-blur-sm"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center group-hover:bg-blue-500 group-hover:border-blue-500 transition-all duration-300">
-                          <IconComponent size={18} className="text-blue-500 group-hover:text-white transition-colors" />
-                        </div>
-                        <span className="font-mono text-[10px] text-gray-400 uppercase px-2 py-1 bg-gray-100 rounded">
-                          {action.method}
-                        </span>
+            {/* Sections */}
+            <div className="space-y-12">
+              {sections.map((section, sectionIndex) => {
+                const SectionIcon = section.icon;
+                return (
+                  <div 
+                    key={section.id} 
+                    className={`${mounted ? `animate-reveal delay-${(sectionIndex + 1) * 100}` : 'opacity-0'}`}
+                  >
+                    {/* Section Header */}
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
+                        <SectionIcon size={18} className="text-blue-500" />
                       </div>
-                      
-                      <h3 className="font-sans-tech font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                        {action.title}
-                      </h3>
-                      <p className="font-sans-tech text-sm text-gray-900/50">
-                        {action.description}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
+                      <div>
+                        <h2 className="font-sans-tech font-semibold text-gray-900">
+                          {section.title}
+                        </h2>
+                        <p className="font-sans-tech text-xs text-gray-900/50">
+                          {section.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Section Actions */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {section.actions.map((action, actionIndex) => {
+                        const IconComponent = action.icon;
+                        return (
+                          <button
+                            key={actionIndex}
+                            onClick={() => {
+                              alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
+                            }}
+                            className="group bg-gray-50 border border-gray-300/10 rounded-xl p-6 text-left hover:border-blue-500/30 hover:bg-white transition-all duration-300 backdrop-blur-sm"
+                          >
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center group-hover:bg-blue-500 group-hover:border-blue-500 transition-all duration-300">
+                                <IconComponent size={18} className="text-gray-500 group-hover:text-white transition-colors" />
+                              </div>
+                              <span className="font-mono text-[10px] text-gray-400 uppercase px-2 py-1 bg-gray-100 rounded">
+                                {action.method}
+                              </span>
+                            </div>
+                            
+                            <h3 className="font-sans-tech font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                              {action.title}
+                            </h3>
+                            <p className="font-sans-tech text-sm text-gray-900/50">
+                              {action.description}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Info Card */}
-            <div className={`${mounted ? 'animate-reveal delay-200' : 'opacity-0'}`}>
+            <div className={`mt-12 ${mounted ? 'animate-reveal delay-300' : 'opacity-0'}`}>
               <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
