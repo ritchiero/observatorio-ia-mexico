@@ -101,6 +101,11 @@ export default function DashboardPage() {
   const [bulkLimit, setBulkLimit] = useState(10);
   const [excludeVerified, setExcludeVerified] = useState(true);
 
+  // JSON edit mode
+  const [jsonEditMode, setJsonEditMode] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
+  const [jsonError, setJsonError] = useState('');
+
   useEffect(() => {
     setMounted(true);
     if (status === 'unauthenticated') {
@@ -204,6 +209,63 @@ export default function DashboardPage() {
     });
     setSaveMessage(null);
     setVerificationResult(null);
+    setJsonEditMode(false);
+    setJsonError('');
+    // Preparar JSON para edición
+    const jsonData = { ...ini };
+    delete (jsonData as any).id; // No editar el ID
+    setJsonInput(JSON.stringify(jsonData, null, 2));
+  };
+
+  const handleSaveFromJson = async () => {
+    if (!selectedIniciativa) return;
+    
+    setJsonError('');
+    
+    // Validar JSON
+    let parsedJson;
+    try {
+      parsedJson = JSON.parse(jsonInput);
+    } catch (e) {
+      setJsonError('JSON inválido. Verifica el formato.');
+      return;
+    }
+
+    setSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/iniciativas', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-key': 'admin-key-placeholder'
+        },
+        body: JSON.stringify({
+          id: selectedIniciativa.id,
+          ...parsedJson,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSaveMessage({ type: 'success', text: 'Iniciativa actualizada desde JSON' });
+        // Actualizar la lista local
+        const updatedIniciativa = { ...selectedIniciativa, ...parsedJson };
+        setIniciativas(prev => prev.map(ini => 
+          ini.id === selectedIniciativa.id ? updatedIniciativa : ini
+        ));
+        setSelectedIniciativa(updatedIniciativa);
+        setEditForm(parsedJson);
+      } else {
+        setSaveMessage({ type: 'error', text: data.error || 'Error al guardar' });
+      }
+    } catch (err: any) {
+      setSaveMessage({ type: 'error', text: err.message || 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSaveIniciativa = async () => {
@@ -910,16 +972,92 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* ID (solo lectura) */}
-                    <div>
-                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                        ID
-                      </label>
-                      <p className="font-mono text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-                        {selectedIniciativa.id}
-                      </p>
+                    {/* Toggle Modo JSON / Formulario */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                          ID
+                        </label>
+                        <p className="font-mono text-xs text-gray-600">
+                          {selectedIniciativa.id}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setJsonEditMode(!jsonEditMode)}
+                        className={`px-3 py-1.5 rounded-lg font-sans-tech text-xs transition-all ${
+                          jsonEditMode 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {jsonEditMode ? '📝 Modo Formulario' : '{ } Modo JSON'}
+                      </button>
                     </div>
 
+                    {/* Modo JSON */}
+                    {jsonEditMode ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-2">
+                            Editar JSON
+                          </label>
+                          <textarea
+                            value={jsonInput}
+                            onChange={(e) => {
+                              setJsonInput(e.target.value);
+                              setJsonError('');
+                            }}
+                            rows={20}
+                            className="w-full px-3 py-2 bg-gray-900 text-green-400 border border-gray-700 rounded-lg font-mono text-xs focus:outline-none focus:border-blue-500 resize-none"
+                            spellCheck={false}
+                          />
+                          {jsonError && (
+                            <p className="mt-2 text-red-500 text-xs font-sans-tech">{jsonError}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleSaveFromJson}
+                            disabled={saving}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-lg font-sans-tech text-sm hover:bg-blue-600 transition-all disabled:opacity-50"
+                          >
+                            {saving ? (
+                              <>
+                                <RefreshCw size={16} className="animate-spin" />
+                                Guardando...
+                              </>
+                            ) : (
+                              <>
+                                <Save size={16} />
+                                Guardar JSON
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Reset JSON to current state
+                              const jsonData = { ...selectedIniciativa };
+                              delete (jsonData as any).id;
+                              setJsonInput(JSON.stringify(jsonData, null, 2));
+                              setJsonError('');
+                            }}
+                            className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-sans-tech text-sm hover:bg-gray-200 transition-all"
+                          >
+                            Resetear
+                          </button>
+                        </div>
+                        {saveMessage && (
+                          <div className={`p-3 rounded-lg text-sm font-sans-tech ${
+                            saveMessage.type === 'success' 
+                              ? 'bg-green-50 text-green-700 border border-green-200' 
+                              : 'bg-red-50 text-red-700 border border-red-200'
+                          }`}>
+                            {saveMessage.type === 'success' ? '✅' : '❌'} {saveMessage.text}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
                     {/* Título */}
                     <div>
                       <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
@@ -1255,6 +1393,8 @@ export default function DashboardPage() {
                       )}
                     </button>
                   </div>
+                      </>
+                    )}
                 )}
               </div>
             </div>
