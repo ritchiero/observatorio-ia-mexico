@@ -66,29 +66,26 @@ IMPORTANTE: Debes responder ÚNICAMENTE con un objeto JSON válido, sin texto ad
 {
   "verified": true/false,
   "confidence": "high" | "medium" | "low",
-  "completeness": {
-    "score": 0-100,
-    "missingFields": ["lista de campos faltantes"],
-    "incompleteFields": ["lista de campos incompletos"]
-  },
-  "coherence": {
-    "titleDescriptionMatch": true/false,
-    "dataConsistency": true/false,
-    "issues": ["lista de problemas de coherencia"]
-  },
-  "recommendations": [
-    "Recomendación 1",
-    "Recomendación 2"
-  ],
-  "suggestedCorrections": {
+  "summary": "Resumen breve de la verificación en español (2-3 oraciones)",
+  "currentStatus": "estatus actual verificado o 'no encontrado'",
+  "statusMatch": true/false,
+  "corrections": {
     "titulo": "título sugerido si aplica, o null",
     "estatus": "estatus sugerido si aplica, o null",
-    "descripcion": "descripción mejorada si aplica, o null"
+    "proponente": "proponente corregido si aplica, o null",
+    "urlPDF": "URL de PDF corregida si aplica, o null"
   },
+  "sources": [
+    "URL de fuente oficial 1",
+    "URL de fuente oficial 2"
+  ],
   "flags": [
     "Lista de alertas o problemas encontrados"
   ],
-  "summary": "Resumen breve de la verificación en español (2-3 oraciones)"
+  "recommendations": [
+    "Recomendación 1",
+    "Recomendación 2"
+  ]
 }
 
 Responde ÚNICAMENTE con el JSON, sin texto adicional.`
@@ -106,21 +103,14 @@ Responde ÚNICAMENTE con el JSON, sin texto adicional.`
       verification = {
         verified: false,
         confidence: 'low',
-        completeness: {
-          score: 0,
-          missingFields: [],
-          incompleteFields: []
-        },
-        coherence: {
-          titleDescriptionMatch: false,
-          dataConsistency: false,
-          issues: ['Error al procesar la respuesta']
-        },
-        recommendations: [],
-        suggestedCorrections: {},
+        summary: 'No se pudo completar la verificación. Error al parsear respuesta.',
+        currentStatus: 'no encontrado',
+        statusMatch: false,
+        corrections: {},
+        sources: [],
         flags: ['Error al parsear la respuesta de IA'],
-        summary: 'No se pudo completar la verificación. Respuesta raw: ' + responseText.substring(0, 500),
-        rawResponse: responseText
+        recommendations: [],
+        rawResponse: responseText.substring(0, 500)
       };
     }
 
