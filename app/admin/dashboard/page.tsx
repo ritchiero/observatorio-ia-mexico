@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle, Edit, Search, Save } from 'lucide-react';
 
 interface ImportResult {
   id: string;
@@ -21,17 +21,48 @@ interface ImportResponse {
   results: ImportResult[];
 }
 
+interface Iniciativa {
+  id: string;
+  titulo: string;
+  estatus: string;
+  proponente: string;
+  categoria: string;
+  fecha: string;
+  descripcion?: string;
+  camara?: string;
+}
+
+const ESTATUS_OPTIONS = [
+  'En comisiones',
+  'Aprobada',
+  'Rechazada',
+  'Pendiente',
+  'En revisión',
+  'Publicada',
+  'Archivada',
+];
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   
-  // Modal states
+  // Modal states - Import
   const [showImportModal, setShowImportModal] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResponse | null>(null);
   const [importError, setImportError] = useState('');
+
+  // Modal states - Edit
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [iniciativas, setIniciativas] = useState<Iniciativa[]>([]);
+  const [loadingIniciativas, setLoadingIniciativas] = useState(false);
+  const [selectedIniciativa, setSelectedIniciativa] = useState<Iniciativa | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Iniciativa>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -91,6 +122,97 @@ export default function DashboardPage() {
     setImportError('');
   };
 
+  // Cargar iniciativas para editar
+  const loadIniciativas = async () => {
+    setLoadingIniciativas(true);
+    try {
+      const response = await fetch('/api/iniciativas');
+      const data = await response.json();
+      if (data.success) {
+        setIniciativas(data.data);
+      }
+    } catch (err) {
+      console.error('Error loading iniciativas:', err);
+    } finally {
+      setLoadingIniciativas(false);
+    }
+  };
+
+  const openEditModal = () => {
+    setShowEditModal(true);
+    setSelectedIniciativa(null);
+    setEditForm({});
+    setSaveMessage(null);
+    setSearchTerm('');
+    loadIniciativas();
+  };
+
+  const selectIniciativa = (ini: Iniciativa) => {
+    setSelectedIniciativa(ini);
+    setEditForm({
+      titulo: ini.titulo,
+      estatus: ini.estatus,
+      proponente: ini.proponente,
+      categoria: ini.categoria,
+      descripcion: ini.descripcion || '',
+    });
+    setSaveMessage(null);
+  };
+
+  const handleSaveIniciativa = async () => {
+    if (!selectedIniciativa) return;
+    
+    setSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/iniciativas', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-key': 'admin-key-placeholder' // El endpoint actual requiere esto
+        },
+        body: JSON.stringify({
+          id: selectedIniciativa.id,
+          ...editForm,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSaveMessage({ type: 'success', text: 'Iniciativa actualizada correctamente' });
+        // Actualizar la lista local
+        setIniciativas(prev => prev.map(ini => 
+          ini.id === selectedIniciativa.id 
+            ? { ...ini, ...editForm } 
+            : ini
+        ));
+        setSelectedIniciativa({ ...selectedIniciativa, ...editForm } as Iniciativa);
+      } else {
+        setSaveMessage({ type: 'error', text: data.error || 'Error al guardar' });
+      }
+    } catch (err: any) {
+      setSaveMessage({ type: 'error', text: err.message || 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setSelectedIniciativa(null);
+    setEditForm({});
+    setSaveMessage(null);
+    setSearchTerm('');
+  };
+
+  const filteredIniciativas = iniciativas.filter(ini =>
+    ini.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ini.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ini.proponente?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -146,11 +268,11 @@ export default function DashboardPage() {
       icon: Scale,
       actions: [
         {
-          title: 'Ver Iniciativas',
-          description: 'Lista de todas las iniciativas legislativas',
-          icon: Scale,
-          href: '/api/iniciativas',
-          method: 'GET',
+          title: 'Editar Iniciativa',
+          description: 'Modificar status u otros campos de una iniciativa',
+          icon: Edit,
+          href: '/api/admin/iniciativas',
+          method: 'PUT',
         },
         {
           title: 'Importar Iniciativas',
@@ -277,6 +399,8 @@ export default function DashboardPage() {
                             onClick={() => {
                               if (action.title === 'Importar Iniciativas') {
                                 setShowImportModal(true);
+                              } else if (action.title === 'Editar Iniciativa') {
+                                openEditModal();
                               } else {
                                 alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
                               }
@@ -506,6 +630,220 @@ export default function DashboardPage() {
                   Cerrar
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Editar Iniciativa */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={closeEditModal}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
+                  <Edit size={18} className="text-blue-500" />
+                </div>
+                <div>
+                  <h2 className="font-sans-tech font-semibold text-gray-900">
+                    Editar Iniciativa
+                  </h2>
+                  <p className="font-sans-tech text-xs text-gray-500">
+                    Selecciona una iniciativa para modificar
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeEditModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Lista de iniciativas */}
+              <div className="w-1/2 border-r border-gray-200 flex flex-col">
+                {/* Buscador */}
+                <div className="p-4 border-b border-gray-100">
+                  <div className="relative">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Buscar por título, ID o proponente..."
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Lista */}
+                <div className="flex-1 overflow-y-auto">
+                  {loadingIniciativas ? (
+                    <div className="flex items-center justify-center h-32">
+                      <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                    </div>
+                  ) : filteredIniciativas.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500 font-sans-tech text-sm">
+                      No se encontraron iniciativas
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {filteredIniciativas.map((ini) => (
+                        <button
+                          key={ini.id}
+                          onClick={() => selectIniciativa(ini)}
+                          className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
+                            selectedIniciativa?.id === ini.id ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                          }`}
+                        >
+                          <p className="font-mono text-[10px] text-gray-400 mb-1">{ini.id}</p>
+                          <p className="font-sans-tech text-sm text-gray-900 line-clamp-2 mb-1">{ini.titulo}</p>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                              ini.estatus === 'Aprobada' ? 'bg-green-100 text-green-700' :
+                              ini.estatus === 'Rechazada' ? 'bg-red-100 text-red-700' :
+                              ini.estatus === 'En comisiones' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {ini.estatus}
+                            </span>
+                            <span className="text-[10px] text-gray-400">{ini.categoria}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Formulario de edición */}
+              <div className="w-1/2 p-6 overflow-y-auto">
+                {!selectedIniciativa ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <Scale size={48} className="mx-auto text-gray-300 mb-3" />
+                      <p className="font-sans-tech text-gray-500">
+                        Selecciona una iniciativa para editar
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {/* ID (solo lectura) */}
+                    <div>
+                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                        ID
+                      </label>
+                      <p className="font-mono text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                        {selectedIniciativa.id}
+                      </p>
+                    </div>
+
+                    {/* Título */}
+                    <div>
+                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                        Título
+                      </label>
+                      <textarea
+                        value={editForm.titulo || ''}
+                        onChange={(e) => setEditForm({ ...editForm, titulo: e.target.value })}
+                        rows={2}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500 resize-none"
+                      />
+                    </div>
+
+                    {/* Estatus */}
+                    <div>
+                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                        Estatus
+                      </label>
+                      <select
+                        value={editForm.estatus || ''}
+                        onChange={(e) => setEditForm({ ...editForm, estatus: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                      >
+                        {ESTATUS_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Proponente */}
+                    <div>
+                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                        Proponente
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.proponente || ''}
+                        onChange={(e) => setEditForm({ ...editForm, proponente: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    {/* Categoría */}
+                    <div>
+                      <label className="block font-sans-tech text-xs uppercase tracking-widest text-gray-500 mb-2">
+                        Categoría
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.categoria || ''}
+                        onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    {/* Mensaje de guardado */}
+                    {saveMessage && (
+                      <div className={`flex items-center gap-2 px-4 py-3 rounded-lg ${
+                        saveMessage.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                      }`}>
+                        {saveMessage.type === 'success' ? (
+                          <CheckCircle size={16} className="text-green-500" />
+                        ) : (
+                          <AlertCircle size={16} className="text-red-500" />
+                        )}
+                        <span className={`font-sans-tech text-sm ${
+                          saveMessage.type === 'success' ? 'text-green-700' : 'text-red-700'
+                        }`}>
+                          {saveMessage.text}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Botón guardar */}
+                    <button
+                      onClick={handleSaveIniciativa}
+                      disabled={saving}
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {saving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        <>
+                          <Save size={16} />
+                          Guardar cambios
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

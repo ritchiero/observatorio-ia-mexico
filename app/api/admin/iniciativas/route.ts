@@ -62,7 +62,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar iniciativa existente
 export async function PUT(request: NextRequest) {
-  if (!verifyAdminKey(request)) {
+  // Verificar autenticación de administrador (sesión o API key)
+  const authError = await requireAdmin();
+  if (authError && !verifyAdminKey(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -113,7 +115,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar iniciativa
 export async function DELETE(request: NextRequest) {
-  if (!verifyAdminKey(request)) {
+  // Verificar autenticación de administrador (sesión o API key)
+  const authError = await requireAdmin();
+  if (authError && !verifyAdminKey(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
