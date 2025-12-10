@@ -4,12 +4,34 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info } from 'lucide-react';
+import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle } from 'lucide-react';
+
+interface ImportResult {
+  id: string;
+  titulo: string;
+  status: 'success' | 'error';
+  error?: string;
+}
+
+interface ImportResponse {
+  success: boolean;
+  total: number;
+  imported: number;
+  errors: number;
+  results: ImportResult[];
+}
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  
+  // Modal states
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResponse | null>(null);
+  const [importError, setImportError] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -17,6 +39,57 @@ export default function DashboardPage() {
       router.push('/admin/login');
     }
   }, [status, router]);
+
+  const handleImportIniciativas = async () => {
+    setImporting(true);
+    setImportError('');
+    setImportResult(null);
+
+    try {
+      // Parsear el JSON
+      let iniciativas;
+      try {
+        const parsed = JSON.parse(jsonInput);
+        iniciativas = Array.isArray(parsed) ? parsed : parsed.iniciativas;
+      } catch {
+        setImportError('JSON inválido. Verifica el formato.');
+        setImporting(false);
+        return;
+      }
+
+      if (!Array.isArray(iniciativas) || iniciativas.length === 0) {
+        setImportError('El JSON debe contener un array de iniciativas.');
+        setImporting(false);
+        return;
+      }
+
+      // Llamar al API
+      const response = await fetch('/api/admin/import-iniciativas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ iniciativas }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setImportError(data.error || 'Error al importar');
+      } else {
+        setImportResult(data);
+      }
+    } catch (err: any) {
+      setImportError(err.message || 'Error de conexión');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const closeModal = () => {
+    setShowImportModal(false);
+    setJsonInput('');
+    setImportResult(null);
+    setImportError('');
+  };
 
   if (status === 'loading') {
     return (
@@ -202,7 +275,11 @@ export default function DashboardPage() {
                           <button
                             key={actionIndex}
                             onClick={() => {
-                              alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
+                              if (action.title === 'Importar Iniciativas') {
+                                setShowImportModal(true);
+                              } else {
+                                alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
+                              }
                             }}
                             className="group bg-gray-50 border border-gray-300/10 rounded-xl p-6 text-left hover:border-blue-500/30 hover:bg-white transition-all duration-300 backdrop-blur-sm"
                           >
@@ -270,6 +347,169 @@ export default function DashboardPage() {
           </div>
         </footer>
       </div>
+
+      {/* Modal: Importar Iniciativas */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={closeModal}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center">
+                  <Upload size={18} className="text-blue-500" />
+                </div>
+                <div>
+                  <h2 className="font-sans-tech font-semibold text-gray-900">
+                    Importar Iniciativas
+                  </h2>
+                  <p className="font-sans-tech text-xs text-gray-500">
+                    Pega el JSON con las iniciativas a importar
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {!importResult ? (
+                <>
+                  {/* Formato esperado */}
+                  <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="font-sans-tech text-xs text-gray-600 mb-2">
+                      <strong>Formato esperado:</strong>
+                    </p>
+                    <pre className="font-mono text-xs text-gray-500 overflow-x-auto">
+{`[
+  {
+    "id": "iniciativa-70",  // opcional
+    "Propuesta": "Título de la iniciativa",
+    "Proponente": "Nombre del proponente",
+    "Fecha": "15/01/2025",  // DD/MM/YYYY
+    "Estado": "En comisiones",
+    "Legislatura": "LXVI",
+    "Tipo": "ley_federal",
+    "Descripción": "Descripción...",
+    "Fuente": "https://..."
+  }
+]`}
+                    </pre>
+                  </div>
+
+                  {/* Textarea */}
+                  <textarea
+                    value={jsonInput}
+                    onChange={(e) => setJsonInput(e.target.value)}
+                    placeholder="Pega aquí el JSON..."
+                    className="w-full h-64 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 resize-none"
+                  />
+
+                  {/* Error */}
+                  {importError && (
+                    <div className="mt-4 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
+                      <AlertCircle size={16} className="text-red-500 shrink-0" />
+                      <span className="font-sans-tech text-sm text-red-600">{importError}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Resultados */
+                <div className="space-y-4">
+                  {/* Resumen */}
+                  <div className={`p-4 rounded-lg border ${importResult.errors > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle size={18} className={importResult.errors > 0 ? 'text-yellow-600' : 'text-green-600'} />
+                      <span className={`font-sans-tech font-semibold ${importResult.errors > 0 ? 'text-yellow-800' : 'text-green-800'}`}>
+                        Importación completada
+                      </span>
+                    </div>
+                    <div className="font-sans-tech text-sm space-y-1">
+                      <p className="text-gray-600">Total procesadas: <strong>{importResult.total}</strong></p>
+                      <p className="text-green-600">Importadas exitosamente: <strong>{importResult.imported}</strong></p>
+                      {importResult.errors > 0 && (
+                        <p className="text-red-600">Con errores: <strong>{importResult.errors}</strong></p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Lista de resultados */}
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {importResult.results.map((result, idx) => (
+                      <div 
+                        key={idx}
+                        className={`flex items-start gap-3 p-3 rounded-lg ${result.status === 'success' ? 'bg-green-50' : 'bg-red-50'}`}
+                      >
+                        {result.status === 'success' ? (
+                          <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-xs text-gray-500">{result.id}</p>
+                          <p className="font-sans-tech text-sm text-gray-900 truncate">{result.titulo}</p>
+                          {result.error && (
+                            <p className="font-sans-tech text-xs text-red-600 mt-1">{result.error}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+              {!importResult ? (
+                <>
+                  <button
+                    onClick={closeModal}
+                    className="px-4 py-2 font-sans-tech text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleImportIniciativas}
+                    disabled={importing || !jsonInput.trim()}
+                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {importing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Importando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} />
+                        Importar
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={closeModal}
+                  className="px-6 py-2 bg-blue-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
