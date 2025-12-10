@@ -2,14 +2,17 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info } from 'lucide-react';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (status === 'unauthenticated') {
       router.push('/admin/login');
     }
@@ -17,10 +20,13 @@ export default function DashboardPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="relative w-12 h-12 mx-auto mb-4">
+            <div className="absolute inset-0 border border-gray-300/20 rounded-full"></div>
+            <div className="absolute inset-0 border-t-2 border-blue-500 rounded-full animate-spin"></div>
+          </div>
+          <p className="font-sans-tech text-sm text-gray-900/50">Cargando...</p>
         </div>
       </div>
     );
@@ -34,155 +40,191 @@ export default function DashboardPage() {
     {
       title: 'Importar Iniciativas',
       description: 'Importar nuevas iniciativas legislativas desde JSON',
-      icon: '📥',
+      icon: Upload,
       href: '/api/admin/import-iniciativas',
       method: 'POST',
-      color: 'from-blue-500 to-cyan-500'
     },
     {
       title: 'Actualizar PDFs',
       description: 'Actualizar URLs de documentos PDF',
-      icon: '📄',
+      icon: FileText,
       href: '/api/admin/update-pdf-urls',
       method: 'POST',
-      color: 'from-purple-500 to-pink-500'
     },
     {
       title: 'Poblar Timeline',
       description: 'Generar timeline de eventos',
-      icon: '📅',
+      icon: Calendar,
       href: '/api/admin/poblar-timeline',
       method: 'POST',
-      color: 'from-green-500 to-emerald-500'
     },
     {
       title: 'Actualizar Anuncio',
       description: 'Modificar anuncios existentes',
-      icon: '📢',
+      icon: Megaphone,
       href: '/api/admin/update-anuncio',
       method: 'POST',
-      color: 'from-orange-500 to-red-500'
     },
     {
       title: 'Gestionar Iniciativas',
       description: 'Ver y editar iniciativas',
-      icon: '⚖️',
+      icon: Scale,
       href: '/api/admin/iniciativas',
       method: 'GET',
-      color: 'from-indigo-500 to-blue-500'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-xl">
-                🇲🇽
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Panel de Administración
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Observatorio IA México
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Ver sitio público
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: '/admin/login' })}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="relative min-h-screen bg-white text-gray-900 overflow-hidden">
+      {/* Textura de ruido */}
+      <div className="noise-bg"></div>
+      
+      {/* Background effects */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 radar-grid transform perspective-1000 rotate-x-12 scale-110 opacity-40"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-50 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-[120px]"></div>
+      </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-2xl">
-              👋
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Bienvenido, {session.user?.name}
-              </h2>
-              <p className="text-gray-600">
-                Gestiona el contenido del observatorio desde este panel
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {adminActions.map((action, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden"
-            >
-              <div className={`h-2 bg-gradient-to-r ${action.color}`}></div>
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="text-4xl">{action.icon}</div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">
-                      {action.title}
-                    </h3>
-                    <span className="text-xs font-medium text-gray-500 uppercase">
-                      {action.method}
-                    </span>
-                  </div>
+      {/* Content */}
+      <div className="relative z-20 min-h-screen flex flex-col">
+        
+        {/* Header */}
+        <header className="border-b border-gray-300/10 backdrop-blur-sm bg-white/80">
+          <div className="max-w-6xl mx-auto px-6 md:px-12 py-4">
+            <div className={`flex justify-between items-center transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+              <Link href="/" className="flex items-center gap-3 group cursor-pointer">
+                <div className="relative w-8 h-8 border border-gray-300/20 flex items-center justify-center rounded-sm overflow-hidden group-hover:border-blue-500/50 transition-colors">
+                  <Eye size={16} className="text-gray-900/80 group-hover:text-blue-500 transition-colors" />
                 </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  {action.description}
-                </p>
-                <button
-                  onClick={() => {
-                    // Aquí se implementará la lógica para llamar a las APIs
-                    alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
-                  }}
-                  className={`w-full py-2 px-4 bg-gradient-to-r ${action.color} text-white rounded-lg font-medium hover:opacity-90 transition-opacity`}
+                <div className="flex flex-col">
+                  <span className="font-sans-tech text-xs tracking-[0.2em] text-gray-900/60 uppercase">Observatorio</span>
+                  <span className="font-serif-display text-lg leading-none text-gray-900 font-bold">IA México</span>
+                </div>
+              </Link>
+
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/"
+                  className="hidden md:flex items-center gap-2 font-sans-tech text-sm text-gray-900/60 hover:text-blue-500 transition-colors"
                 >
-                  Ejecutar
+                  <ExternalLink size={14} />
+                  Ver sitio
+                </Link>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/admin/login' })}
+                  className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 font-sans-tech text-xs uppercase tracking-widest hover:bg-red-50 transition-all duration-300"
+                >
+                  <LogOut size={14} />
+                  <span className="hidden sm:inline">Salir</span>
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        </header>
 
-        {/* Info Card */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl">ℹ️</div>
-            <div>
-              <h3 className="font-bold text-blue-900 mb-2">
-                Información del Sistema
-              </h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Sesión expira en 24 horas</li>
-                <li>• Todas las acciones quedan registradas</li>
-                <li>• Solo un administrador puede acceder a este panel</li>
-              </ul>
+        {/* Main Content */}
+        <main className="flex-grow px-6 md:px-12 py-8 md:py-12">
+          <div className="max-w-6xl mx-auto">
+            
+            {/* Welcome Section */}
+            <div className={`mb-12 ${mounted ? 'animate-reveal' : 'opacity-0'}`}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </div>
+                <span className="font-sans-tech text-xs uppercase tracking-widest text-gray-900/50">
+                  Sesión activa
+                </span>
+              </div>
+              
+              <h1 className="font-serif-display text-4xl md:text-5xl font-light text-gray-900 mb-3">
+                Bienvenido, <span className="italic text-blue-500">{session.user?.name}</span>
+              </h1>
+              <p className="font-sans-tech text-gray-900/50 max-w-xl">
+                Gestiona el contenido del observatorio desde este panel de control
+              </p>
+            </div>
+
+            {/* Actions Grid */}
+            <div className={`mb-12 ${mounted ? 'animate-reveal delay-100' : 'opacity-0'}`}>
+              <h2 className="font-sans-tech text-xs uppercase tracking-widest text-gray-900/40 mb-6">
+                Acciones disponibles
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {adminActions.map((action, index) => {
+                  const IconComponent = action.icon;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
+                      }}
+                      className="group bg-gray-50 border border-gray-300/10 rounded-xl p-6 text-left hover:border-blue-500/30 hover:bg-white transition-all duration-300 backdrop-blur-sm"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center group-hover:bg-blue-500 group-hover:border-blue-500 transition-all duration-300">
+                          <IconComponent size={18} className="text-blue-500 group-hover:text-white transition-colors" />
+                        </div>
+                        <span className="font-mono text-[10px] text-gray-400 uppercase px-2 py-1 bg-gray-100 rounded">
+                          {action.method}
+                        </span>
+                      </div>
+                      
+                      <h3 className="font-sans-tech font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                        {action.title}
+                      </h3>
+                      <p className="font-sans-tech text-sm text-gray-900/50">
+                        {action.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Info Card */}
+            <div className={`${mounted ? 'animate-reveal delay-200' : 'opacity-0'}`}>
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                    <Info size={18} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-sans-tech font-semibold text-blue-900 mb-2">
+                      Información del Sistema
+                    </h3>
+                    <ul className="font-sans-tech text-sm text-blue-800/70 space-y-1">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+                        Sesión expira en 24 horas
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+                        Todas las acciones quedan registradas
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+                        Solo un administrador puede acceder a este panel
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-gray-300/5 px-6 md:px-12 py-6">
+          <div className={`max-w-6xl mx-auto flex justify-between items-center text-xs font-sans-tech text-gray-900/30 ${mounted ? 'animate-reveal delay-300' : 'opacity-0'}`}>
+            <span>Panel de Administración v1.0</span>
+            <span className="text-blue-500/40">Observatorio IA México</span>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }
