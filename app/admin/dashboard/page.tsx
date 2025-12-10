@@ -264,10 +264,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/admin/iniciativas', {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-admin-key': 'admin-key-placeholder'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: selectedIniciativa.id,
           ...parsedJson,

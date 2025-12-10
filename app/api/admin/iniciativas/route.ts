@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-
-// Verificar admin key
-function verifyAdminKey(request: NextRequest) {
-  const adminKey = request.headers.get('x-admin-key');
-  return adminKey === process.env.ADMIN_KEY;
-}
+import { getAdminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // POST - Crear nueva iniciativa
 export async function POST(request: NextRequest) {
@@ -15,36 +9,18 @@ export async function POST(request: NextRequest) {
   const authError = await requireAdmin();
   if (authError) return authError;
 
-  if (!verifyAdminKey(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
+    const db = getAdminDb();
     const data = await request.json();
-    
-    // Convertir fecha string a Timestamp si es necesario
-    if (typeof data.fecha === 'string') {
-      data.fecha = Timestamp.fromDate(new Date(data.fecha));
-    }
-
-    // Convertir eventos si existen
-    if (data.eventos && Array.isArray(data.eventos)) {
-      data.eventos = data.eventos.map((evento: any) => ({
-        ...evento,
-        fecha: typeof evento.fecha === 'string' 
-          ? Timestamp.fromDate(new Date(evento.fecha))
-          : evento.fecha
-      }));
-    }
 
     const iniciativaData = {
       ...data,
       creadoManualmente: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
     };
 
-    const docRef = await addDoc(collection(db, 'iniciativas'), iniciativaData);
+    const docRef = await db.collection('iniciativas').add(iniciativaData);
 
     return NextResponse.json({
       success: true,
@@ -62,13 +38,12 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar iniciativa existente
 export async function PUT(request: NextRequest) {
-  // Verificar autenticación de administrador (sesión o API key)
+  // Verificar autenticación de administrador
   const authError = await requireAdmin();
-  if (authError && !verifyAdminKey(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (authError) return authError;
 
   try {
+    const db = getAdminDb();
     const data = await request.json();
     const { id, ...updateData } = data;
 
@@ -79,25 +54,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Convertir fecha string a Timestamp si es necesario
-    if (typeof updateData.fecha === 'string') {
-      updateData.fecha = Timestamp.fromDate(new Date(updateData.fecha));
-    }
-
-    // Convertir eventos si existen
-    if (updateData.eventos && Array.isArray(updateData.eventos)) {
-      updateData.eventos = updateData.eventos.map((evento: any) => ({
-        ...evento,
-        fecha: typeof evento.fecha === 'string' 
-          ? Timestamp.fromDate(new Date(evento.fecha))
-          : evento.fecha
-      }));
-    }
-
-    const docRef = doc(db, 'iniciativas', id);
-    await updateDoc(docRef, {
+    await db.collection('iniciativas').doc(id).update({
       ...updateData,
-      updatedAt: serverTimestamp()
+      updatedAt: FieldValue.serverTimestamp()
     });
 
     return NextResponse.json({
@@ -115,13 +74,12 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar iniciativa
 export async function DELETE(request: NextRequest) {
-  // Verificar autenticación de administrador (sesión o API key)
+  // Verificar autenticación de administrador
   const authError = await requireAdmin();
-  if (authError && !verifyAdminKey(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (authError) return authError;
 
   try {
+    const db = getAdminDb();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -132,8 +90,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const docRef = doc(db, 'iniciativas', id);
-    await deleteDoc(docRef);
+    await db.collection('iniciativas').doc(id).delete();
 
     return NextResponse.json({
       success: true,
