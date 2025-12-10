@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { requireAdmin } from '@/lib/auth';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY
@@ -19,7 +19,11 @@ export async function POST(request: NextRequest) {
     
     const message = await client.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
+      max_tokens: 8096,
+      tools: [{
+        type: "web_search_20250305",
+        name: "web_search",
+      } as any],
       messages: [{
         role: "user",
         content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. 
