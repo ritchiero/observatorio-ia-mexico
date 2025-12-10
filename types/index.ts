@@ -396,6 +396,7 @@ export interface IniciativaLegislativa {
   fecha: Timestamp; // Fecha de presentación
   legislatura: Legislatura;
   camara: Camara;
+  entidadFederativa?: string; // Estado o 'Federal' para iniciativas federales
   descripcion: string;
   status: IniciativaStatus;
   

@@ -14,6 +14,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
   const [filtroLegislatura, setFiltroLegislatura] = useState<string>('todos');
   const [filtroCamara, setFiltroCamara] = useState<string>('todos');
   const [filtroTema, setFiltroTema] = useState<string>('todos');
+  const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const [busqueda, setBusqueda] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -22,6 +23,10 @@ export default function LegislacionClient({ iniciativas }: Props) {
     if (filtroLegislatura !== 'todos' && i.legislatura !== filtroLegislatura) return false;
     if (filtroCamara !== 'todos' && i.camara !== filtroCamara) return false;
     if (filtroTema !== 'todos' && !(i.temas || []).includes(filtroTema)) return false;
+    if (filtroEstado !== 'todos') {
+      const estado = i.entidadFederativa || (i.camara === 'Local' && i.legislatura?.includes('CDMX') ? 'Ciudad de México' : (i.camara === 'Local' && i.legislatura?.includes('SLP') ? 'San Luis Potosí' : (i.camara === 'Diputados' || i.camara === 'Senado' ? 'Federal' : null)));
+      if (estado !== filtroEstado) return false;
+    }
     if (busqueda) {
       const searchLower = busqueda.toLowerCase();
       const matchTitulo = i.titulo?.toLowerCase().includes(searchLower);
@@ -245,6 +250,26 @@ export default function LegislacionClient({ iniciativas }: Props) {
               <option value="Otros">Otros</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Entidad Federativa</label>
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+              className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="todos">Todas las entidades</option>
+              <option value="Federal">🇲🇽 Federal</option>
+              <option value="Campeche">🏛️ Campeche</option>
+              <option value="Chihuahua">🏛️ Chihuahua</option>
+              <option value="Ciudad de México">🏛️ Ciudad de México</option>
+              <option value="Guanajuato">🏛️ Guanajuato</option>
+              <option value="Michoacán">🏛️ Michoacán</option>
+              <option value="Oaxaca">🏛️ Oaxaca</option>
+              <option value="Querétaro">🏛️ Querétaro</option>
+              <option value="Quintana Roo">🏛️ Quintana Roo</option>
+              <option value="Yucatán">🏛️ Yucatán</option>
+            </select>
+          </div>
         </div>
         <div className="flex gap-4">
           <div className="flex-1">
@@ -257,7 +282,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
-          {(filtroStatus !== 'todos' || filtroLegislatura !== 'todos' || filtroCamara !== 'todos' || filtroTema !== 'todos' || busqueda) && (
+          {(filtroStatus !== 'todos' || filtroLegislatura !== 'todos' || filtroCamara !== 'todos' || filtroTema !== 'todos' || filtroEstado !== 'todos' || busqueda) && (
             <div className="flex items-end">
               <button
                 onClick={() => {
@@ -265,6 +290,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
                   setFiltroLegislatura('todos');
                   setFiltroCamara('todos');
                   setFiltroTema('todos');
+                  setFiltroEstado('todos');
                   setBusqueda('');
                 }}
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
