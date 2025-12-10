@@ -22,7 +22,11 @@ export async function POST(request: NextRequest) {
       max_tokens: 4096,
       messages: [{
         role: "user",
-        content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. Verifica la siguiente iniciativa legislativa:
+        content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. 
+
+**FECHA ACTUAL:** ${new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+Verifica la siguiente iniciativa legislativa:
 
 **ID:** ${initiative.id}
 **Título:** ${initiative.titulo}
