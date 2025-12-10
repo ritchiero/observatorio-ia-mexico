@@ -93,6 +93,7 @@ export default function DashboardPage() {
   // Verification states
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [isCorrecting, setIsCorrecting] = useState(false);
 
   // Bulk verification states
   const [isBulkVerifying, setIsBulkVerifying] = useState(false);
@@ -388,6 +389,91 @@ export default function DashboardPage() {
       alert('Error de conexión al verificar iniciativa');
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  // Corregir automáticamente con IA
+  const handleAutoCorrect = async () => {
+    if (!selectedIniciativa || !verificationResult) return;
+    
+    const confirmar = confirm(
+      '🔧 CORRECCIÓN AUTOMÁTICA CON IA\n\n' +
+      'El agente buscará los datos correctos y actualizará la iniciativa automáticamente.\n\n' +
+      '¿Deseas continuar?'
+    );
+    
+    if (!confirmar) return;
+    
+    setIsCorrecting(true);
+    
+    try {
+      const response = await fetch('/api/admin/correct-initiative', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          iniciativa: selectedIniciativa,
+          verificationResult: verificationResult
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Actualizar con los datos corregidos
+        const correctedData = data.correctedData;
+        const updatedIniciativa = {
+          ...selectedIniciativa,
+          ...correctedData,
+          estadoVerificacion: 'verificado',
+          fechaVerificacion: new Date().toISOString()
+        };
+        
+        setSelectedIniciativa(updatedIniciativa);
+        setIniciativas(prev => prev.map(ini => 
+          ini.id === selectedIniciativa.id ? updatedIniciativa : ini
+        ));
+        
+        // Actualizar el JSON en el editor
+        const jsonData = { ...updatedIniciativa };
+        delete (jsonData as any).id;
+        setEditJsonInput(JSON.stringify(jsonData, null, 2));
+        
+        // Actualizar el formulario
+        setEditForm({
+          titulo: correctedData.titulo || selectedIniciativa.titulo,
+          estatus: correctedData.estatus || selectedIniciativa.estatus,
+          proponente: correctedData.proponente || selectedIniciativa.proponente,
+          categoria: correctedData.categoria || selectedIniciativa.categoria,
+          descripcion: correctedData.descripcion || selectedIniciativa.descripcion,
+          resumen: correctedData.resumen || selectedIniciativa.resumen,
+          legislatura: correctedData.legislatura || selectedIniciativa.legislatura,
+          tipo: correctedData.tipo || selectedIniciativa.tipo,
+          camara: correctedData.camara || selectedIniciativa.camara,
+          entidadFederativa: correctedData.entidadFederativa || selectedIniciativa.entidadFederativa,
+          ambito: correctedData.ambito || selectedIniciativa.ambito,
+          urlGaceta: correctedData.urlGaceta || selectedIniciativa.urlGaceta,
+          urlPDF: correctedData.urlPDF || selectedIniciativa.urlPDF,
+          partido: correctedData.partido || selectedIniciativa.partido,
+        });
+        
+        setVerificationResult({
+          ...verificationResult,
+          estadoVerificacion: 'verificado',
+          fechaVerificacion: new Date().toISOString(),
+          summary: data.correctionSummary || 'Datos corregidos automáticamente por IA',
+          corrections: null
+        });
+        
+        setSaveMessage({ type: 'success', text: '✅ Iniciativa corregida y guardada automáticamente' });
+      } else {
+        alert('Error al corregir: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al corregir iniciativa');
+    } finally {
+      setIsCorrecting(false);
     }
   };
 
@@ -1318,6 +1404,26 @@ export default function DashboardPage() {
                             </p>
                           )}
                         </div>
+
+                        {/* Botón Corregir Automáticamente - Solo para revisión */}
+                        {verificationResult.estadoVerificacion !== 'verificado' && (
+                          <button
+                            onClick={handleAutoCorrect}
+                            disabled={isCorrecting}
+                            className="w-full mb-3 flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 text-white rounded-lg font-sans-tech text-sm font-medium hover:bg-orange-600 transition-all disabled:opacity-50"
+                          >
+                            {isCorrecting ? (
+                              <>
+                                <RefreshCw size={16} className="animate-spin" />
+                                Buscando datos correctos...
+                              </>
+                            ) : (
+                              <>
+                                🔧 Corregir Automáticamente con IA
+                              </>
+                            )}
+                          </button>
+                        )}
 
                         <p className="font-sans-tech text-xs text-gray-700 mb-3 leading-relaxed">
                           {verificationResult.summary}
