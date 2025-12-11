@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -20,7 +20,13 @@ import {
   Minus,
   RefreshCw,
   Search,
-  AlertTriangle
+  AlertTriangle,
+  Copy,
+  Download,
+  Upload,
+  ChevronUp,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 
 interface Fuente {
@@ -95,6 +101,7 @@ const IMPACTO_OPTIONS = [
 export default function AdminAnunciosPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Estados principales
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
@@ -120,15 +127,17 @@ export default function AdminAnunciosPage() {
     status: 'prometido'
   });
   
-  // Estados para agregar fuente
+  // Estados para agregar/editar fuente
   const [showAddFuente, setShowAddFuente] = useState(false);
+  const [editingFuenteIdx, setEditingFuenteIdx] = useState<number | null>(null);
   const [newFuente, setNewFuente] = useState<Partial<Fuente>>({
     tipo: 'nota_prensa',
     accesible: true
   });
   
-  // Estados para agregar evento
+  // Estados para agregar/editar evento
   const [showAddEvento, setShowAddEvento] = useState(false);
+  const [editingEventoId, setEditingEventoId] = useState<string | null>(null);
   const [newEvento, setNewEvento] = useState<Partial<EventoTimeline>>({
     tipo: 'actualizacion',
     impacto: 'neutral',
@@ -192,6 +201,8 @@ export default function AdminAnunciosPage() {
     setEditForm(anuncio);
     setEditMode(false);
     setMessage(null);
+    setEditingFuenteIdx(null);
+    setEditingEventoId(null);
     loadEventos(anuncio.id);
   };
 
@@ -264,6 +275,38 @@ export default function AdminAnunciosPage() {
     }
   };
 
+  const handleDuplicateAnuncio = async () => {
+    if (!selectedAnuncio) return;
+    
+    setSaving(true);
+    try {
+      const duplicado = {
+        ...selectedAnuncio,
+        titulo: `${selectedAnuncio.titulo} (copia)`,
+        status: 'prometido'
+      };
+      delete (duplicado as Partial<Anuncio> & { id?: string }).id;
+      
+      const response = await fetch('/api/anuncios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicado)
+      });
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Promesa duplicada correctamente' });
+        loadAnuncios();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Error al duplicar' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleCreateAnuncio = async () => {
     if (!newAnuncio.titulo || !newAnuncio.descripcion || !newAnuncio.responsable || !newAnuncio.dependencia) {
       setMessage({ type: 'error', text: 'Título, descripción, responsable y dependencia son requeridos' });
@@ -298,6 +341,7 @@ export default function AdminAnunciosPage() {
     }
   };
 
+  // === FUENTES ===
   const handleAddFuente = async () => {
     if (!selectedAnuncio || !newFuente.url || !newFuente.titulo) {
       setMessage({ type: 'error', text: 'URL y título son requeridos' });
@@ -319,21 +363,58 @@ export default function AdminAnunciosPage() {
         })
       });
       
-      const data = await response.json();
-      
       if (response.ok) {
         setMessage({ type: 'success', text: 'Fuente agregada correctamente' });
         setShowAddFuente(false);
         setNewFuente({ tipo: 'nota_prensa', accesible: true });
-        // Recargar anuncio
-        const anuncioResponse = await fetch(`/api/anuncios/${selectedAnuncio.id}`);
-        const anuncioData = await anuncioResponse.json();
-        if (anuncioData.anuncio) {
-          setSelectedAnuncio(anuncioData.anuncio);
-          setEditForm(anuncioData.anuncio);
-        }
+        await reloadSelectedAnuncio();
       } else {
+        const data = await response.json();
         setMessage({ type: 'error', text: data.error || 'Error al agregar fuente' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditFuente = (idx: number) => {
+    if (!selectedAnuncio?.fuentes) return;
+    const fuente = selectedAnuncio.fuentes[idx];
+    setNewFuente({ ...fuente });
+    setEditingFuenteIdx(idx);
+  };
+
+  const handleSaveFuente = async () => {
+    if (!selectedAnuncio || editingFuenteIdx === null || !newFuente.url || !newFuente.titulo) {
+      setMessage({ type: 'error', text: 'URL y título son requeridos' });
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/update-fuente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          anuncioId: selectedAnuncio.id,
+          fuenteIndex: editingFuenteIdx,
+          fuente: {
+            ...newFuente,
+            fecha: newFuente.fecha || new Date().toISOString().split('T')[0]
+          }
+        })
+      });
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Fuente actualizada' });
+        setEditingFuenteIdx(null);
+        setNewFuente({ tipo: 'nota_prensa', accesible: true });
+        await reloadSelectedAnuncio();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Error al actualizar' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión' });
@@ -361,7 +442,6 @@ export default function AdminAnunciosPage() {
       
       if (response.ok) {
         setMessage({ type: 'success', text: 'Fuente eliminada' });
-        // Actualizar localmente
         const updatedFuentes = selectedAnuncio.fuentes?.filter(f => f.url !== fuenteUrl) || [];
         setSelectedAnuncio({ ...selectedAnuncio, fuentes: updatedFuentes });
       } else {
@@ -375,6 +455,38 @@ export default function AdminAnunciosPage() {
     }
   };
 
+  const handleMoveFuente = async (idx: number, direction: 'up' | 'down') => {
+    if (!selectedAnuncio?.fuentes) return;
+    
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= selectedAnuncio.fuentes.length) return;
+    
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/reorder-fuentes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          anuncioId: selectedAnuncio.id,
+          fromIndex: idx,
+          toIndex: newIdx
+        })
+      });
+      
+      if (response.ok) {
+        await reloadSelectedAnuncio();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Error al reordenar' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // === EVENTOS ===
   const handleAddEvento = async () => {
     if (!selectedAnuncio || !newEvento.titulo || !newEvento.descripcion || !newEvento.fecha) {
       setMessage({ type: 'error', text: 'Título, descripción y fecha son requeridos' });
@@ -392,15 +504,52 @@ export default function AdminAnunciosPage() {
         })
       });
       
-      const data = await response.json();
-      
       if (response.ok) {
         setMessage({ type: 'success', text: 'Evento agregado al timeline' });
         setShowAddEvento(false);
         setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] });
         loadEventos(selectedAnuncio.id);
       } else {
+        const data = await response.json();
         setMessage({ type: 'error', text: data.error || 'Error al agregar evento' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditEvento = (evento: EventoTimeline) => {
+    setNewEvento({ ...evento });
+    setEditingEventoId(evento.id);
+  };
+
+  const handleSaveEvento = async () => {
+    if (!editingEventoId || !newEvento.titulo || !newEvento.descripcion || !newEvento.fecha) {
+      setMessage({ type: 'error', text: 'Título, descripción y fecha son requeridos' });
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/update-evento-timeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventoId: editingEventoId,
+          evento: newEvento
+        })
+      });
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Evento actualizado' });
+        setEditingEventoId(null);
+        setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] });
+        if (selectedAnuncio) loadEventos(selectedAnuncio.id);
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Error al actualizar' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión' });
@@ -451,6 +600,86 @@ export default function AdminAnunciosPage() {
     setNewEventoFuente({ tipo: 'nota_prensa' });
   };
 
+  // === EXPORT/IMPORT ===
+  const handleExportJSON = () => {
+    const dataToExport = {
+      anuncios,
+      exportDate: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `promesas-ia-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setMessage({ type: 'success', text: 'JSON exportado correctamente' });
+  };
+
+  const handleImportJSON = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      if (!data.anuncios || !Array.isArray(data.anuncios)) {
+        setMessage({ type: 'error', text: 'Formato de archivo inválido' });
+        return;
+      }
+      
+      const confirmar = confirm(
+        `Se importarán ${data.anuncios.length} promesas.\n\n` +
+        `Las promesas existentes con el mismo ID serán actualizadas.\n` +
+        `¿Continuar?`
+      );
+      
+      if (!confirmar) return;
+      
+      setSaving(true);
+      let imported = 0;
+      
+      for (const anuncio of data.anuncios) {
+        try {
+          const response = await fetch('/api/admin/import-anuncio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(anuncio)
+          });
+          if (response.ok) imported++;
+        } catch (e) {
+          console.error('Error importando:', anuncio.titulo, e);
+        }
+      }
+      
+      setMessage({ type: 'success', text: `${imported} de ${data.anuncios.length} promesas importadas` });
+      loadAnuncios();
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error al leer el archivo JSON' });
+    } finally {
+      setSaving(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // === HELPERS ===
+  const reloadSelectedAnuncio = async () => {
+    if (!selectedAnuncio) return;
+    try {
+      const response = await fetch(`/api/anuncios/${selectedAnuncio.id}`);
+      const data = await response.json();
+      if (data.anuncio) {
+        setSelectedAnuncio(data.anuncio);
+        setEditForm(data.anuncio);
+      }
+    } catch (error) {
+      console.error('Error recargando anuncio:', error);
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
     try {
@@ -464,8 +693,8 @@ export default function AdminAnunciosPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    return STATUS_OPTIONS.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-800';
+  const getStatusColor = (statusValue: string) => {
+    return STATUS_OPTIONS.find(s => s.value === statusValue)?.color || 'bg-gray-100 text-gray-800';
   };
 
   if (status === 'loading' || loading) {
@@ -492,6 +721,27 @@ export default function AdminAnunciosPage() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".json"
+              onChange={handleImportJSON}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              title="Importar JSON"
+            >
+              <Upload size={16} />
+            </button>
+            <button
+              onClick={handleExportJSON}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              title="Exportar JSON"
+            >
+              <Download size={16} />
+            </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
@@ -584,6 +834,7 @@ export default function AdminAnunciosPage() {
                   message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
                 }`}>
                   {message.type === 'error' && <AlertTriangle size={16} />}
+                  {message.type === 'success' && <Check size={16} />}
                   {message.text}
                 </div>
               )}
@@ -618,6 +869,14 @@ export default function AdminAnunciosPage() {
                     </>
                   ) : (
                     <>
+                      <button
+                        onClick={handleDuplicateAnuncio}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+                        title="Duplicar promesa"
+                      >
+                        <Copy size={16} />
+                      </button>
                       <button
                         onClick={handleDeleteAnuncio}
                         disabled={deleting}
@@ -762,7 +1021,7 @@ export default function AdminAnunciosPage() {
                     Fuentes ({selectedAnuncio.fuentes?.length || 0})
                   </h3>
                   <button
-                    onClick={() => setShowAddFuente(true)}
+                    onClick={() => { setShowAddFuente(true); setEditingFuenteIdx(null); setNewFuente({ tipo: 'nota_prensa', accesible: true }); }}
                     className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
                   >
                     <Plus size={16} />
@@ -770,9 +1029,12 @@ export default function AdminAnunciosPage() {
                   </button>
                 </div>
                 
-                {showAddFuente && (
+                {/* Form agregar/editar fuente */}
+                {(showAddFuente || editingFuenteIdx !== null) && (
                   <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="font-medium text-blue-900 mb-3">Nueva Fuente</h4>
+                    <h4 className="font-medium text-blue-900 mb-3">
+                      {editingFuenteIdx !== null ? 'Editar Fuente' : 'Nueva Fuente'}
+                    </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <input type="url" placeholder="URL *" value={newFuente.url || ''} onChange={e => setNewFuente({ ...newFuente, url: e.target.value })} className="px-3 py-2 border rounded-lg" />
                       <input type="text" placeholder="Título *" value={newFuente.titulo || ''} onChange={e => setNewFuente({ ...newFuente, titulo: e.target.value })} className="px-3 py-2 border rounded-lg" />
@@ -783,8 +1045,14 @@ export default function AdminAnunciosPage() {
                       <input type="date" value={newFuente.fecha || ''} onChange={e => setNewFuente({ ...newFuente, fecha: e.target.value })} className="px-3 py-2 border rounded-lg" />
                     </div>
                     <div className="flex justify-end gap-2 mt-3">
-                      <button onClick={() => setShowAddFuente(false)} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
-                      <button onClick={handleAddFuente} disabled={saving} className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">{saving ? 'Agregando...' : 'Agregar'}</button>
+                      <button onClick={() => { setShowAddFuente(false); setEditingFuenteIdx(null); setNewFuente({ tipo: 'nota_prensa', accesible: true }); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                      <button 
+                        onClick={editingFuenteIdx !== null ? handleSaveFuente : handleAddFuente} 
+                        disabled={saving} 
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {saving ? 'Guardando...' : (editingFuenteIdx !== null ? 'Actualizar' : 'Agregar')}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -792,19 +1060,44 @@ export default function AdminAnunciosPage() {
                 <div className="space-y-2">
                   {selectedAnuncio.fuentes?.map((fuente, idx) => (
                     <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg group">
+                      <div className="flex flex-col gap-1">
+                        <button
+                          onClick={() => handleMoveFuente(idx, 'up')}
+                          disabled={idx === 0 || saving}
+                          className="p-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleMoveFuente(idx, 'down')}
+                          disabled={idx === (selectedAnuncio.fuentes?.length || 0) - 1 || saving}
+                          className="p-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
                       <FileText size={16} className="text-gray-400 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 text-sm">{fuente.titulo}</p>
                         <p className="text-xs text-gray-500">{fuente.medio} • {formatDate(fuente.fecha)}</p>
                         <a href={fuente.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate block">{fuente.url}</a>
                       </div>
-                      <button
-                        onClick={() => handleDeleteFuente(fuente.url)}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-opacity"
-                        title="Eliminar fuente"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditFuente(idx)}
+                          className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+                          title="Editar fuente"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFuente(fuente.url)}
+                          className="p-1 text-red-500 hover:bg-red-50 rounded"
+                          title="Eliminar fuente"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   )) || (<p className="text-gray-400 text-sm">No hay fuentes registradas</p>)}
                 </div>
@@ -817,15 +1110,18 @@ export default function AdminAnunciosPage() {
                     <Calendar size={18} />
                     Timeline ({eventos.length} eventos)
                   </h3>
-                  <button onClick={() => setShowAddEvento(true)} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
+                  <button onClick={() => { setShowAddEvento(true); setEditingEventoId(null); setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] }); }} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
                     <Plus size={16} />
                     Agregar
                   </button>
                 </div>
                 
-                {showAddEvento && (
+                {/* Form agregar/editar evento */}
+                {(showAddEvento || editingEventoId !== null) && (
                   <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <h4 className="font-medium text-green-900 mb-3">Nuevo Evento</h4>
+                    <h4 className="font-medium text-green-900 mb-3">
+                      {editingEventoId ? 'Editar Evento' : 'Nuevo Evento'}
+                    </h4>
                     <div className="space-y-3">
                       <div className="grid grid-cols-3 gap-3">
                         <input type="date" value={newEvento.fecha || ''} onChange={e => setNewEvento({ ...newEvento, fecha: e.target.value })} className="px-3 py-2 border rounded-lg" />
@@ -862,8 +1158,14 @@ export default function AdminAnunciosPage() {
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 mt-3">
-                      <button onClick={() => { setShowAddEvento(false); setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] }); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
-                      <button onClick={handleAddEvento} disabled={saving} className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">{saving ? 'Agregando...' : 'Agregar'}</button>
+                      <button onClick={() => { setShowAddEvento(false); setEditingEventoId(null); setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] }); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                      <button 
+                        onClick={editingEventoId ? handleSaveEvento : handleAddEvento} 
+                        disabled={saving} 
+                        className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {saving ? 'Guardando...' : (editingEventoId ? 'Actualizar' : 'Agregar')}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -887,16 +1189,25 @@ export default function AdminAnunciosPage() {
                               </div>
                               <h4 className="font-medium text-gray-900 text-sm mt-1">{evento.titulo}</h4>
                               <p className="text-xs text-gray-600 mt-1">{evento.descripcion}</p>
-                              {evento.citaTextual && (<p className="text-xs italic text-gray-500 mt-1 border-l-2 border-gray-300 pl-2">"{evento.citaTextual}"</p>)}
+                              {evento.citaTextual && (<p className="text-xs italic text-gray-500 mt-1 border-l-2 border-gray-300 pl-2">&quot;{evento.citaTextual}&quot;</p>)}
                               {evento.fuentes?.length > 0 && (<p className="text-xs text-blue-600 mt-1">{evento.fuentes.length} fuente(s)</p>)}
                             </div>
-                            <button
-                              onClick={() => handleDeleteEvento(evento.id)}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-opacity"
-                              title="Eliminar evento"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleEditEvento(evento)}
+                                className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+                                title="Editar evento"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEvento(evento.id)}
+                                className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                title="Eliminar evento"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
