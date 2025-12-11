@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Anuncio, EventoTimeline, Fuente } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import { formatDate } from '@/lib/utils';
-import { ArrowLeft, Calendar, User, Building2, ExternalLink, Newspaper, FileText, Clock, TrendingUp, TrendingDown, Minus }  from 'lucide-react';
+import { ArrowLeft, Calendar, User, Building2, ExternalLink, Newspaper, Clock, TrendingUp, TrendingDown, Minus }  from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
 // Helper para convertir Firestore Timestamp a Date
@@ -87,10 +87,12 @@ export default function AnuncioDetailPage() {
   const fechaAnuncio = anuncio.fechaAnuncio ? new Date(anuncio.fechaAnuncio as unknown as string) : null;
   const fechaPrometida = anuncio.fechaPrometida ? new Date(anuncio.fechaPrometida as unknown as string) : null;
 
-  // Separar fuentes por tipo
-  const fuentesPrensa = anuncio.fuentes?.filter(f => f.tipo === 'nota_prensa') || [];
-  const fuentesOficiales = anuncio.fuentes?.filter(f => f.tipo === 'anuncio_original' || f.tipo === 'declaracion' || f.tipo === 'transparencia') || [];
-  const otrasFuentes = anuncio.fuentes?.filter(f => f.tipo === 'otro') || [];
+  // Combinar todas las fuentes (oficiales primero, luego prensa, luego otras)
+  const todasLasFuentes = [
+    ...(anuncio.fuentes?.filter(f => f.tipo === 'anuncio_original' || f.tipo === 'declaracion' || f.tipo === 'transparencia') || []),
+    ...(anuncio.fuentes?.filter(f => f.tipo === 'nota_prensa') || []),
+    ...(anuncio.fuentes?.filter(f => f.tipo === 'otro') || []),
+  ];
 
   // Agrupar eventos por mes
   const eventosAgrupados = agruparEventosPorMes(eventos);
@@ -203,75 +205,40 @@ export default function AnuncioDetailPage() {
           </section>
         )}
 
-        {/* Links de Prensa y Fuentes */}
+        {/* Cobertura de Prensa y Fuentes */}
         <section>
           <h2 className="text-xl sm:text-2xl font-light font-serif-display text-gray-900 mb-6 flex items-center gap-3">
             <Newspaper className="text-blue-500" size={24} />
-            Links relacionados
+            Cobertura y fuentes
           </h2>
 
-          <div className="space-y-6">
-            {/* Fuentes Oficiales */}
-            {fuentesOficiales.length > 0 && (
-              <div>
-                <h3 className="text-sm uppercase tracking-wider text-gray-500 font-semibold mb-3 font-sans-tech flex items-center gap-2">
-                  <FileText size={14} />
-                  Fuentes Oficiales
-                </h3>
-                <div className="grid gap-3">
-                  {fuentesOficiales.map((fuente, idx) => (
-                    <FuenteCard key={idx} fuente={fuente} tipo="oficial" />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Cobertura de Prensa */}
-            {fuentesPrensa.length > 0 && (
-              <div>
-                <h3 className="text-sm uppercase tracking-wider text-gray-500 font-semibold mb-3 font-sans-tech flex items-center gap-2">
-                  <Newspaper size={14} />
-                  Cobertura de Prensa
-                </h3>
-                <div className="grid gap-3">
-                  {fuentesPrensa.map((fuente, idx) => (
-                    <FuenteCard key={idx} fuente={fuente} tipo="prensa" />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Otras Fuentes */}
-            {otrasFuentes.length > 0 && (
-              <div>
-                <h3 className="text-sm uppercase tracking-wider text-gray-500 font-semibold mb-3 font-sans-tech flex items-center gap-2">
-                  <ExternalLink size={14} />
-                  Otras Fuentes
-                </h3>
-                <div className="grid gap-3">
-                  {otrasFuentes.map((fuente, idx) => (
-                    <FuenteCard key={idx} fuente={fuente} tipo="otro" />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Fallback si solo hay fuenteOriginal */}
-            {(!anuncio.fuentes || anuncio.fuentes.length === 0) && anuncio.fuenteOriginal && (
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <p className="text-sm text-gray-500 mb-2 font-sans-tech">Fuente original:</p>
-                <a 
-                  href={anuncio.fuenteOriginal}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-500 text-sm font-mono break-all inline-flex items-center gap-1 transition-colors"
-                >
-                  {anuncio.fuenteOriginal}
-                  <ExternalLink size={12} />
-                </a>
-              </div>
-            )}
-          </div>
+          {/* Grid de tarjetas de noticias */}
+          {todasLasFuentes.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {todasLasFuentes.map((fuente, idx) => (
+                <NoticiaCard key={idx} fuente={fuente} />
+              ))}
+            </div>
+          ) : anuncio.fuenteOriginal ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <NoticiaCard 
+                fuente={{
+                  url: anuncio.fuenteOriginal,
+                  titulo: 'Fuente original del anuncio',
+                  fecha: anuncio.fechaAnuncio,
+                  tipo: 'anuncio_original',
+                  medio: extraerMedio(anuncio.fuenteOriginal)
+                }} 
+              />
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+              <Newspaper className="mx-auto text-gray-300 mb-3" size={32} />
+              <p className="text-gray-500 font-sans-tech text-sm">
+                No hay fuentes registradas para esta promesa
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Historial de Seguimiento */}
@@ -355,67 +322,165 @@ function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-// Componente FuenteCard
-function FuenteCard({ fuente, tipo }: { fuente: Fuente; tipo: 'oficial' | 'prensa' | 'otro' }) {
-  const colorClasses = {
-    oficial: 'border-l-blue-500 bg-blue-50/50',
-    prensa: 'border-l-purple-500 bg-purple-50/50',
-    otro: 'border-l-gray-400 bg-gray-50/50'
-  };
+// Logos de medios conocidos
+const LOGOS_MEDIOS: Record<string, string> = {
+  'El Universal': '🗞️',
+  'Reforma': '📰',
+  'La Jornada': '📰',
+  'Milenio': '📰',
+  'El Financiero': '💼',
+  'El Economista': '📊',
+  'Expansión': '📈',
+  'Forbes México': '💰',
+  'Animal Político': '🐾',
+  'Proceso': '📰',
+  'Sin Embargo': '📰',
+  'Infobae': '🌐',
+  'Reuters': '🌍',
+  'AP': '🌍',
+  'EFE': '🌍',
+  'Gobierno de México': '🏛️',
+  'Presidencia': '🏛️',
+  'gob.mx': '🏛️',
+  'Senado': '🏛️',
+  'Cámara de Diputados': '🏛️',
+};
 
+// Colores de fondo por tipo de medio
+const COLORES_TIPO: Record<string, { bg: string; accent: string }> = {
+  'anuncio_original': { bg: 'from-blue-600 to-blue-800', accent: 'bg-blue-500' },
+  'declaracion': { bg: 'from-indigo-600 to-indigo-800', accent: 'bg-indigo-500' },
+  'transparencia': { bg: 'from-cyan-600 to-cyan-800', accent: 'bg-cyan-500' },
+  'nota_prensa': { bg: 'from-purple-600 to-purple-800', accent: 'bg-purple-500' },
+  'otro': { bg: 'from-gray-600 to-gray-800', accent: 'bg-gray-500' },
+};
+
+// Extraer medio de una URL
+function extraerMedio(url: string): string {
+  try {
+    const hostname = new URL(url).hostname.replace('www.', '');
+    const medios: Record<string, string> = {
+      'eluniversal.com.mx': 'El Universal',
+      'reforma.com': 'Reforma',
+      'jornada.com.mx': 'La Jornada',
+      'milenio.com': 'Milenio',
+      'elfinanciero.com.mx': 'El Financiero',
+      'eleconomista.com.mx': 'El Economista',
+      'expansion.mx': 'Expansión',
+      'forbes.com.mx': 'Forbes México',
+      'animalpolitico.com': 'Animal Político',
+      'proceso.com.mx': 'Proceso',
+      'sinembargo.mx': 'Sin Embargo',
+      'infobae.com': 'Infobae',
+      'gob.mx': 'Gobierno de México',
+      'presidente.gob.mx': 'Presidencia',
+      'senado.gob.mx': 'Senado',
+      'diputados.gob.mx': 'Cámara de Diputados',
+    };
+    return medios[hostname] || hostname;
+  } catch {
+    return 'Fuente';
+  }
+}
+
+// Componente NoticiaCard - Tarjeta visual tipo noticia
+function NoticiaCard({ fuente }: { fuente: Fuente }) {
+  const medio = fuente.medio || extraerMedio(fuente.url);
+  const logoEmoji = LOGOS_MEDIOS[medio] || '📄';
+  const colores = COLORES_TIPO[fuente.tipo] || COLORES_TIPO['otro'];
+  
   // Convertir timestamp a fecha
   let fechaStr = '';
   const fechaDate = timestampToDate(fuente.fecha);
   if (fechaDate) {
     fechaStr = fechaDate.toLocaleDateString('es-MX', { 
-      year: 'numeric', 
+      day: 'numeric',
       month: 'short', 
-      day: 'numeric' 
+      year: 'numeric' 
     });
   }
+
+  // Etiqueta del tipo
+  const etiquetaTipo: Record<string, string> = {
+    'anuncio_original': 'Oficial',
+    'declaracion': 'Declaración',
+    'transparencia': 'Transparencia',
+    'nota_prensa': 'Prensa',
+    'otro': 'Enlace',
+  };
 
   return (
     <a
       href={fuente.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block border-l-4 ${colorClasses[tipo]} rounded-r-lg p-4 hover:shadow-md transition-all group`}
+      className="group block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            {fuente.medio && (
-              <span className="text-xs font-medium text-gray-600 font-sans-tech">
-                {fuente.medio}
-              </span>
-            )}
-            {fechaStr && (
-              <span className="text-xs text-gray-400 font-mono">
-                {fechaStr}
-              </span>
-            )}
-            {fuente.accesible === false && (
-              <span className="text-xs text-red-500 font-sans-tech">
-                ⚠️ No disponible
-              </span>
-            )}
-          </div>
-          <p className="font-medium text-gray-900 font-sans-tech group-hover:text-blue-600 transition-colors">
-            {fuente.titulo}
-          </p>
-          {fuente.extracto && (
-            <p className="text-sm text-gray-500 mt-1 line-clamp-2 font-sans-tech">
-              {fuente.extracto}
-            </p>
-          )}
+      {/* Miniatura / Header visual */}
+      <div className={`relative h-24 bg-gradient-to-br ${colores.bg} flex items-center justify-center overflow-hidden`}>
+        {/* Patrón de fondo */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M20 20h20v20H20V20zM0 0h20v20H0V0z'/%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
         </div>
-        <ExternalLink size={16} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
+        
+        {/* Logo/Emoji del medio */}
+        <span className="text-4xl opacity-90 group-hover:scale-110 transition-transform">
+          {logoEmoji}
+        </span>
+        
+        {/* Badge de tipo */}
+        <span className={`absolute top-2 right-2 text-xs font-medium text-white px-2 py-0.5 rounded-full ${colores.accent} bg-opacity-80`}>
+          {etiquetaTipo[fuente.tipo] || 'Enlace'}
+        </span>
+        
+        {/* Indicador de no disponible */}
+        {fuente.accesible === false && (
+          <span className="absolute top-2 left-2 text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+            ⚠️ No disponible
+          </span>
+        )}
       </div>
       
+      {/* Contenido */}
+      <div className="p-4">
+        {/* Medio y fecha */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider font-sans-tech truncate">
+            {medio}
+          </span>
+          {fechaStr && (
+            <span className="text-xs text-gray-400 font-mono whitespace-nowrap">
+              {fechaStr}
+            </span>
+          )}
+        </div>
+        
+        {/* Título */}
+        <h3 className="font-medium text-gray-900 font-sans-tech leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors min-h-[2.5rem]">
+          {fuente.titulo}
+        </h3>
+        
+        {/* Extracto */}
+        {fuente.extracto && (
+          <p className="text-xs text-gray-500 mt-2 line-clamp-2 font-sans-tech">
+            {fuente.extracto}
+          </p>
+        )}
+        
+        {/* Link indicator */}
+        <div className="flex items-center gap-1 mt-3 text-xs text-blue-500 font-sans-tech">
+          <span>Leer más</span>
+          <ExternalLink size={10} className="group-hover:translate-x-0.5 transition-transform" />
+        </div>
+      </div>
+      
+      {/* Wayback indicator */}
       {fuente.waybackUrl && fuente.accesible === false && (
-        <div className="mt-2 pt-2 border-t border-gray-200">
-          <span className="text-xs text-gray-500 font-sans-tech">
-            📦 Disponible en Internet Archive
+        <div className="px-4 pb-3">
+          <span className="text-xs text-amber-600 font-sans-tech flex items-center gap-1">
+            📦 Disponible en Archive.org
           </span>
         </div>
       )}
