@@ -43,11 +43,21 @@ export default function LegislacionClient({ iniciativas }: Props) {
     return true;
   });
 
+  // Función para normalizar status para conteo
+  const normalizeStatus = (status: string | undefined): string => {
+    const s = (status || '').toString().toLowerCase().trim();
+    if (s.includes('aprobad') || s.includes('publicad') || s.includes('vigente')) return 'aprobada';
+    if (s.includes('desechad') || s.includes('archivad')) return 'desechada';
+    if (s.includes('rechazad')) return 'rechazada';
+    if (s.includes('comision') || s.includes('turnad') || s.includes('pendiente') || s.includes('dictam')) return 'activa';
+    return 'activa'; // Fallback: considerar como activa
+  };
+
   const stats = {
     total: iniciativas.length,
-    activas: iniciativas.filter(i => i.status === 'en_comisiones').length,
-    desechadas: iniciativas.filter(i => i.status === 'desechada_termino' || i.status === 'archivada').length,
-    aprobadas: iniciativas.filter(i => i.status === 'aprobada').length
+    activas: iniciativas.filter(i => normalizeStatus(i.status) === 'activa').length,
+    desechadas: iniciativas.filter(i => normalizeStatus(i.status) === 'desechada').length,
+    aprobadas: iniciativas.filter(i => normalizeStatus(i.status) === 'aprobada').length
   };
 
   const getStatusBadge = (status: IniciativaStatus | string) => {
