@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
+// Helper para convertir Timestamp a ISO string
+function convertTimestamp(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && 'toDate' in value) {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+  return null;
+}
+
 // GET /api/anuncios/[id] - Obtener un anuncio específico
 export async function GET(
   request: NextRequest,
@@ -20,16 +30,24 @@ export async function GET(
     }
 
     const data = doc.data()!;
+    
+    // Convertir fechas de fuentes
+    const fuentes = data.fuentes?.map((f: Record<string, unknown>) => ({
+      ...f,
+      fecha: convertTimestamp(f.fecha) || f.fecha
+    })) || [];
+
     const anuncio = {
       id: doc.id,
       ...data,
-      fechaAnuncio: data.fechaAnuncio?.toDate().toISOString(),
-      fechaPrometida: data.fechaPrometida?.toDate().toISOString() || null,
-      createdAt: data.createdAt?.toDate().toISOString(),
-      updatedAt: data.updatedAt?.toDate().toISOString(),
-      actualizaciones: data.actualizaciones?.map((act: { fecha?: { toDate: () => Date }; [key: string]: unknown }) => ({
+      fechaAnuncio: convertTimestamp(data.fechaAnuncio),
+      fechaPrometida: convertTimestamp(data.fechaPrometida),
+      createdAt: convertTimestamp(data.createdAt),
+      updatedAt: convertTimestamp(data.updatedAt),
+      fuentes,
+      actualizaciones: data.actualizaciones?.map((act: { fecha?: unknown; [key: string]: unknown }) => ({
         ...act,
-        fecha: act.fecha?.toDate().toISOString(),
+        fecha: convertTimestamp(act.fecha),
       })) || [],
     };
 
