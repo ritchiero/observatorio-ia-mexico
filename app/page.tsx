@@ -88,13 +88,16 @@ export default function Home() {
     fetchLegislacion();
   }, []);
   
-  // Función para calcular días vencidos
+  // Función para calcular días vencidos (usando UTC)
   const calcularDiasVencidos = (fechaPrometida: string): number => {
     if (!fechaPrometida) return 0;
     try {
       const fecha = new Date(fechaPrometida);
       const hoy = new Date();
-      const diffTime = hoy.getTime() - fecha.getTime();
+      // Comparar solo fechas sin hora
+      const fechaUTC = Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate());
+      const hoyUTC = Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+      const diffTime = hoyUTC - fechaUTC;
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       return diffDays > 0 ? diffDays : 0;
     } catch {
@@ -102,25 +105,35 @@ export default function Home() {
     }
   };
 
-  // Formatear fecha para mostrar mes
+  // Formatear fecha para mostrar mes (usando UTC para evitar problemas de timezone)
   const formatearMes = (fechaStr: string): string => {
     if (!fechaStr) return '';
     try {
       const fecha = new Date(fechaStr);
       const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      return meses[fecha.getMonth()];
+      return meses[fecha.getUTCMonth()];
     } catch {
       return '';
     }
   };
 
-  // Formatear fecha prometida
+  // Obtener año UTC
+  const getYearUTC = (fechaStr: string): number => {
+    if (!fechaStr) return new Date().getFullYear();
+    try {
+      return new Date(fechaStr).getUTCFullYear();
+    } catch {
+      return new Date().getFullYear();
+    }
+  };
+
+  // Formatear fecha prometida (usando UTC)
   const formatearFechaPrometida = (fechaStr: string): string => {
     if (!fechaStr) return '';
     try {
       const fecha = new Date(fechaStr);
       const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      return `${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
+      return `${meses[fecha.getUTCMonth()]} ${fecha.getUTCFullYear()}`;
     } catch {
       return '';
     }
@@ -407,7 +420,7 @@ export default function Home() {
                   {/* Fecha sobre la imagen */}
                   <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full">
                     <span className="font-mono text-[10px] text-white uppercase tracking-wider">
-                      {formatearMes(item.fechaAnuncio)} {new Date(item.fechaAnuncio).getFullYear()}
+                      {formatearMes(item.fechaAnuncio)} {getYearUTC(item.fechaAnuncio)}
                     </span>
                   </div>
                   
