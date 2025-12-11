@@ -181,7 +181,14 @@ export default function AnuncioDetailPage() {
           </section>
         )}
 
-        {/* Resumen del agente */}
+        {/* Resumen contextual */}
+        <section className="prose prose-lg max-w-none">
+          <p className="text-gray-700 font-sans-tech leading-relaxed text-base sm:text-lg">
+            {generarResumenContextual(anuncio, fechaAnuncio, fechaPrometida)}
+          </p>
+        </section>
+
+        {/* Hallazgos del monitoreo (si hay información adicional del agente) */}
         {anuncio.resumenAgente && (
           <section className="bg-amber-50 border border-amber-200 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-3">
@@ -548,6 +555,44 @@ function EventoCard({ evento }: { evento: EventoTimeline }) {
       </div>
     </div>
   );
+}
+
+// Función para generar resumen contextual narrativo
+function generarResumenContextual(anuncio: Anuncio, fechaAnuncio: Date | null, fechaPrometida: Date | null): string {
+  const fechaAnuncioStr = fechaAnuncio 
+    ? fechaAnuncio.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'fecha no especificada';
+  
+  const fechaPrometidaStr = fechaPrometida
+    ? fechaPrometida.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
+    : null;
+
+  // Determinar el estado actual en texto
+  const estadoTexto: Record<string, string> = {
+    'prometido': 'permanece como una promesa sin acciones concretas reportadas',
+    'en_desarrollo': 'se encuentra en fase de desarrollo según fuentes oficiales',
+    'operando': 'está operando según los reportes oficiales',
+    'incumplido': 'permanece incumplido sin que se hayan materializado las acciones prometidas',
+    'abandonado': 'parece haber sido abandonado sin comunicación oficial al respecto'
+  };
+
+  const estadoActual = estadoTexto[anuncio.status] || 'tiene un estado indeterminado';
+
+  // Construir el párrafo
+  let resumen = `El ${fechaAnuncioStr}, ${anuncio.responsable} anunció ${anuncio.titulo.toLowerCase().startsWith('el ') || anuncio.titulo.toLowerCase().startsWith('la ') ? '' : 'la iniciativa de '}${anuncio.titulo}`;
+  
+  if (fechaPrometidaStr) {
+    resumen += `, comprometiéndose públicamente a su implementación para ${fechaPrometidaStr}`;
+  }
+  
+  resumen += `. ${anuncio.descripcion}`;
+  
+  // Agregar estado actual si no es "operando"
+  if (anuncio.status !== 'operando') {
+    resumen += ` A la fecha, el proyecto ${estadoActual}.`;
+  }
+
+  return resumen;
 }
 
 // Función para agrupar eventos por mes
