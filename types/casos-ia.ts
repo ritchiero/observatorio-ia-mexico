@@ -96,6 +96,7 @@ export type TemaIA =
   | 'discriminacion'
   | 'privacidad'
   | 'evidencia_ia'
+  | 'herramientas_jurisdiccionales'
   | 'otro';
 
 export type MateriaCaso = 
@@ -158,6 +159,7 @@ export const TEMAS_IA: Record<TemaIA, { label: string; emoji: string; color: str
   discriminacion: { label: 'Discriminación Algorítmica', emoji: '⚖️', color: 'orange' },
   privacidad: { label: 'Privacidad', emoji: '🔒', color: 'cyan' },
   evidencia_ia: { label: 'Evidencia con IA', emoji: '🔍', color: 'teal' },
+  herramientas_jurisdiccionales: { label: 'Herramientas Jurisdiccionales', emoji: '⚙️', color: 'emerald' },
   otro: { label: 'Otro', emoji: '📁', color: 'gray' },
 };
 
