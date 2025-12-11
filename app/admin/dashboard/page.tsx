@@ -928,6 +928,13 @@ export default function DashboardPage() {
       icon: Megaphone,
       actions: [
         {
+          title: 'Administrar Promesas',
+          description: 'Editar anuncios, fuentes y timeline',
+          icon: Edit,
+          href: '/admin/anuncios',
+          method: 'LINK',
+        },
+        {
           title: 'Ver Anuncios',
           description: 'Lista de todos los proyectos federales anunciados',
           icon: Eye,
@@ -1100,7 +1107,9 @@ export default function DashboardPage() {
                           <button
                             key={actionIndex}
                             onClick={() => {
-                              if (action.title === 'Importar Iniciativas') {
+                              if (action.method === 'LINK') {
+                                router.push(action.href);
+                              } else if (action.title === 'Importar Iniciativas') {
                                 setShowImportModal(true);
                               } else if (action.title === 'Editar Iniciativa') {
                                 openEditModal();

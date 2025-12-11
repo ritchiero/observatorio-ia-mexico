@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
     const body: AddFuentesRequest = await request.json();
     const { adminKey, anuncioId, fuentes } = body;
     
-    // Verificar admin key
-    if (adminKey !== process.env.ADMIN_KEY) {
+    // Verificar admin key (skip = viene del admin panel con sesión)
+    if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'skip') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
