@@ -36,16 +36,21 @@ import {
 interface Fuente {
   url: string;
   titulo: string;
-  fecha: string | { _seconds?: number; seconds?: number };
+  fecha: string;
   tipo: string;
   medio?: string;
   accesible?: boolean;
   extracto?: string;
 }
 
+// Tipo para datos que vienen de Firestore (pueden tener Timestamps)
+interface FuenteFromDB extends Omit<Fuente, 'fecha'> {
+  fecha: string | { _seconds?: number; seconds?: number };
+}
+
 interface EventoTimeline {
   id: string;
-  fecha: string | { _seconds?: number; seconds?: number };
+  fecha: string;
   tipo: string;
   titulo: string;
   descripcion: string;
@@ -53,6 +58,12 @@ interface EventoTimeline {
   citaTextual?: string;
   responsable?: string;
   fuentes: Fuente[];
+}
+
+// Tipo para datos que vienen de Firestore
+interface EventoTimelineFromDB extends Omit<EventoTimeline, 'fecha' | 'fuentes'> {
+  fecha: string | { _seconds?: number; seconds?: number };
+  fuentes: FuenteFromDB[];
 }
 
 interface Anuncio {
@@ -115,7 +126,7 @@ export default function AdminAnunciosPage() {
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAnuncio, setSelectedAnuncio] = useState<Anuncio | null>(null);
-  const [eventos, setEventos] = useState<EventoTimeline[]>([]);
+  const [eventos, setEventos] = useState<EventoTimelineFromDB[]>([]);
   const [loadingEventos, setLoadingEventos] = useState(false);
   
   // Log de actividad
