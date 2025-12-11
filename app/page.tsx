@@ -78,6 +78,7 @@ export default function Home() {
       cumplida: false,
       diasVencidos: 67,
       detalle: 'Prometido para octubre por la presidenta Sheinbaum. Octubre llegó y el laboratorio no.',
+      imagen: '/eventos/laboratorio-ia.jpg',
     },
     {
       id: 'vfAcJmOlrgAVbwrwU9bA',
@@ -87,6 +88,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Anunciado en julio por Marcelo Ebrard. Sin documentación técnica ni código público.',
+      imagen: '/eventos/modelo-lenguaje.jpg',
     },
     {
       id: 'fpQIXV5So7Df0Y0TYqaW',
@@ -96,6 +98,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Evento realizado. Sin productos concretos.',
+      imagen: '/eventos/mexico-ia-plus.jpg',
     },
     {
       id: 'zSmTpbbyDUtKxc3bhT3a',
@@ -105,6 +108,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Anunciado. En planeación.',
+      imagen: '/eventos/cloudhq.jpg',
     },
     {
       id: 'BUqQ3xZSWblpv5Qb46vB',
@@ -114,6 +118,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Propuesta publicada. Sin aprobación.',
+      imagen: '/eventos/marco-normativo.jpg',
     },
     {
       id: 'ADyLAhTng95KSjFPUzfO',
@@ -123,6 +128,7 @@ export default function Home() {
       status: 'en_desarrollo',
       statusLabel: 'EN DESARROLLO',
       detalle: 'Convocatoria cerrada. Las clases inician en enero de 2026.',
+      imagen: '/eventos/centro-formacion.jpg',
     },
     {
       id: 'VqNqNJqNGIWqHMsQYGHV',
@@ -132,6 +138,7 @@ export default function Home() {
       status: 'en_desarrollo',
       statusLabel: 'EN DESARROLLO',
       detalle: 'Presentado sin documentación técnica, sin código público, sin benchmarks.',
+      imagen: '/eventos/kal-modelo.jpg',
     },
     {
       id: 'zzNvFLxYWkQrFMZhXOxo',
@@ -141,6 +148,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.',
+      imagen: '/eventos/coatlicue.jpg',
     },
     {
       id: 'bfPbGHMxbgHOxNgMJzpH',
@@ -150,12 +158,14 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Propuesta diplomática. Sin acuerdo vinculante.',
+      imagen: '/eventos/apec-regulacion.jpg',
     },
     {
       id: 'RNMzXVQQOJZZZBHhxlbV',
       fecha: 'Dic',
       anuncio: '15 carreras de bachillerato con IA',
       responsable: 'SEP',
+      imagen: '/eventos/carreras-sep.jpg',
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Aprobadas. Implementación: próximo ciclo escolar.',
@@ -391,81 +401,106 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Grid de Cards Premium */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Grid de Cards Premium con Imagen */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {anunciosFiltrados.map((item, index) => (
               <div
                 key={index}
                 onClick={() => router.push(`/anuncio/${item.id}`)}
-                className="group relative bg-white border border-gray-200/80 rounded-2xl p-5 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 cursor-pointer transition-all duration-300 overflow-hidden"
+                className="group relative bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10 cursor-pointer transition-all duration-500"
               >
-                {/* Barra de estado lateral */}
-                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                  item.status === 'incumplido' ? 'bg-red-500' :
-                  item.status === 'en_desarrollo' ? 'bg-blue-500' :
-                  item.status === 'operando' ? 'bg-emerald-500' :
-                  'bg-gray-300'
-                }`} />
-                
-                {/* Header del card */}
-                <div className="flex items-start justify-between gap-4 mb-4 pl-3">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <img 
-                        src={getLogo(item.responsable)} 
-                        alt="" 
-                        className="w-12 h-12 object-contain rounded-xl border border-gray-100 bg-white p-1 group-hover:scale-105 transition-transform" 
-                      />
-                      {item.status === 'incumplido' && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                          <span className="text-[8px] text-white">!</span>
-                        </div>
-                      )}
+                {/* Imagen del evento */}
+                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+                  {item.imagen ? (
+                    <img 
+                      src={item.imagen} 
+                      alt={item.anuncio}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      onError={(e) => {
+                        // Fallback si la imagen no existe
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : null}
+                  
+                  {/* Overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  
+                  {/* Badge de estado sobre la imagen */}
+                  <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-[10px] font-sans-tech font-bold uppercase tracking-wider backdrop-blur-sm ${
+                    item.status === 'incumplido' ? 'bg-red-500/90 text-white' :
+                    item.status === 'en_desarrollo' ? 'bg-blue-500/90 text-white' :
+                    item.status === 'operando' ? 'bg-emerald-500/90 text-white' :
+                    'bg-white/90 text-gray-700'
+                  }`}>
+                    {item.statusLabel}
+                  </div>
+                  
+                  {/* Fecha sobre la imagen */}
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full">
+                    <span className="font-mono text-[10px] text-white uppercase tracking-wider">
+                      {item.fecha} 2025
+                    </span>
+                  </div>
+                  
+                  {/* Título sobre la imagen */}
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <h3 className="font-sans-tech font-bold text-white text-xl leading-tight drop-shadow-lg">
+                      {item.anuncio}
+                    </h3>
+                  </div>
+                  
+                  {/* Indicador de incumplimiento */}
+                  {item.status === 'incumplido' && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-red-600 rounded-full animate-pulse">
+                      <span className="text-[10px] text-white font-bold">⚠️ INCUMPLIDO</span>
                     </div>
+                  )}
+                </div>
+                
+                {/* Contenido debajo de la imagen */}
+                <div className="p-5">
+                  {/* Responsable */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <img 
+                      src={getLogo(item.responsable)} 
+                      alt="" 
+                      className="w-10 h-10 object-contain rounded-lg border border-gray-100 bg-white p-1" 
+                    />
                     <div>
-                      <div className="font-mono text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">
-                        {item.fecha} 2025
-                      </div>
-                      <div className="font-sans-tech text-xs text-gray-500">
+                      <div className="font-sans-tech text-sm font-medium text-gray-900">
                         {item.responsable}
+                      </div>
+                      <div className="font-sans-tech text-xs text-gray-400">
+                        Responsable
                       </div>
                     </div>
                   </div>
                   
-                  {/* Badge de estado */}
-                  <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-sans-tech font-semibold uppercase tracking-wider ${
-                    item.status === 'incumplido' ? 'bg-red-50 text-red-600 border border-red-200' :
-                    item.status === 'en_desarrollo' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                    item.status === 'operando' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                    'bg-gray-100 text-gray-500 border border-gray-200'
-                  }`}>
-                    {item.statusLabel}
-                  </div>
-                </div>
-                
-                {/* Contenido */}
-                <div className="pl-3">
-                  <h3 className="font-sans-tech font-semibold text-gray-900 text-base mb-2 group-hover:text-blue-600 transition-colors">
-                    {item.anuncio}
-                  </h3>
-                  <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 font-sans-tech">
+                  {/* Detalle */}
+                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 font-sans-tech mb-4">
                     {item.detalle}
                   </p>
                   
                   {/* Footer del card */}
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                     {item.fechaPrometida && !item.cumplida && item.status === 'incumplido' ? (
                       <div className="flex items-center gap-2 text-red-500">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-xs font-mono font-medium">
+                        <span className="text-xs font-mono font-bold">
                           {item.diasVencidos || calcularDiasVencidos(item.fechaPrometida)} días de retraso
                         </span>
                       </div>
                     ) : item.fechaPrometida ? (
-                      <div className="text-xs text-gray-400 font-mono">
-                        Meta: {item.fechaPrometida}
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-xs font-mono">
+                          Meta: {item.fechaPrometida}
+                        </span>
                       </div>
                     ) : (
                       <div className="text-xs text-gray-300 font-mono">
@@ -473,17 +508,14 @@ export default function Home() {
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-1 text-xs text-blue-500 font-sans-tech opacity-0 group-hover:opacity-100 transition-opacity">
-                      Ver detalles
-                      <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1 text-sm text-blue-500 font-sans-tech font-medium group-hover:gap-2 transition-all">
+                      Ver más
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
                   </div>
                 </div>
-                
-                {/* Hover effect - gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-500 pointer-events-none rounded-2xl" />
               </div>
             ))}
           </div>
