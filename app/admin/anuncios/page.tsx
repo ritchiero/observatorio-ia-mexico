@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -13,17 +13,14 @@ import {
   Trash2, 
   ExternalLink,
   Calendar,
-  User,
-  Building2,
   FileText,
-  Clock,
-  ChevronDown,
-  ChevronRight,
   Newspaper,
   TrendingUp,
   TrendingDown,
   Minus,
-  RefreshCw
+  RefreshCw,
+  Search,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Fuente {
@@ -106,11 +103,22 @@ export default function AdminAnunciosPage() {
   const [eventos, setEventos] = useState<EventoTimeline[]>([]);
   const [loadingEventos, setLoadingEventos] = useState(false);
   
+  // Búsqueda y filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('todos');
+  
   // Estados de edición
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Anuncio>>({});
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // Estados para crear nuevo anuncio
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newAnuncio, setNewAnuncio] = useState<Partial<Anuncio>>({
+    status: 'prometido'
+  });
   
   // Estados para agregar fuente
   const [showAddFuente, setShowAddFuente] = useState(false);
@@ -141,6 +149,17 @@ export default function AdminAnunciosPage() {
   useEffect(() => {
     loadAnuncios();
   }, []);
+
+  // Filtrar anuncios
+  const filteredAnuncios = useMemo(() => {
+    return anuncios.filter(a => {
+      const matchesSearch = searchTerm === '' || 
+        a.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.responsable.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = filterStatus === 'todos' || a.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    });
+  }, [anuncios, searchTerm, filterStatus]);
 
   const loadAnuncios = async () => {
     setLoading(true);
@@ -197,13 +216,80 @@ export default function AdminAnunciosPage() {
       if (response.ok) {
         setMessage({ type: 'success', text: 'Anuncio guardado correctamente' });
         setEditMode(false);
-        // Actualizar lista local
         setAnuncios(prev => prev.map(a => 
           a.id === selectedAnuncio.id ? { ...a, ...editForm } : a
         ));
         setSelectedAnuncio({ ...selectedAnuncio, ...editForm } as Anuncio);
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al guardar' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAnuncio = async () => {
+    if (!selectedAnuncio) return;
+    
+    const confirmar = confirm(
+      `⚠️ ELIMINAR PROMESA\n\n` +
+      `¿Estás seguro de eliminar "${selectedAnuncio.titulo}"?\n\n` +
+      `Esto también eliminará todos los eventos del timeline.\n` +
+      `Esta acción NO se puede deshacer.`
+    );
+    
+    if (!confirmar) return;
+    
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/anuncios?id=${selectedAnuncio.id}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Promesa eliminada correctamente' });
+        setAnuncios(prev => prev.filter(a => a.id !== selectedAnuncio.id));
+        setSelectedAnuncio(null);
+        setEventos([]);
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Error al eliminar' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCreateAnuncio = async () => {
+    if (!newAnuncio.titulo || !newAnuncio.descripcion || !newAnuncio.responsable || !newAnuncio.dependencia) {
+      setMessage({ type: 'error', text: 'Título, descripción, responsable y dependencia son requeridos' });
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const response = await fetch('/api/anuncios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newAnuncio,
+          fechaAnuncio: newAnuncio.fechaAnuncio || new Date().toISOString().split('T')[0]
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Promesa creada correctamente' });
+        setShowCreateModal(false);
+        setNewAnuncio({ status: 'prometido' });
+        loadAnuncios();
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al crear' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión' });
@@ -224,7 +310,7 @@ export default function AdminAnunciosPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          adminKey: 'skip', // La API verificará la sesión
+          adminKey: 'skip',
           anuncioId: selectedAnuncio.id,
           fuentes: [{
             ...newFuente,
@@ -256,6 +342,39 @@ export default function AdminAnunciosPage() {
     }
   };
 
+  const handleDeleteFuente = async (fuenteUrl: string) => {
+    if (!selectedAnuncio) return;
+    
+    const confirmar = confirm('¿Eliminar esta fuente?');
+    if (!confirmar) return;
+    
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/delete-fuente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          anuncioId: selectedAnuncio.id,
+          fuenteUrl
+        })
+      });
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Fuente eliminada' });
+        // Actualizar localmente
+        const updatedFuentes = selectedAnuncio.fuentes?.filter(f => f.url !== fuenteUrl) || [];
+        setSelectedAnuncio({ ...selectedAnuncio, fuentes: updatedFuentes });
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Error al eliminar' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAddEvento = async () => {
     if (!selectedAnuncio || !newEvento.titulo || !newEvento.descripcion || !newEvento.fecha) {
       setMessage({ type: 'error', text: 'Título, descripción y fecha son requeridos' });
@@ -279,10 +398,35 @@ export default function AdminAnunciosPage() {
         setMessage({ type: 'success', text: 'Evento agregado al timeline' });
         setShowAddEvento(false);
         setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] });
-        // Recargar eventos
         loadEventos(selectedAnuncio.id);
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al agregar evento' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteEvento = async (eventoId: string) => {
+    const confirmar = confirm('¿Eliminar este evento del timeline?');
+    if (!confirmar) return;
+    
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/delete-evento-timeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventoId })
+      });
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Evento eliminado' });
+        setEventos(prev => prev.filter(e => e.id !== eventoId));
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Error al eliminar' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión' });
@@ -347,27 +491,59 @@ export default function AdminAnunciosPage() {
               Administrar Promesas de IA
             </h1>
           </div>
-          <button
-            onClick={loadAnuncios}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
-          >
-            <RefreshCw size={16} />
-            Recargar
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              <Plus size={16} />
+              Nueva Promesa
+            </button>
+            <button
+              onClick={loadAnuncios}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+            >
+              <RefreshCw size={16} />
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="flex h-[calc(100vh-65px)]">
         {/* Lista de anuncios */}
-        <div className="w-1/3 border-r border-gray-200 bg-white overflow-y-auto">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="font-medium text-gray-700">
-              {anuncios.length} Promesas
-            </h2>
+        <div className="w-1/3 border-r border-gray-200 bg-white overflow-hidden flex flex-col">
+          {/* Búsqueda y filtros */}
+          <div className="p-4 border-b border-gray-200 space-y-3">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por título o responsable..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="todos">Todos los status</option>
+                {STATUS_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <span className="text-xs text-gray-500">
+                {filteredAnuncios.length} de {anuncios.length}
+              </span>
+            </div>
           </div>
           
-          <div className="divide-y divide-gray-100">
-            {anuncios.map(anuncio => (
+          {/* Lista */}
+          <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+            {filteredAnuncios.map(anuncio => (
               <button
                 key={anuncio.id}
                 onClick={() => selectAnuncio(anuncio)}
@@ -390,6 +566,11 @@ export default function AdminAnunciosPage() {
                 </div>
               </button>
             ))}
+            {filteredAnuncios.length === 0 && (
+              <div className="p-8 text-center text-gray-400">
+                No se encontraron promesas
+              </div>
+            )}
           </div>
         </div>
 
@@ -399,9 +580,10 @@ export default function AdminAnunciosPage() {
             <div className="p-6 space-y-6">
               {/* Mensaje de estado */}
               {message && (
-                <div className={`p-3 rounded-lg ${
+                <div className={`p-3 rounded-lg flex items-center gap-2 ${
                   message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
                 }`}>
+                  {message.type === 'error' && <AlertTriangle size={16} />}
                   {message.text}
                 </div>
               )}
@@ -412,7 +594,7 @@ export default function AdminAnunciosPage() {
                   <h2 className="text-2xl font-semibold text-gray-900">
                     {selectedAnuncio.titulo}
                   </h2>
-                  <p className="text-gray-500 mt-1">
+                  <p className="text-gray-500 mt-1 text-sm font-mono">
                     ID: {selectedAnuncio.id}
                   </p>
                 </div>
@@ -437,6 +619,14 @@ export default function AdminAnunciosPage() {
                   ) : (
                     <>
                       <button
+                        onClick={handleDeleteAnuncio}
+                        disabled={deleting}
+                        className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                        title="Eliminar promesa"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <button
                         onClick={() => setEditMode(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                       >
@@ -449,7 +639,6 @@ export default function AdminAnunciosPage() {
                         className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                       >
                         <ExternalLink size={16} />
-                        Ver página
                       </Link>
                     </>
                   )}
@@ -462,9 +651,7 @@ export default function AdminAnunciosPage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Título
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
                     <input
                       type="text"
                       value={editForm.titulo || ''}
@@ -475,9 +662,7 @@ export default function AdminAnunciosPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Status
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select
                       value={editForm.status || ''}
                       onChange={e => setEditForm({ ...editForm, status: e.target.value })}
@@ -491,9 +676,7 @@ export default function AdminAnunciosPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Responsable
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
                     <input
                       type="text"
                       value={editForm.responsable || ''}
@@ -504,9 +687,7 @@ export default function AdminAnunciosPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dependencia
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Dependencia</label>
                     <input
                       type="text"
                       value={editForm.dependencia || ''}
@@ -517,9 +698,7 @@ export default function AdminAnunciosPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Fecha de Anuncio
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Anuncio</label>
                     <input
                       type="date"
                       value={editForm.fechaAnuncio?.split('T')[0] || ''}
@@ -530,9 +709,7 @@ export default function AdminAnunciosPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Fecha Prometida
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Prometida</label>
                     <input
                       type="date"
                       value={editForm.fechaPrometida?.split('T')[0] || ''}
@@ -544,9 +721,7 @@ export default function AdminAnunciosPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descripción
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                   <textarea
                     value={editForm.descripcion || ''}
                     onChange={e => setEditForm({ ...editForm, descripcion: e.target.value })}
@@ -557,9 +732,7 @@ export default function AdminAnunciosPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cita de la Promesa
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cita de la Promesa</label>
                   <textarea
                     value={editForm.citaPromesa || ''}
                     onChange={e => setEditForm({ ...editForm, citaPromesa: e.target.value })}
@@ -570,9 +743,7 @@ export default function AdminAnunciosPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Resumen del Agente (hallazgos del monitoreo)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Resumen del Agente</label>
                   <textarea
                     value={editForm.resumenAgente || ''}
                     onChange={e => setEditForm({ ...editForm, resumenAgente: e.target.value })}
@@ -595,7 +766,7 @@ export default function AdminAnunciosPage() {
                     className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
                   >
                     <Plus size={16} />
-                    Agregar fuente
+                    Agregar
                   </button>
                 </div>
                 
@@ -603,81 +774,39 @@ export default function AdminAnunciosPage() {
                   <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <h4 className="font-medium text-blue-900 mb-3">Nueva Fuente</h4>
                     <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="url"
-                        placeholder="URL *"
-                        value={newFuente.url || ''}
-                        onChange={e => setNewFuente({ ...newFuente, url: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Título *"
-                        value={newFuente.titulo || ''}
-                        onChange={e => setNewFuente({ ...newFuente, titulo: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Medio (ej: El Universal)"
-                        value={newFuente.medio || ''}
-                        onChange={e => setNewFuente({ ...newFuente, medio: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                      />
-                      <select
-                        value={newFuente.tipo || 'nota_prensa'}
-                        onChange={e => setNewFuente({ ...newFuente, tipo: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                      >
-                        {TIPO_FUENTE_OPTIONS.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
+                      <input type="url" placeholder="URL *" value={newFuente.url || ''} onChange={e => setNewFuente({ ...newFuente, url: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                      <input type="text" placeholder="Título *" value={newFuente.titulo || ''} onChange={e => setNewFuente({ ...newFuente, titulo: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                      <input type="text" placeholder="Medio (ej: El Universal)" value={newFuente.medio || ''} onChange={e => setNewFuente({ ...newFuente, medio: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                      <select value={newFuente.tipo || 'nota_prensa'} onChange={e => setNewFuente({ ...newFuente, tipo: e.target.value })} className="px-3 py-2 border rounded-lg">
+                        {TIPO_FUENTE_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
                       </select>
-                      <input
-                        type="date"
-                        value={newFuente.fecha || ''}
-                        onChange={e => setNewFuente({ ...newFuente, fecha: e.target.value })}
-                        className="px-3 py-2 border rounded-lg"
-                      />
+                      <input type="date" value={newFuente.fecha || ''} onChange={e => setNewFuente({ ...newFuente, fecha: e.target.value })} className="px-3 py-2 border rounded-lg" />
                     </div>
                     <div className="flex justify-end gap-2 mt-3">
-                      <button
-                        onClick={() => setShowAddFuente(false)}
-                        className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={handleAddFuente}
-                        disabled={saving}
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {saving ? 'Agregando...' : 'Agregar'}
-                      </button>
+                      <button onClick={() => setShowAddFuente(false)} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                      <button onClick={handleAddFuente} disabled={saving} className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">{saving ? 'Agregando...' : 'Agregar'}</button>
                     </div>
                   </div>
                 )}
                 
                 <div className="space-y-2">
                   {selectedAnuncio.fuentes?.map((fuente, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg group">
                       <FileText size={16} className="text-gray-400 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 text-sm">{fuente.titulo}</p>
                         <p className="text-xs text-gray-500">{fuente.medio} • {formatDate(fuente.fecha)}</p>
-                        <a 
-                          href={fuente.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline truncate block"
-                        >
-                          {fuente.url}
-                        </a>
+                        <a href={fuente.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate block">{fuente.url}</a>
                       </div>
+                      <button
+                        onClick={() => handleDeleteFuente(fuente.url)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-opacity"
+                        title="Eliminar fuente"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                  )) || (
-                    <p className="text-gray-400 text-sm">No hay fuentes registradas</p>
-                  )}
+                  )) || (<p className="text-gray-400 text-sm">No hay fuentes registradas</p>)}
                 </div>
               </div>
 
@@ -688,76 +817,30 @@ export default function AdminAnunciosPage() {
                     <Calendar size={18} />
                     Timeline ({eventos.length} eventos)
                   </h3>
-                  <button
-                    onClick={() => setShowAddEvento(true)}
-                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-                  >
+                  <button onClick={() => setShowAddEvento(true)} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
                     <Plus size={16} />
-                    Agregar evento
+                    Agregar
                   </button>
                 </div>
                 
                 {showAddEvento && (
                   <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <h4 className="font-medium text-green-900 mb-3">Nuevo Evento del Timeline</h4>
+                    <h4 className="font-medium text-green-900 mb-3">Nuevo Evento</h4>
                     <div className="space-y-3">
                       <div className="grid grid-cols-3 gap-3">
-                        <input
-                          type="date"
-                          value={newEvento.fecha || ''}
-                          onChange={e => setNewEvento({ ...newEvento, fecha: e.target.value })}
-                          className="px-3 py-2 border rounded-lg"
-                          placeholder="Fecha *"
-                        />
-                        <select
-                          value={newEvento.tipo || 'actualizacion'}
-                          onChange={e => setNewEvento({ ...newEvento, tipo: e.target.value })}
-                          className="px-3 py-2 border rounded-lg"
-                        >
-                          {TIPO_EVENTO_OPTIONS.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
+                        <input type="date" value={newEvento.fecha || ''} onChange={e => setNewEvento({ ...newEvento, fecha: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                        <select value={newEvento.tipo || 'actualizacion'} onChange={e => setNewEvento({ ...newEvento, tipo: e.target.value })} className="px-3 py-2 border rounded-lg">
+                          {TIPO_EVENTO_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
                         </select>
-                        <select
-                          value={newEvento.impacto || 'neutral'}
-                          onChange={e => setNewEvento({ ...newEvento, impacto: e.target.value as 'positivo' | 'neutral' | 'negativo' })}
-                          className="px-3 py-2 border rounded-lg"
-                        >
-                          {IMPACTO_OPTIONS.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
+                        <select value={newEvento.impacto || 'neutral'} onChange={e => setNewEvento({ ...newEvento, impacto: e.target.value as 'positivo' | 'neutral' | 'negativo' })} className="px-3 py-2 border rounded-lg">
+                          {IMPACTO_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
                         </select>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Título del evento *"
-                        value={newEvento.titulo || ''}
-                        onChange={e => setNewEvento({ ...newEvento, titulo: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      />
-                      <textarea
-                        placeholder="Descripción *"
-                        value={newEvento.descripcion || ''}
-                        onChange={e => setNewEvento({ ...newEvento, descripcion: e.target.value })}
-                        rows={2}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      />
-                      <textarea
-                        placeholder="Cita textual (opcional)"
-                        value={newEvento.citaTextual || ''}
-                        onChange={e => setNewEvento({ ...newEvento, citaTextual: e.target.value })}
-                        rows={2}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Responsable (opcional)"
-                        value={newEvento.responsable || ''}
-                        onChange={e => setNewEvento({ ...newEvento, responsable: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg"
-                      />
+                      <input type="text" placeholder="Título *" value={newEvento.titulo || ''} onChange={e => setNewEvento({ ...newEvento, titulo: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                      <textarea placeholder="Descripción *" value={newEvento.descripcion || ''} onChange={e => setNewEvento({ ...newEvento, descripcion: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" />
+                      <textarea placeholder="Cita textual (opcional)" value={newEvento.citaTextual || ''} onChange={e => setNewEvento({ ...newEvento, citaTextual: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" />
+                      <input type="text" placeholder="Responsable (opcional)" value={newEvento.responsable || ''} onChange={e => setNewEvento({ ...newEvento, responsable: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
                       
-                      {/* Fuentes del evento */}
                       <div className="border-t pt-3">
                         <p className="text-sm font-medium text-gray-700 mb-2">Fuentes del evento:</p>
                         {newEvento.fuentes && newEvento.fuentes.length > 0 && (
@@ -765,67 +848,22 @@ export default function AdminAnunciosPage() {
                             {newEvento.fuentes.map((f, i) => (
                               <div key={i} className="text-xs bg-white p-2 rounded flex justify-between">
                                 <span>{f.titulo}</span>
-                                <button
-                                  onClick={() => setNewEvento({
-                                    ...newEvento,
-                                    fuentes: newEvento.fuentes?.filter((_, idx) => idx !== i)
-                                  })}
-                                  className="text-red-500"
-                                >
-                                  <X size={12} />
-                                </button>
+                                <button onClick={() => setNewEvento({ ...newEvento, fuentes: newEvento.fuentes?.filter((_, idx) => idx !== i) })} className="text-red-500"><X size={12} /></button>
                               </div>
                             ))}
                           </div>
                         )}
                         <div className="flex gap-2">
-                          <input
-                            type="url"
-                            placeholder="URL"
-                            value={newEventoFuente.url || ''}
-                            onChange={e => setNewEventoFuente({ ...newEventoFuente, url: e.target.value })}
-                            className="flex-1 px-2 py-1 border rounded text-sm"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Título"
-                            value={newEventoFuente.titulo || ''}
-                            onChange={e => setNewEventoFuente({ ...newEventoFuente, titulo: e.target.value })}
-                            className="flex-1 px-2 py-1 border rounded text-sm"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Medio"
-                            value={newEventoFuente.medio || ''}
-                            onChange={e => setNewEventoFuente({ ...newEventoFuente, medio: e.target.value })}
-                            className="w-32 px-2 py-1 border rounded text-sm"
-                          />
-                          <button
-                            onClick={addFuenteToEvento}
-                            className="px-2 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300"
-                          >
-                            +
-                          </button>
+                          <input type="url" placeholder="URL" value={newEventoFuente.url || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, url: e.target.value })} className="flex-1 px-2 py-1 border rounded text-sm" />
+                          <input type="text" placeholder="Título" value={newEventoFuente.titulo || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, titulo: e.target.value })} className="flex-1 px-2 py-1 border rounded text-sm" />
+                          <input type="text" placeholder="Medio" value={newEventoFuente.medio || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, medio: e.target.value })} className="w-24 px-2 py-1 border rounded text-sm" />
+                          <button onClick={addFuenteToEvento} className="px-2 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300">+</button>
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 mt-3">
-                      <button
-                        onClick={() => {
-                          setShowAddEvento(false);
-                          setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] });
-                        }}
-                        className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={handleAddEvento}
-                        disabled={saving}
-                        className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {saving ? 'Agregando...' : 'Agregar evento'}
-                      </button>
+                      <button onClick={() => { setShowAddEvento(false); setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] }); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                      <button onClick={handleAddEvento} disabled={saving} className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">{saving ? 'Agregando...' : 'Agregar'}</button>
                     </div>
                   </div>
                 )}
@@ -839,7 +877,7 @@ export default function AdminAnunciosPage() {
                       const impactoColor = IMPACTO_OPTIONS.find(i => i.value === evento.impacto)?.color || 'text-gray-600';
                       
                       return (
-                        <div key={evento.id} className="p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300">
+                        <div key={evento.id} className="p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300 group">
                           <div className="flex items-start gap-3">
                             <ImpactoIcon size={18} className={impactoColor} />
                             <div className="flex-1">
@@ -849,17 +887,16 @@ export default function AdminAnunciosPage() {
                               </div>
                               <h4 className="font-medium text-gray-900 text-sm mt-1">{evento.titulo}</h4>
                               <p className="text-xs text-gray-600 mt-1">{evento.descripcion}</p>
-                              {evento.citaTextual && (
-                                <p className="text-xs italic text-gray-500 mt-1 border-l-2 border-gray-300 pl-2">
-                                  "{evento.citaTextual}"
-                                </p>
-                              )}
-                              {evento.fuentes?.length > 0 && (
-                                <p className="text-xs text-blue-600 mt-1">
-                                  {evento.fuentes.length} fuente(s)
-                                </p>
-                              )}
+                              {evento.citaTextual && (<p className="text-xs italic text-gray-500 mt-1 border-l-2 border-gray-300 pl-2">"{evento.citaTextual}"</p>)}
+                              {evento.fuentes?.length > 0 && (<p className="text-xs text-blue-600 mt-1">{evento.fuentes.length} fuente(s)</p>)}
                             </div>
+                            <button
+                              onClick={() => handleDeleteEvento(evento.id)}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-opacity"
+                              title="Eliminar evento"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         </div>
                       );
@@ -877,6 +914,70 @@ export default function AdminAnunciosPage() {
           )}
         </div>
       </div>
+
+      {/* Modal: Crear Nueva Promesa */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Nueva Promesa de IA</h2>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                  <input type="text" value={newAnuncio.titulo || ''} onChange={e => setNewAnuncio({ ...newAnuncio, titulo: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Ej: Laboratorio Nacional de IA" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Responsable *</label>
+                  <input type="text" value={newAnuncio.responsable || ''} onChange={e => setNewAnuncio({ ...newAnuncio, responsable: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Ej: Claudia Sheinbaum" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Dependencia *</label>
+                  <input type="text" value={newAnuncio.dependencia || ''} onChange={e => setNewAnuncio({ ...newAnuncio, dependencia: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Ej: Presidencia" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Anuncio</label>
+                  <input type="date" value={newAnuncio.fechaAnuncio || ''} onChange={e => setNewAnuncio({ ...newAnuncio, fechaAnuncio: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Prometida</label>
+                  <input type="date" value={newAnuncio.fechaPrometida || ''} onChange={e => setNewAnuncio({ ...newAnuncio, fechaPrometida: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select value={newAnuncio.status || 'prometido'} onChange={e => setNewAnuncio({ ...newAnuncio, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                    {STATUS_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fuente Original (URL)</label>
+                  <input type="url" value={newAnuncio.fuenteOriginal || ''} onChange={e => setNewAnuncio({ ...newAnuncio, fuenteOriginal: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="https://..." />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descripción *</label>
+                  <textarea value={newAnuncio.descripcion || ''} onChange={e => setNewAnuncio({ ...newAnuncio, descripcion: e.target.value })} rows={3} className="w-full px-3 py-2 border rounded-lg" placeholder="Descripción de la promesa..." />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cita de la Promesa</label>
+                  <textarea value={newAnuncio.citaPromesa || ''} onChange={e => setNewAnuncio({ ...newAnuncio, citaPromesa: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" placeholder="Cita textual de la promesa..." />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+              <button onClick={handleCreateAnuncio} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                {saving ? 'Creando...' : 'Crear Promesa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
