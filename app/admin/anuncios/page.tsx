@@ -141,6 +141,8 @@ export default function AdminAnunciosPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [jsonEditMode, setJsonEditMode] = useState(false);
+  const [jsonEditText, setJsonEditText] = useState('');
   
   // Estados para crear nuevo anuncio
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -293,6 +295,7 @@ export default function AdminAnunciosPage() {
       if (response.ok) {
         setMessage({ type: 'success', text: 'Anuncio guardado correctamente' });
         setEditMode(false);
+        setJsonEditMode(false);
         setAnuncios(prev => prev.map(a => 
           a.id === selectedAnuncio.id ? { ...a, ...editForm } : a
         ));
@@ -305,6 +308,76 @@ export default function AdminAnunciosPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveFromJson = async () => {
+    if (!selectedAnuncio || !jsonEditText.trim()) {
+      setMessage({ type: 'error', text: 'Ingresa el JSON' });
+      return;
+    }
+
+    let parsed: Partial<Anuncio>;
+    try {
+      parsed = JSON.parse(jsonEditText);
+    } catch {
+      setMessage({ type: 'error', text: 'JSON inválido. Verifica el formato.' });
+      return;
+    }
+
+    // No permitir cambiar el ID
+    delete (parsed as { id?: string }).id;
+
+    setSaving(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/anuncios', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedAnuncio.id,
+          ...parsed
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Anuncio actualizado desde JSON' });
+        setEditMode(false);
+        setJsonEditMode(false);
+        // Recargar el anuncio
+        await reloadSelectedAnuncio();
+        loadAnuncios();
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al guardar' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const enterJsonEditMode = () => {
+    if (!selectedAnuncio) return;
+    // Crear JSON limpio sin campos internos
+    const cleanData = {
+      titulo: selectedAnuncio.titulo,
+      descripcion: selectedAnuncio.descripcion,
+      fechaAnuncio: selectedAnuncio.fechaAnuncio?.split('T')[0],
+      fechaPrometida: selectedAnuncio.fechaPrometida?.split('T')[0] || null,
+      responsable: selectedAnuncio.responsable,
+      dependencia: selectedAnuncio.dependencia,
+      status: selectedAnuncio.status,
+      citaPromesa: selectedAnuncio.citaPromesa || '',
+      resumenAgente: selectedAnuncio.resumenAgente || '',
+      imagen: selectedAnuncio.imagen || '',
+      fuentes: selectedAnuncio.fuentes || []
+    };
+    setJsonEditText(JSON.stringify(cleanData, null, 2));
+    setJsonEditMode(true);
+    setEditMode(true);
   };
 
   const handleDeleteAnuncio = async () => {
@@ -1081,13 +1154,20 @@ export default function AdminAnunciosPage() {
                   {editMode ? (
                     <>
                       <button
-                        onClick={() => setEditMode(false)}
+                        onClick={() => { setEditMode(false); setJsonEditMode(false); }}
                         className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                       >
                         Cancelar
                       </button>
                       <button
-                        onClick={handleSaveAnuncio}
+                        onClick={() => setJsonEditMode(!jsonEditMode)}
+                        className={`px-3 py-2 rounded-lg text-sm ${jsonEditMode ? 'bg-amber-100 text-amber-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                        title="Alternar modo JSON"
+                      >
+                        {jsonEditMode ? '📝 Formulario' : '{ } JSON'}
+                      </button>
+                      <button
+                        onClick={jsonEditMode ? handleSaveFromJson : handleSaveAnuncio}
                         disabled={saving}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                       >
@@ -1120,6 +1200,13 @@ export default function AdminAnunciosPage() {
                         <Edit size={16} />
                         Editar
                       </button>
+                      <button
+                        onClick={enterJsonEditMode}
+                        className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                        title="Editar como JSON"
+                      >
+                        { } JSON
+                      </button>
                       <Link
                         href={`/anuncio/${selectedAnuncio.id}`}
                         target="_blank"
@@ -1132,7 +1219,28 @@ export default function AdminAnunciosPage() {
                 </div>
               </div>
 
+              {/* Editor JSON */}
+              {jsonEditMode && (
+                <div className="bg-amber-50 rounded-xl border border-amber-200 p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-amber-900">Editar como JSON</h3>
+                    <span className="text-xs text-amber-600">El campo &quot;id&quot; no se puede modificar</span>
+                  </div>
+                  <textarea
+                    value={jsonEditText}
+                    onChange={e => setJsonEditText(e.target.value)}
+                    rows={20}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-lg font-mono text-sm bg-white"
+                    placeholder="Pega o edita el JSON aquí..."
+                  />
+                  <p className="text-xs text-amber-600 mt-2">
+                    Campos: titulo, descripcion, fechaAnuncio (YYYY-MM-DD), fechaPrometida, responsable, dependencia, status, citaPromesa, resumenAgente, imagen, fuentes[]
+                  </p>
+                </div>
+              )}
+
               {/* Formulario de edición */}
+              {!jsonEditMode && (
               <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
                 <h3 className="font-medium text-gray-900 mb-4">Información General</h3>
                 
@@ -1298,6 +1406,7 @@ export default function AdminAnunciosPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Fuentes */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
