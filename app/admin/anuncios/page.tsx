@@ -26,7 +26,9 @@ import {
   Upload,
   ChevronUp,
   ChevronDown,
-  Check
+  Check,
+  History,
+  Clock
 } from 'lucide-react';
 
 interface Fuente {
@@ -109,6 +111,17 @@ export default function AdminAnunciosPage() {
   const [selectedAnuncio, setSelectedAnuncio] = useState<Anuncio | null>(null);
   const [eventos, setEventos] = useState<EventoTimeline[]>([]);
   const [loadingEventos, setLoadingEventos] = useState(false);
+  
+  // Log de actividad
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [activityLog, setActivityLog] = useState<Array<{
+    id: string;
+    fecha: string;
+    tipo: string;
+    descripcion: string;
+    anuncioTitulo?: string;
+  }>>([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
   
   // Búsqueda y filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -212,6 +225,19 @@ export default function AdminAnunciosPage() {
       console.error('Error cargando anuncios:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadActivityLog = async () => {
+    setLoadingActivity(true);
+    try {
+      const response = await fetch('/api/actividad?limit=50');
+      const data = await response.json();
+      setActivityLog(data.actividad || []);
+    } catch (error) {
+      console.error('Error cargando actividad:', error);
+    } finally {
+      setLoadingActivity(false);
     }
   };
 
@@ -760,6 +786,13 @@ export default function AdminAnunciosPage() {
               onChange={handleImportJSON}
               className="hidden"
             />
+            <button
+              onClick={() => { setShowActivityLog(true); loadActivityLog(); }}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              title="Ver historial de cambios"
+            >
+              <History size={16} />
+            </button>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
@@ -1362,6 +1395,63 @@ export default function AdminAnunciosPage() {
               <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
               <button onClick={handleCreateAnuncio} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
                 {saving ? 'Creando...' : 'Crear Promesa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Log de Actividad */}
+      {showActivityLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <History size={20} />
+                Historial de Cambios
+              </h2>
+              <button onClick={() => setShowActivityLog(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingActivity ? (
+                <p className="text-gray-400 text-center py-8">Cargando historial...</p>
+              ) : activityLog.length > 0 ? (
+                <div className="space-y-3">
+                  {activityLog.map((item) => (
+                    <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Clock size={16} className="text-gray-400 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                            {item.tipo.replace(/_/g, ' ')}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {formatDate(item.fecha)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 mt-1">{item.descripcion}</p>
+                        {item.anuncioTitulo && (
+                          <p className="text-xs text-gray-500 mt-1">📋 {item.anuncioTitulo}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-center py-8">No hay actividad registrada</p>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-gray-200 flex justify-between items-center">
+              <span className="text-xs text-gray-400">Últimos 50 cambios</span>
+              <button 
+                onClick={() => setShowActivityLog(false)} 
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                Cerrar
               </button>
             </div>
           </div>
