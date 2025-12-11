@@ -147,6 +147,9 @@ export default function DashboardPage() {
   }, [status, router]);
 
   const handleImportIniciativas = async () => {
+    console.log('[IMPORT] Iniciando importación...');
+    console.log('[IMPORT] jsonInput length:', jsonInput.length);
+    
     setImporting(true);
     setImportError('');
     setImportResult(null);
@@ -155,35 +158,45 @@ export default function DashboardPage() {
       // Parsear el JSON
       let iniciativas;
       try {
+        console.log('[IMPORT] Parseando JSON...');
         const parsed = JSON.parse(jsonInput);
+        console.log('[IMPORT] JSON parseado:', parsed);
         iniciativas = Array.isArray(parsed) ? parsed : parsed.iniciativas;
-      } catch {
+      } catch (parseError) {
+        console.error('[IMPORT] Error parseando JSON:', parseError);
         setImportError('JSON inválido. Verifica el formato.');
         setImporting(false);
         return;
       }
 
       if (!Array.isArray(iniciativas) || iniciativas.length === 0) {
+        console.error('[IMPORT] Array vacío o no es array');
         setImportError('El JSON debe contener un array de iniciativas.');
         setImporting(false);
         return;
       }
 
+      console.log('[IMPORT] Enviando', iniciativas.length, 'iniciativas al API...');
+
       // Llamar al API
       const response = await fetch('/api/admin/import-iniciativas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ iniciativas }),
       });
 
+      console.log('[IMPORT] Response status:', response.status);
       const data = await response.json();
+      console.log('[IMPORT] Response data:', data);
 
       if (!response.ok) {
-        setImportError(data.error || 'Error al importar');
+        setImportError(data.error || `Error ${response.status}: ${response.statusText}`);
       } else {
         setImportResult(data);
       }
     } catch (err: any) {
+      console.error('[IMPORT] Error:', err);
       setImportError(err.message || 'Error de conexión');
     } finally {
       setImporting(false);
@@ -1053,23 +1066,32 @@ export default function DashboardPage() {
                   {/* Formato esperado */}
                   <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="font-sans-tech text-xs text-gray-600 mb-2">
-                      <strong>Formato esperado:</strong>
+                      <strong>Formato esperado (ambos formatos son válidos):</strong>
                     </p>
                     <pre className="font-mono text-xs text-gray-500 overflow-x-auto">
 {`[
   {
-    "id": "iniciativa-70",  // opcional
-    "Propuesta": "Título de la iniciativa",
-    "Proponente": "Nombre del proponente",
-    "Fecha": "15/01/2025",  // DD/MM/YYYY
-    "Estado": "En comisiones",
-    "Legislatura": "LXVI",
-    "Tipo": "ley_federal",
-    "Descripción": "Descripción...",
-    "Fuente": "https://..."
+    "id": "mi-iniciativa-001",     // opcional
+    "titulo": "Título de la iniciativa",
+    "proponente": "Nombre del proponente",
+    "fecha": "2025-01-15",         // YYYY-MM-DD o DD/MM/YYYY
+    "estatus": "En comisiones",
+    "legislatura": "LXVI",
+    "categoria": "Ley Federal",
+    "descripcion": "Descripción detallada...",
+    "resumen": "Resumen breve...",
+    "urlGaceta": "https://...",
+    "urlPDF": "https://...",
+    "camara": "Diputados",
+    "partido": "Morena",
+    "ambito": "Federal",
+    "categoriaTema": "gobernanza_ia"
   }
 ]`}
                     </pre>
+                    <p className="font-sans-tech text-xs text-gray-400 mt-2">
+                      También acepta formato legacy: Propuesta, Proponente, Fecha, Estado...
+                    </p>
                   </div>
 
                   {/* Textarea */}
