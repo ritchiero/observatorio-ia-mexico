@@ -61,7 +61,7 @@ function convertTimestamp(value: unknown): string | null {
 /**
  * Obtener todos los eventos de timeline de un anuncio
  */
-export async function obtenerEventosTimeline(anuncioId: string): Promise<EventoTimeline[]> {
+export async function obtenerEventosTimeline(anuncioId: string): Promise<Record<string, unknown>[]> {
   const db = getAdminDb();
   
   const snapshot = await db
@@ -86,7 +86,7 @@ export async function obtenerEventosTimeline(anuncioId: string): Promise<EventoT
       fecha: convertTimestamp(data.fecha) || data.fecha,
       createdAt: convertTimestamp(data.createdAt),
       fuentes
-    } as EventoTimeline;
+    };
   });
 }
 
