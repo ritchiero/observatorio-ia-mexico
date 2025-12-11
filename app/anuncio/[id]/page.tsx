@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Anuncio, EventoTimeline, Fuente } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import { formatDate } from '@/lib/utils';
-import { ArrowLeft, Calendar, User, Building2, ExternalLink, Newspaper, Clock, TrendingUp, TrendingDown, Minus }  from 'lucide-react';
+import { ArrowLeft, Calendar, User, Building2, ExternalLink, Newspaper, Clock, TrendingUp, TrendingDown, Minus, ChevronDown, Megaphone, Circle }  from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
 // Helper para convertir Firestore Timestamp a Date
@@ -263,27 +263,13 @@ export default function AnuncioDetailPage() {
             )}
           </div>
 
-          {eventos.length > 0 ? (
-            <div className="space-y-8">
-              {Object.entries(eventosAgrupados)
-                .sort(([a], [b]) => b.localeCompare(a)) // Más recientes primero
-                .map(([mes, eventosDelMes]) => (
-                  <MesTimeline key={mes} mes={mes} eventos={eventosDelMes} />
-                ))
-              }
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-              <Clock className="mx-auto text-gray-300 mb-4" size={48} />
-              <p className="text-gray-600 font-sans-tech mb-2">
-                No hay eventos registrados aún
-              </p>
-              <p className="text-sm text-gray-400 font-sans-tech max-w-md mx-auto">
-                El historial se construirá automáticamente cuando se detecten 
-                actualizaciones sobre esta promesa.
-              </p>
-            </div>
-          )}
+          {/* Timeline mensual desde fecha de anuncio hasta hoy */}
+          <TimelineMensual 
+            fechaAnuncio={fechaAnuncio} 
+            eventos={eventos} 
+            eventosAgrupados={eventosAgrupados}
+            anuncio={anuncio}
+          />
         </section>
 
         {/* Nota sobre el monitoreo */}
@@ -488,38 +474,203 @@ function NoticiaCard({ fuente }: { fuente: Fuente }) {
   );
 }
 
-// Componente MesTimeline
-function MesTimeline({ mes, eventos }: { mes: string; eventos: EventoTimeline[] }) {
+// Generar lista de meses desde fecha de anuncio hasta hoy
+function generarMesesDesdeAnuncio(fechaAnuncio: Date | null): string[] {
+  if (!fechaAnuncio) return [];
+  
+  const meses: string[] = [];
+  const hoy = new Date();
+  const fecha = new Date(fechaAnuncio.getFullYear(), fechaAnuncio.getMonth(), 1);
+  
+  while (fecha <= hoy) {
+    const mes = `${(fecha.getMonth() + 1).toString().padStart(2, '0')}-${fecha.getFullYear()}`;
+    meses.push(mes);
+    fecha.setMonth(fecha.getMonth() + 1);
+  }
+  
+  return meses.reverse(); // Más recientes primero
+}
+
+// Componente principal del Timeline Mensual
+function TimelineMensual({ 
+  fechaAnuncio, 
+  eventos, 
+  eventosAgrupados,
+  anuncio 
+}: { 
+  fechaAnuncio: Date | null; 
+  eventos: EventoTimeline[];
+  eventosAgrupados: Record<string, EventoTimeline[]>;
+  anuncio: Anuncio;
+}) {
+  const meses = generarMesesDesdeAnuncio(fechaAnuncio);
+  const mesAnuncio = fechaAnuncio 
+    ? `${(fechaAnuncio.getMonth() + 1).toString().padStart(2, '0')}-${fechaAnuncio.getFullYear()}`
+    : null;
+
+  if (meses.length === 0) {
+    return (
+      <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
+        <Clock className="mx-auto text-gray-300 mb-4" size={48} />
+        <p className="text-gray-500 font-sans-tech">No hay fecha de anuncio registrada</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+      {meses.map((mes, index) => {
+        const eventosDelMes = eventosAgrupados[mes] || [];
+        const esAnuncio = mes === mesAnuncio;
+        const tieneMovimientos = eventosDelMes.length > 0;
+        
+        return (
+          <FilaMes 
+            key={mes}
+            mes={mes}
+            eventos={eventosDelMes}
+            esAnuncio={esAnuncio}
+            tieneMovimientos={tieneMovimientos}
+            esPrimero={index === 0}
+            anuncio={anuncio}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// Componente FilaMes - Fila colapsable por mes
+function FilaMes({ 
+  mes, 
+  eventos, 
+  esAnuncio, 
+  tieneMovimientos,
+  esPrimero,
+  anuncio
+}: { 
+  mes: string;
+  eventos: EventoTimeline[];
+  esAnuncio: boolean;
+  tieneMovimientos: boolean;
+  esPrimero: boolean;
+  anuncio: Anuncio;
+}) {
+  const [expandido, setExpandido] = useState(esAnuncio || tieneMovimientos);
+  
   const [mesStr, anio] = mes.split('-');
   const nombreMes = new Date(parseInt(anio), parseInt(mesStr) - 1).toLocaleDateString('es-MX', { 
     month: 'long', 
     year: 'numeric' 
   });
 
+  // Contar avances y retrocesos del mes
+  const avances = eventos.filter(e => e.impacto === 'positivo').length;
+  const retrocesos = eventos.filter(e => e.impacto === 'negativo').length;
+
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-px flex-1 bg-gradient-to-r from-blue-200 to-transparent"></div>
-        <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wider font-sans-tech">
-          {nombreMes}
-        </h3>
-        <div className="h-px flex-1 bg-gradient-to-l from-blue-200 to-transparent"></div>
-      </div>
+    <div className={`${!esPrimero ? 'border-t border-gray-200' : ''}`}>
+      {/* Header del mes - clickeable */}
+      <button
+        onClick={() => setExpandido(!expandido)}
+        className={`w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors ${
+          esAnuncio ? 'bg-blue-50' : ''
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          {/* Indicador */}
+          <div className={`w-2 h-2 rounded-full ${
+            esAnuncio ? 'bg-blue-500' : tieneMovimientos ? 'bg-emerald-500' : 'bg-gray-300'
+          }`} />
+          
+          {/* Nombre del mes */}
+          <span className={`font-medium font-sans-tech capitalize ${
+            esAnuncio ? 'text-blue-700' : 'text-gray-700'
+          }`}>
+            {nombreMes}
+          </span>
+          
+          {/* Badge de anuncio */}
+          {esAnuncio && (
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-sans-tech flex items-center gap-1">
+              <Megaphone size={10} />
+              Anuncio
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {/* Estado del mes */}
+          {tieneMovimientos ? (
+            <div className="flex items-center gap-2 text-xs font-sans-tech">
+              {avances > 0 && (
+                <span className="text-emerald-600 flex items-center gap-1">
+                  <TrendingUp size={12} />
+                  {avances}
+                </span>
+              )}
+              {retrocesos > 0 && (
+                <span className="text-red-600 flex items-center gap-1">
+                  <TrendingDown size={12} />
+                  {retrocesos}
+                </span>
+              )}
+              {avances === 0 && retrocesos === 0 && (
+                <span className="text-gray-500">{eventos.length} actualización{eventos.length > 1 ? 'es' : ''}</span>
+              )}
+            </div>
+          ) : !esAnuncio ? (
+            <span className="text-xs text-gray-400 font-sans-tech">Sin movimientos</span>
+          ) : null}
+          
+          {/* Chevron */}
+          <ChevronDown 
+            size={16} 
+            className={`text-gray-400 transition-transform ${expandido ? 'rotate-180' : ''}`}
+          />
+        </div>
+      </button>
       
-      <div className="space-y-4">
-        {eventos.map((evento) => (
-          <EventoCard key={evento.id} evento={evento} />
-        ))}
-      </div>
+      {/* Contenido expandible */}
+      {expandido && (
+        <div className="px-4 pb-4 pt-2 bg-gray-50/50">
+          {esAnuncio && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Megaphone className="text-blue-500 flex-shrink-0 mt-0.5" size={18} />
+                <div>
+                  <p className="text-sm font-medium text-blue-800 font-sans-tech">
+                    Fecha del anuncio oficial
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1 font-sans-tech">
+                    {anuncio.responsable} anunció esta iniciativa públicamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {eventos.length > 0 ? (
+            <div className="space-y-3">
+              {eventos.map((evento) => (
+                <EventoCompacto key={evento.id} evento={evento} />
+              ))}
+            </div>
+          ) : !esAnuncio ? (
+            <p className="text-sm text-gray-400 font-sans-tech py-2 text-center">
+              No se registraron movimientos este mes
+            </p>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
 
-// Componente EventoCard
-function EventoCard({ evento }: { evento: EventoTimeline }) {
+// Componente EventoCompacto - Evento dentro de un mes
+function EventoCompacto({ evento }: { evento: EventoTimeline }) {
   const [expandido, setExpandido] = useState(false);
-
-  // Convertir timestamp a fecha
+  
   const fecha = timestampToDate(evento.fecha) || new Date();
   const fechaFormateada = fecha.toLocaleDateString('es-MX', {
     day: 'numeric',
@@ -527,97 +678,80 @@ function EventoCard({ evento }: { evento: EventoTimeline }) {
   });
 
   const impactoConfig = {
-    positivo: { icon: <TrendingUp size={16} />, color: 'text-emerald-600', bg: 'bg-emerald-100', border: 'border-emerald-200' },
-    neutral: { icon: <Minus size={16} />, color: 'text-gray-500', bg: 'bg-gray-100', border: 'border-gray-200' },
-    negativo: { icon: <TrendingDown size={16} />, color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-200' }
+    positivo: { icon: <TrendingUp size={14} />, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+    neutral: { icon: <Minus size={14} />, color: 'text-gray-500', bg: 'bg-gray-100' },
+    negativo: { icon: <TrendingDown size={14} />, color: 'text-red-600', bg: 'bg-red-100' }
   };
 
   const config = impactoConfig[evento.impacto];
 
   return (
-    <div className={`rounded-xl border ${config.border} bg-white overflow-hidden`}>
-      <div className="p-4 sm:p-5">
-        <div className="flex items-start gap-4">
-          {/* Indicador de impacto */}
-          <div className={`flex-shrink-0 w-10 h-10 rounded-full ${config.bg} ${config.color} flex items-center justify-center`}>
-            {config.icon}
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            {/* Header */}
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-medium text-gray-400 font-mono">
-                {fechaFormateada}
-              </span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${config.bg} ${config.color} font-sans-tech`}>
-                {evento.impacto === 'positivo' ? 'Avance' : evento.impacto === 'negativo' ? 'Retroceso' : 'Actualización'}
-              </span>
-            </div>
-            
-            {/* Título */}
-            <h4 className="font-semibold text-gray-900 font-sans-tech mb-2">
-              {evento.titulo}
-            </h4>
-            
-            {/* Descripción */}
-            <p className="text-sm text-gray-600 font-sans-tech leading-relaxed">
-              {evento.descripcion}
-            </p>
-
-            {/* Cita textual */}
-            {evento.citaTextual && (
-              <blockquote className="mt-3 border-l-2 border-blue-300 pl-3 py-1 bg-blue-50 rounded-r">
-                <p className="text-sm text-gray-700 italic font-serif-display">
-                  &ldquo;{evento.citaTextual}&rdquo;
-                </p>
-                {evento.responsable && (
-                  <footer className="text-xs text-gray-500 mt-1 font-sans-tech">
-                    — {evento.responsable}
-                  </footer>
-                )}
-              </blockquote>
-            )}
-
-            {/* Fuentes */}
-            {evento.fuentes.length > 0 && (
-              <div className="mt-3">
-                <button
-                  onClick={() => setExpandido(!expandido)}
-                  className="text-xs text-blue-600 hover:text-blue-500 font-medium font-sans-tech flex items-center gap-1"
-                >
-                  {expandido ? 'Ocultar fuentes' : `Ver ${evento.fuentes.length} fuente${evento.fuentes.length > 1 ? 's' : ''}`}
-                </button>
-                
-                {expandido && (
-                  <div className="mt-3 space-y-2">
-                    {evento.fuentes.map((fuente, idx) => (
-                      <a
-                        key={idx}
-                        href={fuente.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            {fuente.medio && (
-                              <span className="text-xs text-gray-500 font-sans-tech">{fuente.medio}</span>
-                            )}
-                            <p className="text-sm font-medium text-gray-800 font-sans-tech">
-                              {fuente.titulo}
-                            </p>
-                          </div>
-                          <ExternalLink size={12} className="text-gray-400 flex-shrink-0" />
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Header clickeable */}
+      <button
+        onClick={() => setExpandido(!expandido)}
+        className="w-full p-3 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
+      >
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full ${config.bg} ${config.color} flex items-center justify-center`}>
+          {config.icon}
         </div>
-      </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 font-mono">{fechaFormateada}</span>
+            <span className={`text-xs px-1.5 py-0.5 rounded ${config.bg} ${config.color} font-sans-tech`}>
+              {evento.impacto === 'positivo' ? 'Avance' : evento.impacto === 'negativo' ? 'Retroceso' : 'Info'}
+            </span>
+          </div>
+          <h4 className="font-medium text-gray-900 font-sans-tech text-sm truncate">
+            {evento.titulo}
+          </h4>
+        </div>
+        
+        <ChevronDown 
+          size={14} 
+          className={`text-gray-400 flex-shrink-0 transition-transform ${expandido ? 'rotate-180' : ''}`}
+        />
+      </button>
+      
+      {/* Contenido expandido */}
+      {expandido && (
+        <div className="px-3 pb-3 pt-0 border-t border-gray-100">
+          <p className="text-sm text-gray-600 font-sans-tech mt-3 leading-relaxed">
+            {evento.descripcion}
+          </p>
+          
+          {evento.citaTextual && (
+            <blockquote className="mt-3 border-l-2 border-blue-300 pl-3 py-1 bg-blue-50 rounded-r">
+              <p className="text-sm text-gray-700 italic font-serif-display">
+                &ldquo;{evento.citaTextual}&rdquo;
+              </p>
+              {evento.responsable && (
+                <footer className="text-xs text-gray-500 mt-1 font-sans-tech">
+                  — {evento.responsable}
+                </footer>
+              )}
+            </blockquote>
+          )}
+          
+          {evento.fuentes.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {evento.fuentes.map((fuente, idx) => (
+                <a
+                  key={idx}
+                  href={fuente.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-500 bg-blue-50 px-2 py-1 rounded font-sans-tech"
+                >
+                  {fuente.medio || 'Fuente'}
+                  <ExternalLink size={10} />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
