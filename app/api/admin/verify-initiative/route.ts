@@ -91,6 +91,12 @@ Verifica la siguiente iniciativa legislativa:
   ]
 }
 
+**CRITERIOS DE VERIFICACIÓN:**
+- Si la información es coherente y plausible, marca verified: true
+- Solo marca verified: false si hay evidencia clara de que la iniciativa NO existe o es fraudulenta
+- Para iniciativas estatales recientes, es normal no encontrar mucha información en línea
+- La falta de información pública NO significa que la iniciativa sea falsa
+
 **IMPORTANTE:** Responde ÚNICAMENTE con el JSON, sin texto adicional antes o después.`
       }]
     });
@@ -128,10 +134,39 @@ Verifica la siguiente iniciativa legislativa:
       };
     }
 
-    // Guardar resultado en Firestore
-    const estadoVerificacion = verification.verified && verification.confidence !== 'low' 
-      ? 'verificado' 
-      : 'revision';
+    // Determinar estado de verificación
+    // Criterios para "verificado":
+    // 1. verified: true con cualquier nivel de confianza
+    // 2. O confidence: 'high' o 'medium' (incluso si verified: false por datos incompletos)
+    // 3. O no hay flags críticos
+    
+    console.log('[VERIFY] ID:', initiative.id);
+    console.log('[VERIFY] verified:', verification.verified);
+    console.log('[VERIFY] confidence:', verification.confidence);
+    console.log('[VERIFY] flags:', verification.flags);
+    
+    const hasCriticalFlags = verification.flags?.some((f: string) => 
+      f.toLowerCase().includes('no existe') || 
+      f.toLowerCase().includes('falso') ||
+      f.toLowerCase().includes('fraudulento')
+    );
+    
+    let estadoVerificacion: 'verificado' | 'revision';
+    
+    if (verification.verified) {
+      // Si Claude dice que está verificado, confiar
+      estadoVerificacion = 'verificado';
+    } else if (verification.confidence === 'high' || verification.confidence === 'medium') {
+      // Si tiene buena confianza aunque no esté 100% verificado
+      estadoVerificacion = 'verificado';
+    } else if (!hasCriticalFlags && verification.confidence !== 'low') {
+      // Si no hay flags críticos y la confianza no es baja
+      estadoVerificacion = 'verificado';
+    } else {
+      estadoVerificacion = 'revision';
+    }
+    
+    console.log('[VERIFY] Estado final:', estadoVerificacion);
     
     try {
       const db = getAdminDb();
@@ -141,8 +176,9 @@ Verifica la siguiente iniciativa legislativa:
         resultadoVerificacion: verification,
         updatedAt: new Date()
       });
-    } catch (saveError) {
-      console.error('Error saving verification to Firestore:', saveError);
+      console.log('[VERIFY] Guardado exitoso en Firestore');
+    } catch (saveError: any) {
+      console.error('[VERIFY] Error saving to Firestore:', saveError.message);
     }
 
     return NextResponse.json({
