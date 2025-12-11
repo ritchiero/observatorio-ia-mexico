@@ -118,7 +118,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Propuesta publicada. Sin aprobación.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/VMqlwqeFZkSQZhxe.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/CBknYpnmRnbmDeJt.jpg',
     },
     {
       id: 'ADyLAhTng95KSjFPUzfO',
@@ -128,7 +128,7 @@ export default function Home() {
       status: 'en_desarrollo',
       statusLabel: 'EN DESARROLLO',
       detalle: 'Convocatoria cerrada. Las clases inician en enero de 2026.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/QaRztStQjmxjfOWP.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/QMxTxEKxNqvltEgD.jpg',
     },
     {
       id: 'VqNqNJqNGIWqHMsQYGHV',
