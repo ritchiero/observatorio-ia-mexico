@@ -32,6 +32,7 @@ export default function Home() {
   }>>([]);
   const [anuncios, setAnuncios] = useState<AnuncioData[]>([]);
   const [loadingAnuncios, setLoadingAnuncios] = useState(true);
+  const [loadingLegStats, setLoadingLegStats] = useState(true);
 
   // Cargar anuncios/promesas de IA
   useEffect(() => {
@@ -83,6 +84,8 @@ export default function Home() {
         }
       } catch (error) {
         console.error('Error fetching legislacion:', error);
+      } finally {
+        setLoadingLegStats(false);
       }
     }
     fetchLegislacion();
@@ -203,7 +206,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <HeroSection stats={stats} legStats={legStats} loading={loadingAnuncios} />
+      <HeroSection stats={stats} legStats={legStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} />
 
       {/* Sección: Cómo funciona - Observatorio Automatizado */}
       <section id="metodologia" className="bg-gray-50 border-y border-gray-300/5 py-10 sm:py-14 px-4">
@@ -528,15 +531,21 @@ export default function Home() {
             {/* Stats rápidas */}
             <div className="flex gap-3">
               <div className="bg-white border border-gray-200 rounded-xl p-4 text-center min-w-[80px]">
-                <div className="font-serif-display text-2xl sm:text-3xl text-gray-900">{legStats.total}</div>
+                <div className={`font-serif-display text-2xl sm:text-3xl text-gray-900 ${loadingLegStats ? 'animate-pulse' : ''}`}>
+                  {loadingLegStats ? '—' : legStats.total}
+                </div>
                 <div className="text-[10px] font-sans-tech text-gray-500 uppercase tracking-wider">Iniciativas</div>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center min-w-[80px]">
-                <div className="font-serif-display text-2xl sm:text-3xl text-blue-600">{legStats.activas}</div>
+                <div className={`font-serif-display text-2xl sm:text-3xl text-blue-600 ${loadingLegStats ? 'animate-pulse' : ''}`}>
+                  {loadingLegStats ? '—' : legStats.activas}
+                </div>
                 <div className="text-[10px] font-sans-tech text-blue-600 uppercase tracking-wider">Activas</div>
               </div>
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center min-w-[80px]">
-                <div className="font-serif-display text-2xl sm:text-3xl text-emerald-600">{legStats.aprobadas}</div>
+                <div className={`font-serif-display text-2xl sm:text-3xl text-emerald-600 ${loadingLegStats ? 'animate-pulse' : ''}`}>
+                  {loadingLegStats ? '—' : legStats.aprobadas}
+                </div>
                 <div className="text-[10px] font-sans-tech text-emerald-600 uppercase tracking-wider">Aprobadas</div>
               </div>
             </div>
@@ -596,7 +605,7 @@ export default function Home() {
             </Link>
             <div className="flex items-center gap-2 text-xs text-gray-500 font-sans-tech">
               <ShieldCheck size={14} className="text-emerald-500" />
-              <span>{legStats.verificadas} iniciativas verificadas con IA</span>
+              <span>{loadingLegStats ? 'Cargando...' : `${legStats.verificadas} iniciativas verificadas con IA`}</span>
             </div>
           </div>
         </div>

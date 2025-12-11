@@ -17,10 +17,12 @@ interface HeroSectionProps {
     activas: number;
   };
   loading?: boolean;
+  loadingLeg?: boolean;
 }
 
-export default function HeroSection({ stats, legStats, loading }: HeroSectionProps) {
+export default function HeroSection({ stats, legStats, loading, loadingLeg }: HeroSectionProps) {
   const isLoading = loading || stats.total === 0;
+  const isLoadingLeg = loadingLeg !== false && (!legStats || legStats.total === 0);
   const [mounted, setMounted] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -142,7 +144,9 @@ export default function HeroSection({ stats, legStats, loading }: HeroSectionPro
               <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Productos Operativos</div>
             </div>
             <Link href="/legislacion" className="group cursor-pointer">
-              <div className="font-serif-display text-3xl md:text-5xl text-emerald-600 group-hover:text-gray-900 transition-colors duration-300">{legStats?.total || '—'}</div>
+              <div className={`font-serif-display text-3xl md:text-5xl text-emerald-600 group-hover:text-gray-900 transition-colors duration-300 ${isLoadingLeg ? 'animate-pulse' : ''}`}>
+                {isLoadingLeg ? '—' : legStats?.total}
+              </div>
               <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
                 <Scale size={10} className="hidden md:inline" />
                 Iniciativas de Ley
