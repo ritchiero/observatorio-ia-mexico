@@ -201,6 +201,41 @@ Verifica la siguiente iniciativa legislativa:
         console.log('[VERIFY] Categoría detectada:', verification.categoriaTema);
       }
       
+      // APLICAR CORRECCIONES AUTOMÁTICAMENTE si las hay
+      if (verification.corrections) {
+        const corrections = verification.corrections;
+        
+        // Aplicar corrección de estatus si existe y es diferente
+        if (corrections.estatus && corrections.estatus !== initiative.estatus) {
+          updateData.estatus = corrections.estatus;
+          console.log('[VERIFY] Aplicando corrección de estatus:', corrections.estatus);
+        }
+        
+        // Aplicar corrección de título si existe
+        if (corrections.titulo && corrections.titulo !== initiative.titulo) {
+          updateData.titulo = corrections.titulo;
+          console.log('[VERIFY] Aplicando corrección de título:', corrections.titulo);
+        }
+        
+        // Aplicar corrección de proponente si existe
+        if (corrections.proponente && corrections.proponente !== initiative.proponente) {
+          updateData.proponente = corrections.proponente;
+          console.log('[VERIFY] Aplicando corrección de proponente:', corrections.proponente);
+        }
+        
+        // Aplicar corrección de URL PDF si existe
+        if (corrections.urlPDF && corrections.urlPDF !== initiative.urlPDF) {
+          updateData.urlPDF = corrections.urlPDF;
+          console.log('[VERIFY] Aplicando corrección de URL PDF:', corrections.urlPDF);
+        }
+        
+        // Guardar también el estatus verificado por la IA
+        if (verification.currentStatus && verification.currentStatus !== 'no encontrado') {
+          updateData.estatusVerificado = verification.currentStatus;
+          console.log('[VERIFY] Estatus verificado por IA:', verification.currentStatus);
+        }
+      }
+      
       const docRef = db.collection('iniciativas').doc(initiative.id);
       const docSnap = await docRef.get();
       
@@ -218,6 +253,7 @@ Verifica la siguiente iniciativa legislativa:
       }
       
       console.log('[VERIFY] Guardado exitoso en Firestore');
+      console.log('[VERIFY] Datos actualizados:', JSON.stringify(updateData, null, 2));
     } catch (saveError: any) {
       console.error('[VERIFY] Error saving to Firestore:', saveError.message);
     }

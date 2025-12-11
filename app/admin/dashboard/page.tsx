@@ -437,7 +437,7 @@ export default function DashboardPage() {
     setVerificationResult(null);
   };
 
-  // Verificar iniciativa con Claude Haiku 4.5
+  // Verificar iniciativa con Claude Sonnet 4
   const handleVerifyInitiative = async () => {
     if (!selectedIniciativa) return;
     
@@ -448,6 +448,7 @@ export default function DashboardPage() {
       const response = await fetch('/api/admin/verify-initiative', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(selectedIniciativa)
       });
       
@@ -460,17 +461,52 @@ export default function DashboardPage() {
           fechaVerificacion: data.fechaVerificacion
         });
         
-        // Actualizar la iniciativa en la lista local
+        // Actualizar la iniciativa en la lista local con TODAS las correcciones aplicadas
         if (selectedIniciativa) {
+          const corrections = data.verification?.corrections || {};
           const updatedIniciativa = {
             ...selectedIniciativa,
             estadoVerificacion: data.estadoVerificacion,
-            fechaVerificacion: data.fechaVerificacion
+            fechaVerificacion: data.fechaVerificacion,
+            // Aplicar correcciones si existen
+            ...(corrections.estatus && { estatus: corrections.estatus }),
+            ...(corrections.titulo && { titulo: corrections.titulo }),
+            ...(corrections.proponente && { proponente: corrections.proponente }),
+            ...(corrections.urlPDF && { urlPDF: corrections.urlPDF }),
+            ...(data.verification?.categoriaTema && { categoriaTema: data.verification.categoriaTema }),
           };
+          
+          console.log('[VERIFY UI] Correcciones aplicadas:', corrections);
+          console.log('[VERIFY UI] Iniciativa actualizada:', updatedIniciativa);
+          
           setSelectedIniciativa(updatedIniciativa);
           setIniciativas(prev => prev.map(ini => 
             ini.id === selectedIniciativa.id ? updatedIniciativa : ini
           ));
+          
+          // Actualizar el formulario de edición
+          setEditForm({
+            titulo: updatedIniciativa.titulo,
+            estatus: updatedIniciativa.estatus,
+            proponente: updatedIniciativa.proponente,
+            categoria: updatedIniciativa.categoria,
+            categoriaTema: updatedIniciativa.categoriaTema,
+            descripcion: updatedIniciativa.descripcion,
+            resumen: updatedIniciativa.resumen,
+            legislatura: updatedIniciativa.legislatura,
+            tipo: updatedIniciativa.tipo,
+            camara: updatedIniciativa.camara,
+            entidadFederativa: updatedIniciativa.entidadFederativa,
+            ambito: updatedIniciativa.ambito,
+            urlGaceta: updatedIniciativa.urlGaceta,
+            urlPDF: updatedIniciativa.urlPDF,
+            partido: updatedIniciativa.partido,
+          });
+          
+          // Actualizar el JSON de edición
+          const jsonData = { ...updatedIniciativa };
+          delete (jsonData as Record<string, unknown>).id;
+          setEditJsonInput(JSON.stringify(jsonData, null, 2));
         }
       } else {
         alert('Error al verificar: ' + data.error);
