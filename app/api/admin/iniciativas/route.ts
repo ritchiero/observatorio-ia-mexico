@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Actualizar iniciativa existente
+// PUT - Actualizar iniciativa existente (o crear si no existe)
 export async function PUT(request: NextRequest) {
   console.log('[API PUT] Iniciando actualización de iniciativa');
   
@@ -72,7 +72,29 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    await db.collection('iniciativas').doc(id).update({
+    const docRef = db.collection('iniciativas').doc(id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      // El documento no existe - crearlo con set()
+      console.log('[API PUT] Documento no existe, creando con set()');
+      await docRef.set({
+        ...cleanData,
+        id,
+        creadoManualmente: true,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+      console.log('[API PUT] Documento creado exitosamente');
+      return NextResponse.json({
+        success: true,
+        message: 'Iniciativa creada exitosamente (no existía previamente)',
+        created: true
+      });
+    }
+
+    // El documento existe - actualizarlo
+    await docRef.update({
       ...cleanData,
       updatedAt: FieldValue.serverTimestamp()
     });

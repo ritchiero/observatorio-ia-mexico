@@ -201,7 +201,22 @@ Verifica la siguiente iniciativa legislativa:
         console.log('[VERIFY] Categoría detectada:', verification.categoriaTema);
       }
       
-      await db.collection('iniciativas').doc(initiative.id).update(updateData);
+      const docRef = db.collection('iniciativas').doc(initiative.id);
+      const docSnap = await docRef.get();
+      
+      if (!docSnap.exists) {
+        // El documento no existe - crearlo con todos los datos
+        console.log('[VERIFY] Documento no existe, creando con set()');
+        await docRef.set({
+          ...initiative,
+          ...updateData,
+          creadoManualmente: true,
+          createdAt: new Date()
+        });
+      } else {
+        await docRef.update(updateData);
+      }
+      
       console.log('[VERIFY] Guardado exitoso en Firestore');
     } catch (saveError: any) {
       console.error('[VERIFY] Error saving to Firestore:', saveError.message);
