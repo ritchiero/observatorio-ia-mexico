@@ -296,13 +296,13 @@ export async function GET() {
     ];
 
     // Eliminar eventos existentes del timeline para este anuncio
-    const existingEvents = await db.collection('timeline').where('anuncioId', '==', anuncioId).get();
+    const existingEvents = await db.collection('eventos_timeline').where('anuncioId', '==', anuncioId).get();
     const deletePromises = existingEvents.docs.map(doc => doc.ref.delete());
     await Promise.all(deletePromises);
 
     // Crear nuevos eventos
     for (const evento of eventos) {
-      const eventoRef = db.collection('timeline').doc();
+      const eventoRef = db.collection('eventos_timeline').doc();
       await eventoRef.set({
         id: eventoRef.id,
         ...evento
