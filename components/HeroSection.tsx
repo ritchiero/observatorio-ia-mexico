@@ -16,9 +16,11 @@ interface HeroSectionProps {
     total: number;
     activas: number;
   };
+  loading?: boolean;
 }
 
-export default function HeroSection({ stats, legStats }: HeroSectionProps) {
+export default function HeroSection({ stats, legStats, loading }: HeroSectionProps) {
+  const isLoading = loading || stats.total === 0;
   const [mounted, setMounted] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -121,22 +123,26 @@ export default function HeroSection({ stats, legStats }: HeroSectionProps) {
 
             {/* Subheadline */}
             <p className="font-sans-tech text-lg md:text-xl text-gray-900/60 max-w-2xl leading-relaxed animate-reveal delay-300 border-l border-blue-500/30 pl-6 ml-1">
-              Documentamos la brecha sistémica entre la narrativa gubernamental de innovación y la realidad operativa. <span className="text-gray-900/90">{stats.total} anuncios en 2025. {stats.operando} implementaciones verificadas.</span>
+              Documentamos la brecha sistémica entre la narrativa gubernamental de innovación y la realidad operativa. <span className="text-gray-900/90">{isLoading ? 'Cargando datos...' : `${stats.total} anuncios en 2025. ${stats.operando} implementaciones verificadas.`}</span>
             </p>
           </div>
 
           {/* STATS ROW */}
           <div className="grid grid-cols-3 gap-6 md:gap-8 mt-16 border-t border-gray-300/10 pt-8 max-w-3xl animate-reveal delay-400">
             <div className="group cursor-default">
-              <div className="font-serif-display text-3xl md:text-5xl text-gray-900 group-hover:text-blue-400 transition-colors duration-300">{stats.total}</div>
+              <div className={`font-serif-display text-3xl md:text-5xl text-gray-900 group-hover:text-blue-400 transition-colors duration-300 ${isLoading ? 'animate-pulse' : ''}`}>
+                {isLoading ? '—' : stats.total}
+              </div>
               <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Anuncios Oficiales</div>
             </div>
             <div className="group cursor-default">
-              <div className="font-serif-display text-3xl md:text-5xl text-blue-500 group-hover:text-gray-900 transition-colors duration-300">{stats.operando}</div>
+              <div className={`font-serif-display text-3xl md:text-5xl text-blue-500 group-hover:text-gray-900 transition-colors duration-300 ${isLoading ? 'animate-pulse' : ''}`}>
+                {isLoading ? '—' : stats.operando}
+              </div>
               <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Productos Operativos</div>
             </div>
             <Link href="/legislacion" className="group cursor-pointer">
-              <div className="font-serif-display text-3xl md:text-5xl text-emerald-600 group-hover:text-gray-900 transition-colors duration-300">{legStats?.total || '80+'}</div>
+              <div className="font-serif-display text-3xl md:text-5xl text-emerald-600 group-hover:text-gray-900 transition-colors duration-300">{legStats?.total || '—'}</div>
               <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
                 <Scale size={10} className="hidden md:inline" />
                 Iniciativas de Ley
