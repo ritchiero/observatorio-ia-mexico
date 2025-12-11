@@ -286,6 +286,9 @@ export default function DashboardPage() {
         data = { error: 'Respuesta inválida del servidor' };
       }
 
+      console.log('[SAVE JSON] Response status:', response.status);
+      console.log('[SAVE JSON] Response data:', data);
+
       if (response.ok) {
         setSaveMessage({ type: 'success', text: 'Iniciativa actualizada desde JSON' });
         // Actualizar la lista local
@@ -296,9 +299,12 @@ export default function DashboardPage() {
         setSelectedIniciativa(updatedIniciativa);
         setEditForm(parsedJson);
       } else {
-        setSaveMessage({ type: 'error', text: data.error || 'Error al guardar' });
+        const errorMsg = data.error || `Error ${response.status}: ${response.statusText}`;
+        console.error('[SAVE JSON] Error:', errorMsg);
+        setSaveMessage({ type: 'error', text: errorMsg });
       }
     } catch (err: any) {
+      console.error('[SAVE JSON] Exception:', err);
       setSaveMessage({ type: 'error', text: err.message || 'Error de conexión' });
     } finally {
       setSaving(false);

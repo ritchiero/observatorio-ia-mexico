@@ -38,14 +38,24 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar iniciativa existente
 export async function PUT(request: NextRequest) {
+  console.log('[API PUT] Iniciando actualización de iniciativa');
+  
   // Verificar autenticación de administrador
   const authError = await requireAdmin();
-  if (authError) return authError;
+  if (authError) {
+    console.log('[API PUT] Error de autenticación');
+    return authError;
+  }
+  
+  console.log('[API PUT] Autenticación exitosa');
 
   try {
     const db = getAdminDb();
     const data = await request.json();
     const { id, ...updateData } = data;
+
+    console.log('[API PUT] ID:', id);
+    console.log('[API PUT] Campos a actualizar:', Object.keys(updateData));
 
     if (!id) {
       return NextResponse.json(
@@ -54,19 +64,29 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Limpiar campos undefined
+    const cleanData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(updateData)) {
+      if (value !== undefined) {
+        cleanData[key] = value;
+      }
+    }
+
     await db.collection('iniciativas').doc(id).update({
-      ...updateData,
+      ...cleanData,
       updatedAt: FieldValue.serverTimestamp()
     });
+
+    console.log('[API PUT] Actualización exitosa');
 
     return NextResponse.json({
       success: true,
       message: 'Iniciativa actualizada exitosamente'
     });
-  } catch (error) {
-    console.error('Error updating iniciativa:', error);
+  } catch (error: any) {
+    console.error('[API PUT] Error:', error.message || error);
     return NextResponse.json(
-      { error: 'Error al actualizar iniciativa' },
+      { error: error.message || 'Error al actualizar iniciativa' },
       { status: 500 }
     );
   }
