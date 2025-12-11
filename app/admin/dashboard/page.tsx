@@ -104,9 +104,10 @@ export default function DashboardPage() {
   const [bulkQueue, setBulkQueue] = useState<Array<{
     id: string;
     titulo: string;
-    status: 'pending' | 'verifying' | 'verified' | 'revision' | 'error';
+    status: 'pending' | 'verifying' | 'verified' | 'revision' | 'error' | 'correcting' | 'corrected';
     error?: string;
   }>>([]);
+  const [isBulkCorrecting, setIsBulkCorrecting] = useState(false);
 
   // JSON edit mode
   const [jsonEditMode, setJsonEditMode] = useState(false);
@@ -592,6 +593,82 @@ export default function DashboardPage() {
     });
     
     setIsBulkVerifying(false);
+  };
+
+  // Corregir en lote las iniciativas que quedaron en revisión
+  const handleBulkCorrect = async () => {
+    const toCorrect = bulkQueue.filter(item => item.status === 'revision');
+    
+    if (toCorrect.length === 0) {
+      alert('No hay iniciativas en revisión para corregir');
+      return;
+    }
+
+    const confirmar = confirm(
+      `🔧 CORRECCIÓN AUTOMÁTICA EN LOTE\n\n` +
+      `Se corregirán ${toCorrect.length} iniciativas que requieren revisión.\n` +
+      `El agente buscará los datos correctos para cada una.\n\n` +
+      `¿Deseas continuar?`
+    );
+
+    if (!confirmar) return;
+
+    setIsBulkCorrecting(true);
+
+    for (let i = 0; i < toCorrect.length; i++) {
+      const item = toCorrect[i];
+      const iniciativa = iniciativas.find(ini => ini.id === item.id);
+      
+      if (!iniciativa) continue;
+
+      // Actualizar estado a "correcting"
+      setBulkQueue(prev => prev.map(q => 
+        q.id === item.id ? { ...q, status: 'correcting' } : q
+      ));
+
+      try {
+        const response = await fetch('/api/admin/correct-initiative', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            iniciativa: iniciativa,
+            verificationResult: null // La API buscará los datos correctos
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Actualizar a "corrected"
+          setBulkQueue(prev => prev.map(q => 
+            q.id === item.id ? { ...q, status: 'corrected' } : q
+          ));
+
+          // Actualizar la lista local de iniciativas
+          setIniciativas(prev => prev.map(ini => 
+            ini.id === item.id 
+              ? { ...ini, ...data.correctedData, estadoVerificacion: 'verificado', fechaVerificacion: new Date().toISOString() }
+              : ini
+          ));
+        } else {
+          setBulkQueue(prev => prev.map(q => 
+            q.id === item.id ? { ...q, status: 'error', error: data.error } : q
+          ));
+        }
+      } catch (error: any) {
+        setBulkQueue(prev => prev.map(q => 
+          q.id === item.id ? { ...q, status: 'error', error: error.message || 'Error de conexión' } : q
+        ));
+      }
+
+      // Pausa entre correcciones
+      if (i < toCorrect.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+    }
+
+    setIsBulkCorrecting(false);
   };
 
   const filteredIniciativas = iniciativas.filter(ini =>
@@ -1709,28 +1786,34 @@ export default function DashboardPage() {
               ) : isBulkVerifying || bulkQueue.length > 0 ? (
                 <div className="space-y-4">
                   {/* Resumen en tiempo real */}
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="bg-gray-50 rounded-lg p-3 text-center">
-                      <p className="font-sans-tech text-xl font-bold text-gray-900">{bulkQueue.length}</p>
-                      <p className="font-sans-tech text-[10px] text-gray-500">Total</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    <div className="bg-gray-50 rounded-lg p-2 text-center">
+                      <p className="font-sans-tech text-lg font-bold text-gray-900">{bulkQueue.length}</p>
+                      <p className="font-sans-tech text-[9px] text-gray-500">Total</p>
                     </div>
-                    <div className="bg-green-50 rounded-lg p-3 text-center">
-                      <p className="font-sans-tech text-xl font-bold text-green-600">
+                    <div className="bg-green-50 rounded-lg p-2 text-center">
+                      <p className="font-sans-tech text-lg font-bold text-green-600">
                         {bulkQueue.filter(i => i.status === 'verified').length}
                       </p>
-                      <p className="font-sans-tech text-[10px] text-green-600">Verificados</p>
+                      <p className="font-sans-tech text-[9px] text-green-600">Verificados</p>
                     </div>
-                    <div className="bg-orange-50 rounded-lg p-3 text-center">
-                      <p className="font-sans-tech text-xl font-bold text-orange-600">
+                    <div className="bg-orange-50 rounded-lg p-2 text-center">
+                      <p className="font-sans-tech text-lg font-bold text-orange-600">
                         {bulkQueue.filter(i => i.status === 'revision').length}
                       </p>
-                      <p className="font-sans-tech text-[10px] text-orange-600">Revisión</p>
+                      <p className="font-sans-tech text-[9px] text-orange-600">Revisión</p>
                     </div>
-                    <div className="bg-blue-50 rounded-lg p-3 text-center">
-                      <p className="font-sans-tech text-xl font-bold text-blue-600">
-                        {bulkQueue.filter(i => i.status === 'pending' || i.status === 'verifying').length}
+                    <div className="bg-emerald-50 rounded-lg p-2 text-center">
+                      <p className="font-sans-tech text-lg font-bold text-emerald-600">
+                        {bulkQueue.filter(i => i.status === 'corrected').length}
                       </p>
-                      <p className="font-sans-tech text-[10px] text-blue-600">Pendientes</p>
+                      <p className="font-sans-tech text-[9px] text-emerald-600">Corregidos</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-2 text-center">
+                      <p className="font-sans-tech text-lg font-bold text-blue-600">
+                        {bulkQueue.filter(i => i.status === 'pending' || i.status === 'verifying' || i.status === 'correcting').length}
+                      </p>
+                      <p className="font-sans-tech text-[9px] text-blue-600">Proceso</p>
                     </div>
                   </div>
 
@@ -1743,6 +1826,8 @@ export default function DashboardPage() {
                           item.status === 'verified' ? 'bg-green-50' :
                           item.status === 'revision' ? 'bg-orange-50' :
                           item.status === 'verifying' ? 'bg-blue-50 animate-pulse' :
+                          item.status === 'correcting' ? 'bg-orange-50 animate-pulse' :
+                          item.status === 'corrected' ? 'bg-emerald-50' :
                           item.status === 'error' ? 'bg-red-50' :
                           'bg-gray-50'
                         }`}
@@ -1761,6 +1846,12 @@ export default function DashboardPage() {
                           {item.status === 'revision' && (
                             <AlertCircle size={18} className="text-orange-500" />
                           )}
+                          {item.status === 'correcting' && (
+                            <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                          )}
+                          {item.status === 'corrected' && (
+                            <CheckCircle size={18} className="text-emerald-500" />
+                          )}
                           {item.status === 'error' && (
                             <X size={18} className="text-red-500" />
                           )}
@@ -1772,6 +1863,8 @@ export default function DashboardPage() {
                             item.status === 'verifying' ? 'text-blue-700 font-medium' :
                             item.status === 'verified' ? 'text-green-700' :
                             item.status === 'revision' ? 'text-orange-700' :
+                            item.status === 'correcting' ? 'text-orange-700 font-medium' :
+                            item.status === 'corrected' ? 'text-emerald-700' :
                             item.status === 'error' ? 'text-red-700' :
                             'text-gray-600'
                           }`}>
@@ -1779,6 +1872,12 @@ export default function DashboardPage() {
                           </p>
                           {item.status === 'verifying' && (
                             <p className="font-sans-tech text-[10px] text-blue-500">Verificando con Claude Sonnet 4...</p>
+                          )}
+                          {item.status === 'correcting' && (
+                            <p className="font-sans-tech text-[10px] text-orange-500">🔧 Buscando datos correctos...</p>
+                          )}
+                          {item.status === 'corrected' && (
+                            <p className="font-sans-tech text-[10px] text-emerald-500">✓ Corregido y verificado</p>
                           )}
                           {item.status === 'error' && item.error && (
                             <p className="font-sans-tech text-[10px] text-red-500">{item.error}</p>
@@ -1793,17 +1892,37 @@ export default function DashboardPage() {
                     ))}
                   </div>
 
-                  {/* Botón de cerrar cuando termine */}
-                  {!isBulkVerifying && (
-                    <button
-                      onClick={() => {
-                        setShowBulkModal(false);
-                        setBulkQueue([]);
-                      }}
-                      className="w-full py-3 bg-gray-100 text-gray-700 font-sans-tech font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      Cerrar
-                    </button>
+                  {/* Botones de acción cuando termine */}
+                  {!isBulkVerifying && !isBulkCorrecting && (
+                    <div className="space-y-2">
+                      {/* Botón de corregir si hay revisiones */}
+                      {bulkQueue.filter(i => i.status === 'revision').length > 0 && (
+                        <button
+                          onClick={handleBulkCorrect}
+                          className="w-full py-3 bg-orange-500 text-white font-sans-tech font-medium rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                          🔧 Corregir {bulkQueue.filter(i => i.status === 'revision').length} con IA
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setShowBulkModal(false);
+                          setBulkQueue([]);
+                        }}
+                        className="w-full py-3 bg-gray-100 text-gray-700 font-sans-tech font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Indicador de corrección en progreso */}
+                  {isBulkCorrecting && (
+                    <div className="text-center py-2">
+                      <p className="font-sans-tech text-sm text-orange-600">
+                        🔧 Corrigiendo iniciativas... No cierres esta ventana.
+                      </p>
+                    </div>
                   )}
                 </div>
               ) : bulkResults ? (
