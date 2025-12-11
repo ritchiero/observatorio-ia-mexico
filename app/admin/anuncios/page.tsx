@@ -113,6 +113,8 @@ export default function AdminAnunciosPage() {
   // Búsqueda y filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('todos');
+  const [sortBy, setSortBy] = useState<'fechaAnuncio' | 'fechaPrometida' | 'titulo' | 'status' | 'manual'>('fechaAnuncio');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // Estados de edición
   const [editMode, setEditMode] = useState(false);
@@ -159,16 +161,46 @@ export default function AdminAnunciosPage() {
     loadAnuncios();
   }, []);
 
-  // Filtrar anuncios
+  // Filtrar y ordenar anuncios
   const filteredAnuncios = useMemo(() => {
-    return anuncios.filter(a => {
+    const filtered = anuncios.filter(a => {
       const matchesSearch = searchTerm === '' || 
         a.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.responsable.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === 'todos' || a.status === filterStatus;
       return matchesSearch && matchesStatus;
     });
-  }, [anuncios, searchTerm, filterStatus]);
+
+    // Ordenar
+    const statusOrder = ['incumplido', 'prometido', 'en_desarrollo', 'operando', 'abandonado'];
+    
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'fechaAnuncio':
+          comparison = new Date(a.fechaAnuncio || 0).getTime() - new Date(b.fechaAnuncio || 0).getTime();
+          break;
+        case 'fechaPrometida':
+          const fechaA = a.fechaPrometida ? new Date(a.fechaPrometida).getTime() : 0;
+          const fechaB = b.fechaPrometida ? new Date(b.fechaPrometida).getTime() : 0;
+          comparison = fechaA - fechaB;
+          break;
+        case 'titulo':
+          comparison = a.titulo.localeCompare(b.titulo, 'es');
+          break;
+        case 'status':
+          comparison = statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+          break;
+        case 'manual':
+          // Usa el campo 'orden' si existe
+          comparison = (a as Anuncio & { orden?: number }).orden || 0 - ((b as Anuncio & { orden?: number }).orden || 0);
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [anuncios, searchTerm, filterStatus, sortBy, sortOrder]);
 
   const loadAnuncios = async () => {
     setLoading(true);
@@ -759,7 +791,34 @@ export default function AdminAnunciosPage() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-65px)]">
+      {/* Estadísticas rápidas */}
+      <div className="bg-white border-b border-gray-200 px-6 py-3">
+        <div className="flex items-center gap-4 text-sm">
+          <span className="text-gray-500">Resumen:</span>
+          {STATUS_OPTIONS.map(opt => {
+            const count = anuncios.filter(a => a.status === opt.value).length;
+            if (count === 0) return null;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setFilterStatus(filterStatus === opt.value ? 'todos' : opt.value)}
+                className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                  filterStatus === opt.value 
+                    ? opt.color + ' ring-2 ring-offset-1 ring-gray-400' 
+                    : opt.color + ' opacity-70 hover:opacity-100'
+                }`}
+              >
+                {count} {opt.label}
+              </button>
+            );
+          })}
+          <span className="text-gray-400 ml-auto">
+            Total: {anuncios.length} promesas
+          </span>
+        </div>
+      </div>
+
+      <div className="flex h-[calc(100vh-113px)]">
         {/* Lista de anuncios */}
         <div className="w-1/3 border-r border-gray-200 bg-white overflow-hidden flex flex-col">
           {/* Búsqueda y filtros */}
@@ -785,8 +844,27 @@ export default function AdminAnunciosPage() {
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-              <span className="text-xs text-gray-500">
-                {filteredAnuncios.length} de {anuncios.length}
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as typeof sortBy)}
+                className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="fechaAnuncio">Fecha de anuncio</option>
+                <option value="fechaPrometida">Fecha prometida</option>
+                <option value="titulo">Alfabético (A-Z)</option>
+                <option value="status">Por status</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+              <span className="text-xs text-gray-500 whitespace-nowrap">
+                {filteredAnuncios.length}/{anuncios.length}
               </span>
             </div>
           </div>
