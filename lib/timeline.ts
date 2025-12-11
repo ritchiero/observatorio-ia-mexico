@@ -58,10 +58,25 @@ function convertTimestamp(value: unknown): string | null {
   return null;
 }
 
+// Interfaz para eventos devueltos por la API
+interface EventoTimelineResponse {
+  id: string;
+  anuncioId: string;
+  fecha: string;
+  tipo: string;
+  titulo: string;
+  descripcion: string;
+  impacto: 'positivo' | 'neutral' | 'negativo';
+  fuentes: Array<{ url: string; titulo: string; fecha?: string }>;
+  citaTextual?: string;
+  responsable?: string;
+  createdAt?: string;
+}
+
 /**
  * Obtener todos los eventos de timeline de un anuncio
  */
-export async function obtenerEventosTimeline(anuncioId: string): Promise<Record<string, unknown>[]> {
+export async function obtenerEventosTimeline(anuncioId: string): Promise<EventoTimelineResponse[]> {
   const db = getAdminDb();
   
   const snapshot = await db
@@ -74,18 +89,24 @@ export async function obtenerEventosTimeline(anuncioId: string): Promise<Record<
     const data = doc.data();
     
     // Convertir fechas de fuentes
-    const fuentes = data.fuentes?.map((f: Record<string, unknown>) => ({
-      ...f,
-      fecha: convertTimestamp(f.fecha) || f.fecha,
-      fechaPublicacion: convertTimestamp(f.fechaPublicacion) || f.fechaPublicacion
-    })) || [];
+    const fuentes = (data.fuentes || []).map((f: Record<string, unknown>) => ({
+      url: f.url as string,
+      titulo: f.titulo as string,
+      fecha: (convertTimestamp(f.fecha) || f.fecha) as string,
+    }));
 
     return {
-      ...data,
       id: doc.id,
-      fecha: convertTimestamp(data.fecha) || data.fecha,
-      createdAt: convertTimestamp(data.createdAt),
-      fuentes
+      anuncioId: data.anuncioId,
+      fecha: (convertTimestamp(data.fecha) || data.fecha) as string,
+      tipo: data.tipo,
+      titulo: data.titulo,
+      descripcion: data.descripcion,
+      impacto: data.impacto,
+      fuentes,
+      citaTextual: data.citaTextual,
+      responsable: data.responsable,
+      createdAt: convertTimestamp(data.createdAt) || undefined,
     };
   });
 }
