@@ -72,6 +72,7 @@ Verifica la siguiente iniciativa legislativa:
   "summary": "Resumen breve de la verificación en español (2-3 oraciones)",
   "currentStatus": "estatus actual verificado o 'no encontrado'",
   "statusMatch": true/false,
+  "categoriaTema": "propiedad_intelectual" | "responsabilidad" | "ciberseguridad" | "delitos" | "laboral" | "privacidad_datos" | "deepfakes" | "salud" | "educacion" | "sector_publico" | "etica_transparencia" | "regulacion_general" | "violencia_genero" | "transporte" | "servicios_financieros",
   "corrections": {
     "titulo": "título sugerido si aplica, o null",
     "estatus": "estatus sugerido si aplica, o null",
@@ -90,6 +91,23 @@ Verifica la siguiente iniciativa legislativa:
     "Recomendación 2"
   ]
 }
+
+**CATEGORÍAS TEMÁTICAS (elige la más apropiada):**
+- propiedad_intelectual: Derechos de autor, patentes, obras generadas por IA
+- responsabilidad: Responsabilidad civil/penal por uso de IA
+- ciberseguridad: Seguridad de sistemas, ataques con IA
+- delitos: Delitos cometidos con IA (fraude, estafas)
+- laboral: Impacto en empleo, derechos de trabajadores
+- privacidad_datos: Protección de datos, reconocimiento facial
+- deepfakes: Contenido sintético, suplantación de identidad
+- salud: IA en medicina, diagnóstico
+- educacion: IA en educación, herramientas educativas
+- sector_publico: Gobierno digital, decisiones automatizadas
+- etica_transparencia: Principios éticos, explicabilidad
+- regulacion_general: Marco regulatorio general de IA
+- violencia_genero: Violencia digital, pornografía no consentida
+- transporte: Vehículos autónomos, drones
+- servicios_financieros: IA en banca, seguros, créditos
 
 **CRITERIOS DE VERIFICACIÓN:**
 - Si la información es coherente y plausible, marca verified: true
@@ -170,12 +188,20 @@ Verifica la siguiente iniciativa legislativa:
     
     try {
       const db = getAdminDb();
-      await db.collection('iniciativas').doc(initiative.id).update({
+      const updateData: any = {
         estadoVerificacion,
         fechaVerificacion: new Date().toISOString(),
         resultadoVerificacion: verification,
         updatedAt: new Date()
-      });
+      };
+      
+      // Agregar categoría si fue detectada
+      if (verification.categoriaTema) {
+        updateData.categoriaTema = verification.categoriaTema;
+        console.log('[VERIFY] Categoría detectada:', verification.categoriaTema);
+      }
+      
+      await db.collection('iniciativas').doc(initiative.id).update(updateData);
       console.log('[VERIFY] Guardado exitoso en Firestore');
     } catch (saveError: any) {
       console.error('[VERIFY] Error saving to Firestore:', saveError.message);

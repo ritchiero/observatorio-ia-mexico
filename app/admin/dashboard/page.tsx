@@ -28,6 +28,7 @@ interface Iniciativa {
   status?: string;
   proponente: string;
   categoria?: string;
+  categoriaTema?: string;
   fecha: string;
   descripcion?: string;
   camara?: string;
@@ -54,6 +55,24 @@ const ESTATUS_OPTIONS = [
   'En revisión',
   'Publicada',
   'Archivada',
+];
+
+const CATEGORIA_TEMA_OPTIONS = [
+  { value: 'propiedad_intelectual', label: '🎨 Propiedad Intelectual' },
+  { value: 'responsabilidad', label: '⚖️ Responsabilidad' },
+  { value: 'ciberseguridad', label: '🔒 Ciberseguridad' },
+  { value: 'delitos', label: '🚨 Delitos' },
+  { value: 'laboral', label: '💼 Laboral' },
+  { value: 'privacidad_datos', label: '🛡️ Privacidad y Datos' },
+  { value: 'deepfakes', label: '🎭 Deepfakes' },
+  { value: 'salud', label: '🏥 Salud' },
+  { value: 'educacion', label: '📚 Educación' },
+  { value: 'sector_publico', label: '🏛️ Sector Público' },
+  { value: 'etica_transparencia', label: '🧠 Ética y Transparencia' },
+  { value: 'regulacion_general', label: '📜 Regulación General' },
+  { value: 'violencia_genero', label: '👩 Violencia de Género' },
+  { value: 'transporte', label: '🚗 Transporte' },
+  { value: 'servicios_financieros', label: '💰 Servicios Financieros' },
 ];
 
 const CAMARA_OPTIONS = [
@@ -108,6 +127,11 @@ export default function DashboardPage() {
     error?: string;
   }>>([]);
   const [isBulkCorrecting, setIsBulkCorrecting] = useState(false);
+
+  // Categorization states
+  const [showCategorizeModal, setShowCategorizeModal] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
+  const [categorizeResults, setCategorizeResults] = useState<any>(null);
 
   // JSON edit mode
   const [jsonEditMode, setJsonEditMode] = useState(false);
@@ -204,6 +228,7 @@ export default function DashboardPage() {
       estatus: ini.estatus || ini.status || '',
       proponente: ini.proponente,
       categoria: ini.categoria || '',
+      categoriaTema: ini.categoriaTema || '',
       descripcion: ini.descripcion || '',
       resumen: ini.resumen || '',
       legislatura: ini.legislatura || '',
@@ -458,6 +483,7 @@ export default function DashboardPage() {
           estatus: correctedData.estatus || selectedIniciativa.estatus,
           proponente: correctedData.proponente || selectedIniciativa.proponente,
           categoria: correctedData.categoria || selectedIniciativa.categoria,
+          categoriaTema: correctedData.categoriaTema || selectedIniciativa.categoriaTema,
           descripcion: correctedData.descripcion || selectedIniciativa.descripcion,
           resumen: correctedData.resumen || selectedIniciativa.resumen,
           legislatura: correctedData.legislatura || selectedIniciativa.legislatura,
@@ -752,6 +778,13 @@ export default function DashboardPage() {
           href: '/api/admin/update-pdf-urls',
           method: 'POST',
         },
+        {
+          title: 'Categorizar con IA',
+          description: 'Asignar categoría temática automáticamente',
+          icon: Scale,
+          href: '/api/admin/categorize-initiatives',
+          method: 'POST',
+        },
       ]
     },
   ];
@@ -865,6 +898,9 @@ export default function DashboardPage() {
                                 setShowImportModal(true);
                               } else if (action.title === 'Editar Iniciativa') {
                                 openEditModal();
+                              } else if (action.title === 'Categorizar con IA') {
+                                setCategorizeResults(null);
+                                setShowCategorizeModal(true);
                               } else {
                                 alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
                               }
@@ -1451,11 +1487,28 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    {/* Row: Categoría + Partido */}
+                    {/* Categoría Temática */}
+                    <div>
+                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        Categoría Temática
+                      </label>
+                      <select
+                        value={editForm.categoriaTema || ''}
+                        onChange={(e) => setEditForm({ ...editForm, categoriaTema: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg font-sans-tech text-sm focus:outline-none focus:border-blue-500"
+                      >
+                        <option value="">Seleccionar categoría...</option>
+                        {CATEGORIA_TEMA_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Row: Categoría antigua + Partido */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-                          Categoría
+                          Categoría (legacy)
                         </label>
                         <input
                           type="text"
@@ -1984,6 +2037,150 @@ export default function DashboardPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Categorizar con IA */}
+      {showCategorizeModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={() => !isCategorizing && setShowCategorizeModal(false)}
+          />
+          
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center">
+                  <span className="text-xl">🏷️</span>
+                </div>
+                <div>
+                  <h2 className="font-sans-tech font-semibold text-gray-900">
+                    Categorizar con IA
+                  </h2>
+                  <p className="font-sans-tech text-xs text-gray-500">
+                    Asignar categoría temática automáticamente
+                  </p>
+                </div>
+              </div>
+              {!isCategorizing && (
+                <button
+                  onClick={() => setShowCategorizeModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              )}
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {!isCategorizing && !categorizeResults ? (
+                <div className="space-y-4">
+                  <p className="font-sans-tech text-sm text-gray-600">
+                    Esta función asignará automáticamente una categoría temática a las iniciativas que aún no tienen una.
+                  </p>
+                  
+                  <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
+                    <p className="font-sans-tech text-sm text-purple-800">
+                      🏷️ Categorías disponibles: Propiedad Intelectual, Responsabilidad, Ciberseguridad, Delitos, Laboral, Privacidad, Deepfakes, Salud, Educación, y más.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      setIsCategorizing(true);
+                      try {
+                        const response = await fetch('/api/admin/categorize-initiatives', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ limit: 50, excludeCategorized: true })
+                        });
+                        const data = await response.json();
+                        setCategorizeResults(data);
+                        if (data.success) {
+                          loadIniciativas();
+                        }
+                      } catch (error) {
+                        console.error('Error:', error);
+                        setCategorizeResults({ success: false, error: 'Error de conexión' });
+                      } finally {
+                        setIsCategorizing(false);
+                      }
+                    }}
+                    className="w-full py-3 bg-purple-600 text-white font-sans-tech font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    🚀 Categorizar Iniciativas
+                  </button>
+                </div>
+              ) : isCategorizing ? (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4" />
+                  <p className="font-sans-tech text-gray-600">
+                    Categorizando iniciativas con Claude Sonnet 4...
+                  </p>
+                  <p className="font-sans-tech text-sm text-gray-400 mt-2">
+                    Esto puede tomar unos minutos.
+                  </p>
+                </div>
+              ) : categorizeResults ? (
+                <div className="space-y-4">
+                  {categorizeResults.success ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-50 rounded-lg p-4 text-center">
+                          <p className="font-sans-tech text-2xl font-bold text-gray-900">{categorizeResults.total}</p>
+                          <p className="font-sans-tech text-xs text-gray-500">Total procesadas</p>
+                        </div>
+                        <div className="bg-purple-50 rounded-lg p-4 text-center">
+                          <p className="font-sans-tech text-2xl font-bold text-purple-600">{categorizeResults.categorized}</p>
+                          <p className="font-sans-tech text-xs text-purple-600">Categorizadas</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {categorizeResults.results?.map((result: any, idx: number) => (
+                          <div 
+                            key={idx}
+                            className={`flex items-start gap-3 p-3 rounded-lg ${
+                              result.categoria ? 'bg-purple-50' : 'bg-gray-50'
+                            }`}
+                          >
+                            <span className="text-lg">
+                              {result.categoria ? '🏷️' : '❌'}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-sans-tech text-sm text-gray-800 truncate">
+                                {result.titulo}
+                              </p>
+                              {result.categoria && (
+                                <p className="font-sans-tech text-xs text-purple-600">
+                                  {CATEGORIA_TEMA_OPTIONS.find(c => c.value === result.categoria)?.label || result.categoria}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="font-sans-tech text-sm text-red-700">
+                        ❌ Error: {categorizeResults.error}
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setShowCategorizeModal(false)}
+                    className="w-full py-3 bg-gray-100 text-gray-700 font-sans-tech font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       )}

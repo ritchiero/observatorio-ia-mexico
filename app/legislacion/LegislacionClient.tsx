@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto } from '@/types';
+import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto, CATEGORIAS_TEMA, CategoriaTema } from '@/types';
 import { FileText, Scale, TrendingUp, AlertCircle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
@@ -15,6 +15,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
   const [filtroCamara, setFiltroCamara] = useState<string>('todos');
   const [filtroTema, setFiltroTema] = useState<string>('todos');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+  const [filtroCategoria, setFiltroCategoria] = useState<string>('todos');
   const [busqueda, setBusqueda] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -23,6 +24,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
     if (filtroLegislatura !== 'todos' && i.legislatura !== filtroLegislatura) return false;
     if (filtroCamara !== 'todos' && i.camara !== filtroCamara) return false;
     if (filtroTema !== 'todos' && !(i.temas || []).includes(filtroTema)) return false;
+    if (filtroCategoria !== 'todos' && (i as any).categoriaTema !== filtroCategoria) return false;
     if (filtroEstado !== 'todos') {
       const camara = i.camara as string;
       const estado = i.entidadFederativa || 
@@ -274,6 +276,19 @@ export default function LegislacionClient({ iniciativas }: Props) {
               <option value="Yucatán">🏛️ Yucatán</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+            <select
+              value={filtroCategoria}
+              onChange={(e) => setFiltroCategoria(e.target.value)}
+              className="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="todos">Todas las categorías</option>
+              {Object.entries(CATEGORIAS_TEMA).map(([key, { label, emoji }]) => (
+                <option key={key} value={key}>{emoji} {label}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="flex gap-4">
           <div className="flex-1">
@@ -286,7 +301,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
               className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
-          {(filtroStatus !== 'todos' || filtroLegislatura !== 'todos' || filtroCamara !== 'todos' || filtroTema !== 'todos' || filtroEstado !== 'todos' || busqueda) && (
+          {(filtroStatus !== 'todos' || filtroLegislatura !== 'todos' || filtroCamara !== 'todos' || filtroTema !== 'todos' || filtroEstado !== 'todos' || filtroCategoria !== 'todos' || busqueda) && (
             <div className="flex items-end">
               <button
                 onClick={() => {
@@ -295,6 +310,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
                   setFiltroCamara('todos');
                   setFiltroTema('todos');
                   setFiltroEstado('todos');
+                  setFiltroCategoria('todos');
                   setBusqueda('');
                 }}
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -387,6 +403,15 @@ export default function LegislacionClient({ iniciativas }: Props) {
                             <div className="w-1 bg-blue-500"></div>
                             
                             <div className="p-6 w-full pl-14">
+                              {/* Categoría Temática */}
+                              {(iniciativa as any).categoriaTema && CATEGORIAS_TEMA[(iniciativa as any).categoriaTema as CategoriaTema] && (
+                                <div className="mb-4">
+                                  <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-${CATEGORIAS_TEMA[(iniciativa as any).categoriaTema as CategoriaTema].color}-100 text-${CATEGORIAS_TEMA[(iniciativa as any).categoriaTema as CategoriaTema].color}-700 border border-${CATEGORIAS_TEMA[(iniciativa as any).categoriaTema as CategoriaTema].color}-200`}>
+                                    {CATEGORIAS_TEMA[(iniciativa as any).categoriaTema as CategoriaTema].emoji} {CATEGORIAS_TEMA[(iniciativa as any).categoriaTema as CategoriaTema].label}
+                                  </span>
+                                </div>
+                              )}
+
                               {/* Metadatos Clave */}
                               <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-6">
                                 <div>

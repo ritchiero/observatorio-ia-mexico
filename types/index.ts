@@ -387,6 +387,42 @@ export type CategoriaImpacto =
   | 'trabajo'
   | 'economia';
 
+// Categorías temáticas principales para iniciativas de IA
+export type CategoriaTema = 
+  | 'propiedad_intelectual'  // Derechos de autor, patentes
+  | 'responsabilidad'        // Responsabilidad civil/penal
+  | 'ciberseguridad'         // Seguridad de sistemas
+  | 'delitos'                // Delitos cometidos con IA
+  | 'laboral'                // Impacto en empleo
+  | 'privacidad_datos'       // Protección de datos
+  | 'deepfakes'              // Contenido sintético
+  | 'salud'                  // IA en medicina
+  | 'educacion'              // IA en educación
+  | 'sector_publico'         // Gobierno digital
+  | 'etica_transparencia'    // Principios éticos
+  | 'regulacion_general'     // Marco regulatorio general
+  | 'violencia_genero'       // Violencia digital
+  | 'transporte'             // Movilidad autónoma
+  | 'servicios_financieros'; // IA en finanzas
+
+export const CATEGORIAS_TEMA: Record<CategoriaTema, { label: string; emoji: string; color: string }> = {
+  'propiedad_intelectual': { label: 'Propiedad Intelectual', emoji: '🎨', color: 'purple' },
+  'responsabilidad': { label: 'Responsabilidad', emoji: '⚖️', color: 'blue' },
+  'ciberseguridad': { label: 'Ciberseguridad', emoji: '🔒', color: 'cyan' },
+  'delitos': { label: 'Delitos', emoji: '🚨', color: 'red' },
+  'laboral': { label: 'Laboral', emoji: '💼', color: 'amber' },
+  'privacidad_datos': { label: 'Privacidad y Datos', emoji: '🛡️', color: 'indigo' },
+  'deepfakes': { label: 'Deepfakes', emoji: '🎭', color: 'pink' },
+  'salud': { label: 'Salud', emoji: '🏥', color: 'rose' },
+  'educacion': { label: 'Educación', emoji: '📚', color: 'green' },
+  'sector_publico': { label: 'Sector Público', emoji: '🏛️', color: 'slate' },
+  'etica_transparencia': { label: 'Ética y Transparencia', emoji: '🧠', color: 'violet' },
+  'regulacion_general': { label: 'Regulación General', emoji: '📜', color: 'gray' },
+  'violencia_genero': { label: 'Violencia de Género', emoji: '👩', color: 'fuchsia' },
+  'transporte': { label: 'Transporte', emoji: '🚗', color: 'orange' },
+  'servicios_financieros': { label: 'Servicios Financieros', emoji: '💰', color: 'emerald' }
+};
+
 export interface IniciativaLegislativa {
   id: string;
   numero: number; // Número de iniciativa en el listado (1-69+)
@@ -423,6 +459,9 @@ export interface IniciativaLegislativa {
   // Verificación con IA
   estadoVerificacion?: 'verificado' | 'revision' | 'pendiente';
   fechaVerificacion?: string;
+  
+  // Categoría temática
+  categoriaTema?: CategoriaTema;
   
   // Metadata
   creadoManualmente: boolean;
