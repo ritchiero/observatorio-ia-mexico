@@ -363,6 +363,108 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Sección: Legislación en IA */}
+      <section className="bg-gray-50 border-t border-gray-200/50 py-12 sm:py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200/50 rounded-full mb-4">
+                <Scale size={14} className="text-blue-500" />
+                <span className="text-xs font-sans-tech text-blue-600 font-medium">Monitoreo Legislativo</span>
+              </div>
+              <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 mb-3">
+                Legislación en <span className="italic text-blue-500">IA</span>
+              </h2>
+              <p className="text-gray-600 font-sans-tech text-sm sm:text-base max-w-xl">
+                Seguimiento de todas las iniciativas de ley relacionadas con inteligencia artificial 
+                en el Congreso Federal y congresos estatales.
+              </p>
+            </div>
+            
+            {/* Stats rápidas */}
+            <div className="flex gap-3">
+              <div className="bg-white border border-gray-200 rounded-xl p-4 text-center min-w-[80px]">
+                <div className={`font-serif-display text-2xl sm:text-3xl text-gray-900 ${loadingLegStats ? 'animate-pulse' : ''}`}>
+                  {loadingLegStats ? '—' : legStats.total}
+                </div>
+                <div className="text-[10px] font-sans-tech text-gray-500 uppercase tracking-wider">Iniciativas</div>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center min-w-[80px]">
+                <div className={`font-serif-display text-2xl sm:text-3xl text-blue-600 ${loadingLegStats ? 'animate-pulse' : ''}`}>
+                  {loadingLegStats ? '—' : legStats.activas}
+                </div>
+                <div className="text-[10px] font-sans-tech text-blue-600 uppercase tracking-wider">Activas</div>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center min-w-[80px]">
+                <div className={`font-serif-display text-2xl sm:text-3xl text-emerald-600 ${loadingLegStats ? 'animate-pulse' : ''}`}>
+                  {loadingLegStats ? '—' : legStats.aprobadas}
+                </div>
+                <div className="text-[10px] font-sans-tech text-emerald-600 uppercase tracking-wider">Aprobadas</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Iniciativas destacadas */}
+          {iniciativasDestacadas.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              {iniciativasDestacadas.map((ini, index) => (
+                <Link 
+                  key={ini.id || index}
+                  href={`/legislacion/${ini.id}`}
+                  className="group bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <span className={`px-2 py-0.5 text-[10px] font-sans-tech font-medium rounded-full ${
+                      (ini.status || '').toLowerCase().includes('aprob') 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {ini.status || 'En comisiones'}
+                    </span>
+                    {ini.estadoVerificacion === 'verificado' && (
+                      <span className="flex items-center gap-1 text-emerald-600">
+                        <ShieldCheck size={14} />
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="font-sans-tech font-medium text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
+                    {ini.titulo}
+                  </h3>
+                  <p className="text-xs text-gray-500 font-sans-tech line-clamp-1">
+                    {ini.proponente}
+                  </p>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {ini.fecha ? new Date(ini.fecha).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' }) : ''}
+                    </span>
+                    <span className="text-xs text-blue-500 font-sans-tech group-hover:underline flex items-center gap-1">
+                      Ver más <ArrowRight size={12} />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/legislacion"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              <Scale size={16} />
+              Ver todas las iniciativas
+              <ArrowRight size={16} />
+            </Link>
+            <div className="flex items-center gap-2 text-xs text-gray-500 font-sans-tech">
+              <ShieldCheck size={14} className="text-emerald-500" />
+              <span>{loadingLegStats ? 'Cargando...' : `${legStats.verificadas} iniciativas verificadas con IA`}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Tabla de anuncios */}
       <section id="tracker" className="py-8 sm:py-12 md:py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
@@ -536,108 +638,6 @@ export default function Home() {
           )}
 
 
-        </div>
-      </section>
-
-      {/* Sección: Legislación en IA */}
-      <section className="bg-gray-50 border-t border-gray-200/50 py-12 sm:py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200/50 rounded-full mb-4">
-                <Scale size={14} className="text-blue-500" />
-                <span className="text-xs font-sans-tech text-blue-600 font-medium">Monitoreo Legislativo</span>
-              </div>
-              <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 mb-3">
-                Legislación en <span className="italic text-blue-500">IA</span>
-              </h2>
-              <p className="text-gray-600 font-sans-tech text-sm sm:text-base max-w-xl">
-                Seguimiento de todas las iniciativas de ley relacionadas con inteligencia artificial 
-                en el Congreso Federal y congresos estatales.
-              </p>
-            </div>
-            
-            {/* Stats rápidas */}
-            <div className="flex gap-3">
-              <div className="bg-white border border-gray-200 rounded-xl p-4 text-center min-w-[80px]">
-                <div className={`font-serif-display text-2xl sm:text-3xl text-gray-900 ${loadingLegStats ? 'animate-pulse' : ''}`}>
-                  {loadingLegStats ? '—' : legStats.total}
-                </div>
-                <div className="text-[10px] font-sans-tech text-gray-500 uppercase tracking-wider">Iniciativas</div>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center min-w-[80px]">
-                <div className={`font-serif-display text-2xl sm:text-3xl text-blue-600 ${loadingLegStats ? 'animate-pulse' : ''}`}>
-                  {loadingLegStats ? '—' : legStats.activas}
-                </div>
-                <div className="text-[10px] font-sans-tech text-blue-600 uppercase tracking-wider">Activas</div>
-              </div>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center min-w-[80px]">
-                <div className={`font-serif-display text-2xl sm:text-3xl text-emerald-600 ${loadingLegStats ? 'animate-pulse' : ''}`}>
-                  {loadingLegStats ? '—' : legStats.aprobadas}
-                </div>
-                <div className="text-[10px] font-sans-tech text-emerald-600 uppercase tracking-wider">Aprobadas</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Iniciativas destacadas */}
-          {iniciativasDestacadas.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {iniciativasDestacadas.map((ini, index) => (
-                <Link 
-                  key={ini.id || index}
-                  href={`/legislacion/${ini.id}`}
-                  className="group bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-lg transition-all"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className={`px-2 py-0.5 text-[10px] font-sans-tech font-medium rounded-full ${
-                      (ini.status || '').toLowerCase().includes('aprob') 
-                        ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {ini.status || 'En comisiones'}
-                    </span>
-                    {ini.estadoVerificacion === 'verificado' && (
-                      <span className="flex items-center gap-1 text-emerald-600">
-                        <ShieldCheck size={14} />
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-sans-tech font-medium text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
-                    {ini.titulo}
-                  </h3>
-                  <p className="text-xs text-gray-500 font-sans-tech line-clamp-1">
-                    {ini.proponente}
-                  </p>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                    <span className="text-[10px] text-gray-400 font-mono">
-                      {ini.fecha ? new Date(ini.fecha).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' }) : ''}
-                    </span>
-                    <span className="text-xs text-blue-500 font-sans-tech group-hover:underline flex items-center gap-1">
-                      Ver más <ArrowRight size={12} />
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/legislacion"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
-            >
-              <Scale size={16} />
-              Ver todas las iniciativas
-              <ArrowRight size={16} />
-            </Link>
-            <div className="flex items-center gap-2 text-xs text-gray-500 font-sans-tech">
-              <ShieldCheck size={14} className="text-emerald-500" />
-              <span>{loadingLegStats ? 'Cargando...' : `${legStats.verificadas} iniciativas verificadas con IA`}</span>
-            </div>
-          </div>
         </div>
       </section>
     </div>
