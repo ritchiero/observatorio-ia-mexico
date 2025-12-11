@@ -38,7 +38,7 @@ export interface FundamentoLegal {
 
 export interface Criterio {
   tiene: boolean;
-  tipo: 'tesis_aislada' | 'jurisprudencia';
+  tipo: 'tesis_aislada' | 'jurisprudencia' | 'sentencia_pleno_desestimada' | string;
   clave?: string;
   registro: string;
   epoca: string;
@@ -97,6 +97,7 @@ export type TemaIA =
   | 'privacidad'
   | 'evidencia_ia'
   | 'herramientas_jurisdiccionales'
+  | 'delitos_informaticos'
   | 'otro';
 
 export type MateriaCaso = 
@@ -160,6 +161,7 @@ export const TEMAS_IA: Record<TemaIA, { label: string; emoji: string; color: str
   privacidad: { label: 'Privacidad', emoji: '🔒', color: 'cyan' },
   evidencia_ia: { label: 'Evidencia con IA', emoji: '🔍', color: 'teal' },
   herramientas_jurisdiccionales: { label: 'Herramientas Jurisdiccionales', emoji: '⚙️', color: 'emerald' },
+  delitos_informaticos: { label: 'Delitos Informáticos', emoji: '🔐', color: 'rose' },
   otro: { label: 'Otro', emoji: '📁', color: 'gray' },
 };
 
@@ -173,7 +175,8 @@ export const MATERIAS: Record<MateriaCaso, string> = {
   mercantil: 'Mercantil',
 };
 
-export const TIPOS_CRITERIO = {
+export const TIPOS_CRITERIO: Record<string, { label: string; emoji: string }> = {
   tesis_aislada: { label: 'Tesis Aislada', emoji: '📜' },
   jurisprudencia: { label: 'Jurisprudencia', emoji: '⚖️' },
+  sentencia_pleno_desestimada: { label: 'Sentencia Pleno (Desestimada)', emoji: '🏛️' },
 };
