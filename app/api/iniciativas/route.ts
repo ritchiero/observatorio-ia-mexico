@@ -17,6 +17,9 @@ export async function GET() {
       return {
         id: doc.id,
         ...data,
+        // Normalizar: Firestore usa "estatus", frontend espera "status"
+        // Priorizar "estatus" si existe, sino usar "status"
+        status: data.estatus || data.status || 'en_comisiones',
         // Convertir Timestamps a strings para JSON
         fecha: data.fecha?.toDate ? data.fecha.toDate().toISOString() : data.fecha,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
