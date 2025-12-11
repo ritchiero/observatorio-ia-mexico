@@ -157,6 +157,8 @@ export default function AdminAnunciosPage() {
     tipo: 'nota_prensa',
     accesible: true
   });
+  const [fuenteJsonMode, setFuenteJsonMode] = useState(false);
+  const [fuenteJsonText, setFuenteJsonText] = useState('');
   
   // Estados para agregar/editar evento
   const [showAddEvento, setShowAddEvento] = useState(false);
@@ -555,6 +557,65 @@ export default function AdminAnunciosPage() {
       } else {
         const data = await response.json();
         setMessage({ type: 'error', text: data.error || 'Error al actualizar' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddFuentesFromJson = async () => {
+    if (!selectedAnuncio || !fuenteJsonText.trim()) {
+      setMessage({ type: 'error', text: 'Ingresa el JSON de las fuentes' });
+      return;
+    }
+
+    let fuentesToAdd: Partial<Fuente>[];
+    try {
+      const parsed = JSON.parse(fuenteJsonText);
+      fuentesToAdd = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      setMessage({ type: 'error', text: 'JSON inválido. Verifica el formato.' });
+      return;
+    }
+
+    // Validar estructura mínima
+    for (const fuente of fuentesToAdd) {
+      if (!fuente.url || !fuente.titulo) {
+        setMessage({ type: 'error', text: 'Cada fuente necesita al menos "url" y "titulo"' });
+        return;
+      }
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/add-fuentes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminKey: 'skip',
+          anuncioId: selectedAnuncio.id,
+          fuentes: fuentesToAdd.map(f => ({
+            url: f.url,
+            titulo: f.titulo,
+            fecha: f.fecha || new Date().toISOString().split('T')[0],
+            tipo: f.tipo || 'nota_prensa',
+            medio: f.medio || '',
+            accesible: f.accesible !== false
+          }))
+        })
+      });
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: `${fuentesToAdd.length} fuente(s) agregada(s)` });
+        setShowAddFuente(false);
+        setFuenteJsonMode(false);
+        setFuenteJsonText('');
+        await reloadSelectedAnuncio();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Error al agregar fuentes' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión' });
@@ -1415,40 +1476,98 @@ export default function AdminAnunciosPage() {
                     <Newspaper size={18} />
                     Fuentes ({selectedAnuncio.fuentes?.length || 0})
                   </h3>
-                  <button
-                    onClick={() => { setShowAddFuente(true); setEditingFuenteIdx(null); setNewFuente({ tipo: 'nota_prensa', accesible: true }); }}
-                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-                  >
-                    <Plus size={16} />
-                    Agregar
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { setShowAddFuente(true); setEditingFuenteIdx(null); setFuenteJsonMode(false); setNewFuente({ tipo: 'nota_prensa', accesible: true }); }}
+                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      <Plus size={16} />
+                      Agregar
+                    </button>
+                    <button
+                      onClick={() => { setShowAddFuente(true); setEditingFuenteIdx(null); setFuenteJsonMode(true); setFuenteJsonText(''); }}
+                      className="flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700"
+                    >
+                      { } JSON
+                    </button>
+                  </div>
                 </div>
                 
                 {/* Form agregar/editar fuente */}
                 {(showAddFuente || editingFuenteIdx !== null) && (
                   <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="font-medium text-blue-900 mb-3">
-                      {editingFuenteIdx !== null ? 'Editar Fuente' : 'Nueva Fuente'}
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="url" placeholder="URL *" value={newFuente.url || ''} onChange={e => setNewFuente({ ...newFuente, url: e.target.value })} className="px-3 py-2 border rounded-lg" />
-                      <input type="text" placeholder="Título *" value={newFuente.titulo || ''} onChange={e => setNewFuente({ ...newFuente, titulo: e.target.value })} className="px-3 py-2 border rounded-lg" />
-                      <input type="text" placeholder="Medio (ej: El Universal)" value={newFuente.medio || ''} onChange={e => setNewFuente({ ...newFuente, medio: e.target.value })} className="px-3 py-2 border rounded-lg" />
-                      <select value={newFuente.tipo || 'nota_prensa'} onChange={e => setNewFuente({ ...newFuente, tipo: e.target.value })} className="px-3 py-2 border rounded-lg">
-                        {TIPO_FUENTE_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
-                      </select>
-                      <input type="date" value={newFuente.fecha || ''} onChange={e => setNewFuente({ ...newFuente, fecha: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-blue-900">
+                        {editingFuenteIdx !== null ? 'Editar Fuente' : 'Nueva(s) Fuente(s)'}
+                      </h4>
+                      {editingFuenteIdx === null && (
+                        <button
+                          onClick={() => setFuenteJsonMode(!fuenteJsonMode)}
+                          className={`text-xs px-2 py-1 rounded ${fuenteJsonMode ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 border border-blue-300'}`}
+                        >
+                          {fuenteJsonMode ? '📝 Formulario' : '{ } JSON'}
+                        </button>
+                      )}
                     </div>
-                    <div className="flex justify-end gap-2 mt-3">
-                      <button onClick={() => { setShowAddFuente(false); setEditingFuenteIdx(null); setNewFuente({ tipo: 'nota_prensa', accesible: true }); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
-                      <button 
-                        onClick={editingFuenteIdx !== null ? handleSaveFuente : handleAddFuente} 
-                        disabled={saving} 
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {saving ? 'Guardando...' : (editingFuenteIdx !== null ? 'Actualizar' : 'Agregar')}
-                      </button>
-                    </div>
+                    
+                    {fuenteJsonMode && editingFuenteIdx === null ? (
+                      /* Modo JSON */
+                      <div className="space-y-3">
+                        <textarea
+                          placeholder={`Pega una fuente o array de fuentes en JSON:
+[
+  {
+    "url": "https://ejemplo.com/nota",
+    "titulo": "Título de la nota",
+    "medio": "El Universal",
+    "tipo": "nota_prensa",
+    "fecha": "2025-01-15"
+  }
+]`}
+                          value={fuenteJsonText}
+                          onChange={e => setFuenteJsonText(e.target.value)}
+                          rows={10}
+                          className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Campos requeridos: <code>url</code>, <code>titulo</code>. 
+                          Opcionales: <code>medio</code>, <code>tipo</code>, <code>fecha</code>
+                        </p>
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => { setShowAddFuente(false); setFuenteJsonMode(false); setFuenteJsonText(''); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                          <button 
+                            onClick={handleAddFuentesFromJson} 
+                            disabled={saving} 
+                            className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            {saving ? 'Importando...' : 'Importar JSON'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Modo Formulario */
+                      <>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input type="url" placeholder="URL *" value={newFuente.url || ''} onChange={e => setNewFuente({ ...newFuente, url: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                          <input type="text" placeholder="Título *" value={newFuente.titulo || ''} onChange={e => setNewFuente({ ...newFuente, titulo: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                          <input type="text" placeholder="Medio (ej: El Universal)" value={newFuente.medio || ''} onChange={e => setNewFuente({ ...newFuente, medio: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                          <select value={newFuente.tipo || 'nota_prensa'} onChange={e => setNewFuente({ ...newFuente, tipo: e.target.value })} className="px-3 py-2 border rounded-lg">
+                            {TIPO_FUENTE_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                          </select>
+                          <input type="date" value={newFuente.fecha || ''} onChange={e => setNewFuente({ ...newFuente, fecha: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                        </div>
+                        <div className="flex justify-end gap-2 mt-3">
+                          <button onClick={() => { setShowAddFuente(false); setEditingFuenteIdx(null); setNewFuente({ tipo: 'nota_prensa', accesible: true }); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                          <button 
+                            onClick={editingFuenteIdx !== null ? handleSaveFuente : handleAddFuente} 
+                            disabled={saving} 
+                            className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            {saving ? 'Guardando...' : (editingFuenteIdx !== null ? 'Actualizar' : 'Agregar')}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
                 
