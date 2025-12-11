@@ -28,7 +28,9 @@ import {
   ChevronDown,
   Check,
   History,
-  Clock
+  Clock,
+  ImageIcon,
+  Loader2
 } from 'lucide-react';
 
 interface Fuente {
@@ -105,6 +107,9 @@ export default function AdminAnunciosPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const newImageInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   // Estados principales
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
@@ -796,6 +801,44 @@ export default function AdminAnunciosPage() {
     }
   };
 
+  // === UPLOAD IMAGE ===
+  const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>, target: 'edit' | 'new') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (selectedAnuncio) {
+        formData.append('anuncioId', selectedAnuncio.id);
+      }
+
+      const response = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.url) {
+        if (target === 'edit') {
+          setEditForm({ ...editForm, imagen: data.url });
+        } else {
+          setNewAnuncio({ ...newAnuncio, imagen: data.url });
+        }
+        setMessage({ type: 'success', text: 'Imagen subida correctamente' });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al subir imagen' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error de conexión al subir imagen' });
+    } finally {
+      setUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
+  };
+
   // === HELPERS ===
   const reloadSelectedAnuncio = async () => {
     if (!selectedAnuncio) return;
@@ -1197,26 +1240,61 @@ export default function AdminAnunciosPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Imagen (URL)</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={editForm.imagen || ''}
-                      onChange={e => setEditForm({ ...editForm, imagen: e.target.value })}
-                      disabled={!editMode}
-                      placeholder="https://..."
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-50"
-                    />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del Thumbnail</label>
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={editForm.imagen || ''}
+                          onChange={e => setEditForm({ ...editForm, imagen: e.target.value })}
+                          disabled={!editMode}
+                          placeholder="https://... o sube una imagen"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-50 text-sm"
+                        />
+                        <input
+                          type="file"
+                          ref={imageInputRef}
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          onChange={(e) => handleUploadImage(e, 'edit')}
+                          className="hidden"
+                          disabled={!editMode}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          disabled={!editMode || uploadingImage}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          {uploadingImage ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <ImageIcon size={16} />
+                          )}
+                          Subir
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-400">JPG, PNG, WebP o GIF. Máximo 5MB. Aparece en la landing.</p>
+                    </div>
                     {editForm.imagen && (
-                      <img 
-                        src={editForm.imagen} 
-                        alt="Preview" 
-                        className="w-12 h-12 object-cover rounded-lg border"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
+                      <div className="relative group">
+                        <img 
+                          src={editForm.imagen} 
+                          alt="Preview" 
+                          className="w-20 h-20 object-cover rounded-lg border"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect fill="%23f3f4f6" width="80" height="80"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="10">Error</text></svg>'; }}
+                        />
+                        {editMode && (
+                          <button
+                            onClick={() => setEditForm({ ...editForm, imagen: '' })}
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Esta imagen aparece en la landing page</p>
                 </div>
               </div>
 
@@ -1537,11 +1615,55 @@ export default function AdminAnunciosPage() {
                   <textarea value={newAnuncio.citaPromesa || ''} onChange={e => setNewAnuncio({ ...newAnuncio, citaPromesa: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" placeholder="Cita textual de la promesa..." />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Imagen (URL)</label>
-                  <div className="flex gap-2">
-                    <input type="url" value={newAnuncio.imagen || ''} onChange={e => setNewAnuncio({ ...newAnuncio, imagen: e.target.value })} className="flex-1 px-3 py-2 border rounded-lg" placeholder="https://..." />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del Thumbnail</label>
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2">
+                        <input 
+                          type="url" 
+                          value={newAnuncio.imagen || ''} 
+                          onChange={e => setNewAnuncio({ ...newAnuncio, imagen: e.target.value })} 
+                          className="flex-1 px-3 py-2 border rounded-lg text-sm" 
+                          placeholder="https://... o sube una imagen" 
+                        />
+                        <input
+                          type="file"
+                          ref={newImageInputRef}
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          onChange={(e) => handleUploadImage(e, 'new')}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => newImageInputRef.current?.click()}
+                          disabled={uploadingImage}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 text-sm"
+                        >
+                          {uploadingImage ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <ImageIcon size={16} />
+                          )}
+                          Subir
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-400">JPG, PNG, WebP o GIF. Máximo 5MB.</p>
+                    </div>
                     {newAnuncio.imagen && (
-                      <img src={newAnuncio.imagen} alt="Preview" className="w-12 h-12 object-cover rounded-lg border" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <div className="relative group">
+                        <img 
+                          src={newAnuncio.imagen} 
+                          alt="Preview" 
+                          className="w-16 h-16 object-cover rounded-lg border"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="%23f3f4f6" width="64" height="64"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="8">Error</text></svg>'; }}
+                        />
+                        <button
+                          onClick={() => setNewAnuncio({ ...newAnuncio, imagen: '' })}
+                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
