@@ -50,17 +50,60 @@ export default function LegislacionClient({ iniciativas }: Props) {
     aprobadas: iniciativas.filter(i => i.status === 'aprobada').length
   };
 
-  const getStatusBadge = (status: IniciativaStatus) => {
-    const badges = {
+  const getStatusBadge = (status: IniciativaStatus | string) => {
+    const badges: Record<string, { text: string; color: string }> = {
       'en_comisiones': { text: 'En comisiones', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+      'en comisiones': { text: 'En comisiones', color: 'bg-blue-100 text-blue-700 border-blue-200' },
       'desechada_termino': { text: 'Desechada', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+      'desechada': { text: 'Desechada', color: 'bg-gray-100 text-gray-700 border-gray-200' },
       'archivada': { text: 'Archivada', color: 'bg-gray-100 text-gray-600 border-gray-200' },
+      'archivado': { text: 'Archivado', color: 'bg-gray-100 text-gray-600 border-gray-200' },
       'aprobada': { text: 'Aprobada', color: 'bg-green-100 text-green-700 border-green-200' },
+      'aprobado': { text: 'Aprobado', color: 'bg-green-100 text-green-700 border-green-200' },
+      'aprobada en lo general': { text: 'Aprobada', color: 'bg-green-100 text-green-700 border-green-200' },
+      'publicada': { text: 'Publicada', color: 'bg-green-100 text-green-700 border-green-200' },
+      'publicado': { text: 'Publicado', color: 'bg-green-100 text-green-700 border-green-200' },
+      'vigente': { text: 'Vigente', color: 'bg-green-100 text-green-700 border-green-200' },
       'rechazada': { text: 'Rechazada', color: 'bg-red-100 text-red-700 border-red-200' },
+      'rechazado': { text: 'Rechazado', color: 'bg-red-100 text-red-700 border-red-200' },
       'turnada': { text: 'Turnada', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-      'dictaminada': { text: 'Dictaminada', color: 'bg-orange-100 text-orange-700 border-orange-200' }
+      'turnado': { text: 'Turnado', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+      'pendiente': { text: 'Pendiente', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+      'dictaminada': { text: 'Dictaminada', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+      'dictaminado': { text: 'Dictaminado', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+      'en dictamen': { text: 'En dictamen', color: 'bg-orange-100 text-orange-700 border-orange-200' },
     };
-    return badges[status] || badges['en_comisiones'];
+    
+    // Normalizar el estatus: minúsculas y sin espacios extra
+    const normalizedStatus = (status || '').toString().toLowerCase().trim();
+    
+    // Buscar coincidencia exacta primero
+    if (badges[normalizedStatus]) {
+      return badges[normalizedStatus];
+    }
+    
+    // Buscar coincidencia parcial para variantes como "Aprobada por unanimidad"
+    if (normalizedStatus.includes('aprobad')) {
+      return { text: status?.toString() || 'Aprobada', color: 'bg-green-100 text-green-700 border-green-200' };
+    }
+    if (normalizedStatus.includes('rechazad')) {
+      return { text: status?.toString() || 'Rechazada', color: 'bg-red-100 text-red-700 border-red-200' };
+    }
+    if (normalizedStatus.includes('publicad') || normalizedStatus.includes('vigente')) {
+      return { text: status?.toString() || 'Publicada', color: 'bg-green-100 text-green-700 border-green-200' };
+    }
+    if (normalizedStatus.includes('archivad') || normalizedStatus.includes('desechad')) {
+      return { text: status?.toString() || 'Archivada', color: 'bg-gray-100 text-gray-700 border-gray-200' };
+    }
+    if (normalizedStatus.includes('dictam')) {
+      return { text: status?.toString() || 'Dictaminada', color: 'bg-orange-100 text-orange-700 border-orange-200' };
+    }
+    if (normalizedStatus.includes('turnad') || normalizedStatus.includes('pendiente')) {
+      return { text: status?.toString() || 'Turnada', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
+    }
+    
+    // Fallback: azul para estados desconocidos
+    return { text: status?.toString() || 'En proceso', color: 'bg-blue-100 text-blue-700 border-blue-200' };
   };
 
   const getCategoriaLabel = (categoria: CategoriaImpacto | string): string => {
