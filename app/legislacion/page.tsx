@@ -41,13 +41,16 @@ export default function LegislacionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2">
-            Cargando iniciativas...
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute inset-0 border-2 border-blue-500/20 rounded-full"></div>
+            <div className="absolute inset-0 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+          </div>
+          <h2 className="text-2xl font-serif-display font-light text-gray-900 mb-2">
+            Cargando <span className="italic text-blue-500">iniciativas</span>
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 font-sans-tech text-sm">
             Obteniendo datos del servidor
           </p>
         </div>
@@ -57,14 +60,14 @@ export default function LegislacionPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-serif-display font-light text-gray-900 mb-2">
             Error cargando iniciativas
           </h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-gray-600 font-sans-tech mb-4">{error}</p>
+          <p className="text-sm text-gray-400 font-sans-tech">
             Por favor contacta al administrador del sitio.
           </p>
         </div>
