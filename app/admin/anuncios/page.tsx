@@ -801,8 +801,30 @@ export default function AdminAnunciosPage() {
     setSaving(false);
   };
 
-  const handleEditEvento = (evento: EventoTimeline) => {
-    setNewEvento({ ...evento });
+  const handleEditEvento = (evento: EventoTimelineFromDB) => {
+    // Convertir fecha a string si es objeto
+    const fechaStr = typeof evento.fecha === 'object' 
+      ? (evento.fecha._seconds 
+          ? new Date(evento.fecha._seconds * 1000).toISOString().split('T')[0]
+          : evento.fecha.seconds 
+            ? new Date(evento.fecha.seconds * 1000).toISOString().split('T')[0]
+            : '')
+      : evento.fecha?.split('T')[0] || '';
+    
+    setNewEvento({ 
+      ...evento,
+      fecha: fechaStr,
+      fuentes: evento.fuentes?.map(f => ({
+        ...f,
+        fecha: typeof f.fecha === 'object'
+          ? (f.fecha._seconds 
+              ? new Date(f.fecha._seconds * 1000).toISOString().split('T')[0]
+              : f.fecha.seconds
+                ? new Date(f.fecha.seconds * 1000).toISOString().split('T')[0]
+                : '')
+          : f.fecha?.split('T')[0] || ''
+      })) || []
+    });
     setEditingEventoId(evento.id);
   };
 
