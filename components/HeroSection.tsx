@@ -180,8 +180,8 @@ export default function HeroSection({ stats, legStats, loading, loadingLeg }: He
         {/* FOOTER HERO */}
         <div className="flex flex-col md:flex-row justify-between items-end md:items-center mt-12 pt-6 border-t border-gray-300/5 text-xs font-sans-tech text-gray-900/30 animate-reveal delay-700">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-900 rounded-full animate-pulse"></div>
-            <span>Sistema operativo · Nivel de amenaza: BAJO</span>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Sistema operativo · Monitoreo continuo</span>
           </div>
           
           <div className="mt-4 md:mt-0 flex flex-col md:items-end">
