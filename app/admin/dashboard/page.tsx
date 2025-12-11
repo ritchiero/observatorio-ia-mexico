@@ -106,6 +106,7 @@ export default function DashboardPage() {
   const [selectedIniciativa, setSelectedIniciativa] = useState<Iniciativa | null>(null);
   const [editForm, setEditForm] = useState<Partial<Iniciativa>>({});
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -372,6 +373,45 @@ export default function DashboardPage() {
       setSaveMessage({ type: 'error', text: err.message || 'Error de conexión' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteIniciativa = async () => {
+    if (!selectedIniciativa) return;
+    
+    const confirmar = confirm(
+      `⚠️ ELIMINAR INICIATIVA\n\n` +
+      `¿Estás seguro de que deseas eliminar esta iniciativa?\n\n` +
+      `"${selectedIniciativa.titulo}"\n\n` +
+      `Esta acción NO se puede deshacer.`
+    );
+    
+    if (!confirmar) return;
+    
+    setDeleting(true);
+    setSaveMessage(null);
+
+    try {
+      const response = await fetch(`/api/admin/iniciativas?id=${selectedIniciativa.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSaveMessage({ type: 'success', text: 'Iniciativa eliminada correctamente' });
+        // Remover de la lista local
+        setIniciativas(prev => prev.filter(ini => ini.id !== selectedIniciativa.id));
+        setSelectedIniciativa(null);
+        setEditForm({});
+      } else {
+        setSaveMessage({ type: 'error', text: data.error || 'Error al eliminar' });
+      }
+    } catch (err: any) {
+      setSaveMessage({ type: 'error', text: err.message || 'Error de conexión' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1283,7 +1323,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Toggle Modo JSON / Formulario */}
+                    {/* Toggle Modo JSON / Formulario + Eliminar */}
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
@@ -1293,6 +1333,20 @@ export default function DashboardPage() {
                           {selectedIniciativa.id}
                         </p>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleDeleteIniciativa}
+                          disabled={deleting}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg font-sans-tech text-xs bg-red-50 text-red-600 hover:bg-red-100 transition-all disabled:opacity-50"
+                          title="Eliminar iniciativa"
+                        >
+                          {deleting ? (
+                            <div className="w-3 h-3 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                          ) : (
+                            <X size={14} />
+                          )}
+                          Eliminar
+                        </button>
                       <button
                         onClick={() => {
                           setJsonEditMode(!jsonEditMode);
@@ -1307,6 +1361,7 @@ export default function DashboardPage() {
                       >
                         {jsonEditMode ? '📝 Modo Formulario' : '{ } Modo JSON'}
                       </button>
+                      </div>
                     </div>
 
                     {/* Modo JSON */}
