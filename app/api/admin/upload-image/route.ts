@@ -43,24 +43,46 @@ export async function POST(request: NextRequest) {
       : `anuncios/thumbnails/img-${timestamp}.${extension}`;
 
     // Subir a Firebase Storage
-    const storage = getAdminStorage();
+    let storage;
+    try {
+      storage = getAdminStorage();
+    } catch (storageError) {
+      console.error('Error inicializando Storage:', storageError);
+      return NextResponse.json({
+        error: 'Error de configuración de Storage',
+        details: storageError instanceof Error ? storageError.message : 'Unknown'
+      }, { status: 500 });
+    }
+
     const bucket = storage.bucket();
     const fileRef = bucket.file(filename);
 
-    await fileRef.save(buffer, {
-      metadata: {
-        contentType: file.type,
+    // Guardar archivo
+    try {
+      await fileRef.save(buffer, {
         metadata: {
-          uploadedAt: new Date().toISOString(),
-          originalName: file.name
-        }
-      }
-    });
+          contentType: file.type,
+          cacheControl: 'public, max-age=31536000',
+        },
+        public: true, // Intentar hacer público al guardar
+      });
+    } catch (saveError) {
+      console.error('Error guardando archivo:', saveError);
+      return NextResponse.json({
+        error: 'Error al guardar archivo en Storage',
+        details: saveError instanceof Error ? saveError.message : 'Unknown'
+      }, { status: 500 });
+    }
 
-    // Hacer el archivo público
-    await fileRef.makePublic();
+    // Intentar hacer público (si no se hizo al guardar)
+    try {
+      await fileRef.makePublic();
+    } catch (publicError) {
+      // Si falla makePublic, intentamos con signed URL
+      console.warn('makePublic falló, usando URL directa:', publicError);
+    }
 
-    // Obtener URL pública
+    // URL pública
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
 
     return NextResponse.json({

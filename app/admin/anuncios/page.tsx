@@ -829,7 +829,8 @@ export default function AdminAnunciosPage() {
         }
         setMessage({ type: 'success', text: 'Imagen subida correctamente' });
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error al subir imagen' });
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error;
+        setMessage({ type: 'error', text: errorMsg || 'Error al subir imagen' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Error de conexión al subir imagen' });
