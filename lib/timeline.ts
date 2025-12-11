@@ -48,6 +48,16 @@ export async function crearEventoTimeline(params: {
   return eventoRef.id;
 }
 
+// Helper para convertir Timestamp a ISO string
+function convertTimestamp(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && 'toDate' in value) {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+  return null;
+}
+
 /**
  * Obtener todos los eventos de timeline de un anuncio
  */
@@ -60,7 +70,24 @@ export async function obtenerEventosTimeline(anuncioId: string): Promise<EventoT
     .orderBy('fecha', 'desc')
     .get();
 
-  return snapshot.docs.map(doc => doc.data() as EventoTimeline);
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    
+    // Convertir fechas de fuentes
+    const fuentes = data.fuentes?.map((f: Record<string, unknown>) => ({
+      ...f,
+      fecha: convertTimestamp(f.fecha) || f.fecha,
+      fechaPublicacion: convertTimestamp(f.fechaPublicacion) || f.fechaPublicacion
+    })) || [];
+
+    return {
+      ...data,
+      id: doc.id,
+      fecha: convertTimestamp(data.fecha) || data.fecha,
+      createdAt: convertTimestamp(data.createdAt),
+      fuentes
+    } as EventoTimeline;
+  });
 }
 
 /**
