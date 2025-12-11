@@ -36,7 +36,7 @@ import {
 interface Fuente {
   url: string;
   titulo: string;
-  fecha: string;
+  fecha: string | { _seconds?: number; seconds?: number };
   tipo: string;
   medio?: string;
   accesible?: boolean;
@@ -45,7 +45,7 @@ interface Fuente {
 
 interface EventoTimeline {
   id: string;
-  fecha: string;
+  fecha: string | { _seconds?: number; seconds?: number };
   tipo: string;
   titulo: string;
   descripcion: string;
@@ -989,16 +989,37 @@ export default function AdminAnunciosPage() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
+  const formatDate = (dateInput: string | { _seconds?: number; seconds?: number; toDate?: () => Date } | null | undefined) => {
+    if (!dateInput) return '-';
+    
     try {
-      return new Date(dateStr).toLocaleDateString('es-MX', {
+      let date: Date;
+      
+      // Si es un objeto Timestamp de Firestore (serializado)
+      if (typeof dateInput === 'object') {
+        if ('toDate' in dateInput && typeof dateInput.toDate === 'function') {
+          date = dateInput.toDate();
+        } else if ('_seconds' in dateInput && dateInput._seconds) {
+          date = new Date(dateInput._seconds * 1000);
+        } else if ('seconds' in dateInput && dateInput.seconds) {
+          date = new Date(dateInput.seconds * 1000);
+        } else {
+          return '-';
+        }
+      } else {
+        // Es un string
+        date = new Date(dateInput);
+      }
+      
+      if (isNaN(date.getTime())) return '-';
+      
+      return date.toLocaleDateString('es-MX', {
         day: 'numeric',
         month: 'short',
         year: 'numeric'
       });
     } catch {
-      return dateStr;
+      return '-';
     }
   };
 
