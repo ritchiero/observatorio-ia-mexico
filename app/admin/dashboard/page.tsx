@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle, Edit, Search, Save, RefreshCw } from 'lucide-react';
+import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle, Edit, Search, Save, RefreshCw, Trash2, Copy } from 'lucide-react';
 
 interface ImportResult {
   id: string;
@@ -138,6 +138,15 @@ export default function DashboardPage() {
   const [jsonEditMode, setJsonEditMode] = useState(false);
   const [editJsonInput, setEditJsonInput] = useState('');
   const [editJsonError, setEditJsonError] = useState('');
+
+  // Duplicates detection states
+  const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
+  const [duplicatesGroups, setDuplicatesGroups] = useState<Array<{
+    key: string;
+    items: Iniciativa[];
+  }>>([]);
+  const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+  const [deletingDuplicate, setDeletingDuplicate] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -426,6 +435,107 @@ export default function DashboardPage() {
     } finally {
       setDeleting(false);
     }
+  };
+
+  // Función para normalizar texto para comparación
+  const normalizeText = (text: string): string => {
+    return (text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+      .replace(/[^a-z0-9\s]/g, '') // Solo letras, números y espacios
+      .replace(/\s+/g, ' ') // Normalizar espacios
+      .trim();
+  };
+
+  // Detectar duplicados
+  const detectDuplicates = async () => {
+    setLoadingDuplicates(true);
+    setDuplicatesGroups([]);
+
+    try {
+      // Si no tenemos iniciativas cargadas, cargarlas
+      let inits = iniciativas;
+      if (inits.length === 0) {
+        const response = await fetch('/api/iniciativas', { credentials: 'include' });
+        const data = await response.json();
+        if (data.success) {
+          inits = data.data;
+          setIniciativas(inits);
+        }
+      }
+
+      // Agrupar por título normalizado
+      const groups: Record<string, Iniciativa[]> = {};
+      
+      inits.forEach(ini => {
+        const key = normalizeText(ini.titulo);
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(ini);
+      });
+
+      // Filtrar solo los grupos con más de 1 elemento (duplicados)
+      const duplicates = Object.entries(groups)
+        .filter(([, items]) => items.length > 1)
+        .map(([key, items]) => ({ key, items }))
+        .sort((a, b) => b.items.length - a.items.length); // Más duplicados primero
+
+      setDuplicatesGroups(duplicates);
+    } catch (error) {
+      console.error('Error detectando duplicados:', error);
+    } finally {
+      setLoadingDuplicates(false);
+    }
+  };
+
+  // Eliminar un duplicado específico
+  const deleteDuplicate = async (iniciativa: Iniciativa) => {
+    const confirmar = confirm(
+      `⚠️ ELIMINAR DUPLICADO\n\n` +
+      `¿Eliminar esta iniciativa?\n\n` +
+      `ID: ${iniciativa.id}\n` +
+      `Título: "${iniciativa.titulo.substring(0, 80)}..."\n\n` +
+      `Esta acción NO se puede deshacer.`
+    );
+
+    if (!confirmar) return;
+
+    setDeletingDuplicate(iniciativa.id);
+
+    try {
+      const response = await fetch(`/api/admin/iniciativas?id=${iniciativa.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        // Actualizar la lista local
+        setIniciativas(prev => prev.filter(ini => ini.id !== iniciativa.id));
+        
+        // Actualizar los grupos de duplicados
+        setDuplicatesGroups(prev => 
+          prev.map(group => ({
+            ...group,
+            items: group.items.filter(item => item.id !== iniciativa.id)
+          })).filter(group => group.items.length > 1) // Solo mantener grupos con duplicados
+        );
+      } else {
+        const data = await response.json();
+        alert('Error al eliminar: ' + (data.error || 'Error desconocido'));
+      }
+    } catch (error: any) {
+      alert('Error de conexión: ' + error.message);
+    } finally {
+      setDeletingDuplicate(null);
+    }
+  };
+
+  // Abrir modal de duplicados
+  const openDuplicatesModal = () => {
+    setShowDuplicatesModal(true);
+    detectDuplicates();
   };
 
   const closeEditModal = () => {
@@ -874,6 +984,13 @@ export default function DashboardPage() {
           href: '/api/admin/categorize-initiatives',
           method: 'POST',
         },
+        {
+          title: 'Detectar Duplicadas',
+          description: 'Encontrar y eliminar iniciativas repetidas',
+          icon: Copy,
+          href: '#duplicates',
+          method: 'ACTION',
+        },
       ]
     },
   ];
@@ -990,6 +1107,8 @@ export default function DashboardPage() {
                               } else if (action.title === 'Categorizar con IA') {
                                 setCategorizeResults(null);
                                 setShowCategorizeModal(true);
+                              } else if (action.title === 'Detectar Duplicadas') {
+                                openDuplicatesModal();
                               } else {
                                 alert(`Funcionalidad: ${action.title}\nRuta: ${action.href}`);
                               }
@@ -2293,6 +2412,166 @@ export default function DashboardPage() {
                   </button>
                 </div>
               ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Detectar Duplicadas */}
+      {showDuplicatesModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={() => !deletingDuplicate && setShowDuplicatesModal(false)}
+          />
+          
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
+                  <Copy size={18} className="text-orange-500" />
+                </div>
+                <div>
+                  <h2 className="font-sans-tech font-semibold text-gray-900">
+                    Detectar Duplicadas
+                  </h2>
+                  <p className="font-sans-tech text-xs text-gray-500">
+                    Iniciativas con títulos similares
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDuplicatesModal(false)}
+                disabled={!!deletingDuplicate}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingDuplicates ? (
+                <div className="text-center py-12">
+                  <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4" />
+                  <p className="font-sans-tech text-gray-600">
+                    Analizando iniciativas...
+                  </p>
+                </div>
+              ) : duplicatesGroups.length === 0 ? (
+                <div className="text-center py-12">
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <h3 className="font-sans-tech font-semibold text-gray-900 text-lg mb-2">
+                    ¡Sin duplicados!
+                  </h3>
+                  <p className="font-sans-tech text-gray-500 text-sm">
+                    No se encontraron iniciativas con títulos repetidos.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertCircle size={16} className="text-orange-600" />
+                      <span className="font-sans-tech font-semibold text-orange-800">
+                        {duplicatesGroups.length} grupo{duplicatesGroups.length > 1 ? 's' : ''} de duplicados encontrado{duplicatesGroups.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <p className="font-sans-tech text-sm text-orange-700">
+                      Revisa cada grupo y elimina las iniciativas que estén repetidas. 
+                      Conserva la que tenga mejor información.
+                    </p>
+                  </div>
+
+                  {duplicatesGroups.map((group, groupIndex) => (
+                    <div key={groupIndex} className="border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                        <span className="font-sans-tech font-medium text-gray-700">
+                          Grupo {groupIndex + 1}: {group.items.length} iniciativas similares
+                        </span>
+                      </div>
+                      
+                      <div className="divide-y divide-gray-100">
+                        {group.items.map((item, itemIndex) => (
+                          <div 
+                            key={item.id}
+                            className={`p-4 ${itemIndex === 0 ? 'bg-green-50/50' : 'bg-white'} hover:bg-gray-50 transition-colors`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  {itemIndex === 0 && (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-sans-tech font-medium rounded-full">
+                                      CONSERVAR
+                                    </span>
+                                  )}
+                                  <span className="font-mono text-xs text-gray-400">
+                                    {item.id}
+                                  </span>
+                                </div>
+                                <h4 className="font-sans-tech text-sm font-medium text-gray-900 mb-1 line-clamp-2">
+                                  {item.titulo}
+                                </h4>
+                                <div className="flex flex-wrap gap-2 text-xs text-gray-500 font-sans-tech">
+                                  <span>📅 {new Date(item.fecha).toLocaleDateString('es-MX')}</span>
+                                  <span>👤 {item.proponente?.substring(0, 30)}...</span>
+                                  <span className={`px-1.5 py-0.5 rounded ${
+                                    item.estadoVerificacion === 'verificado' 
+                                      ? 'bg-emerald-100 text-emerald-700' 
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {item.estadoVerificacion === 'verificado' ? '✓ Verificado' : 'Sin verificar'}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {itemIndex > 0 && (
+                                <button
+                                  onClick={() => deleteDuplicate(item)}
+                                  disabled={deletingDuplicate === item.id}
+                                  className="shrink-0 flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 font-sans-tech text-sm"
+                                >
+                                  {deletingDuplicate === item.id ? (
+                                    <>
+                                      <div className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                                      Eliminando...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Trash2 size={14} />
+                                      Eliminar
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-between items-center">
+              <button
+                onClick={detectDuplicates}
+                disabled={loadingDuplicates}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-sans-tech text-sm transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={16} className={loadingDuplicates ? 'animate-spin' : ''} />
+                Volver a analizar
+              </button>
+              <button
+                onClick={() => setShowDuplicatesModal(false)}
+                disabled={!!deletingDuplicate}
+                className="px-6 py-2 bg-gray-900 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
