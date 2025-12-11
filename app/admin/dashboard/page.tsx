@@ -491,17 +491,24 @@ export default function DashboardPage() {
 
   // Verificar iniciativas (con opciones)
   const handleBulkVerify = async () => {
+    console.log('[BULK] Iniciando verificación en lote');
+    console.log('[BULK] Total iniciativas cargadas:', iniciativas.length);
+    console.log('[BULK] excludeVerified:', excludeVerified);
+    console.log('[BULK] bulkLimit:', bulkLimit);
+    
     // Filtrar iniciativas según configuración
     let toVerify = [...iniciativas];
     
     if (excludeVerified) {
       toVerify = toVerify.filter(ini => !ini.estadoVerificacion || ini.estadoVerificacion === 'pendiente');
+      console.log('[BULK] Después de filtrar verificadas:', toVerify.length);
     }
     
     toVerify = toVerify.slice(0, bulkLimit);
+    console.log('[BULK] Iniciativas a verificar:', toVerify.length);
     
     if (toVerify.length === 0) {
-      alert('No hay iniciativas pendientes de verificar');
+      alert('No hay iniciativas pendientes de verificar. Todas ya están verificadas o no se han cargado.');
       return;
     }
     
@@ -512,10 +519,12 @@ export default function DashboardPage() {
       status: 'pending' as const
     }));
     
+    console.log('[BULK] Cola inicializada:', queue.length);
+    
+    // IMPORTANTE: Establecer estados en orden correcto
+    setBulkResults(null);
     setBulkQueue(queue);
     setIsBulkVerifying(true);
-    setBulkResults(null);
-    setShowBulkModal(true);
 
     let verificados = 0;
     let revision = 0;
@@ -1058,7 +1067,7 @@ export default function DashboardPage() {
                   )}
                 </button>
                 <button
-                  onClick={() => { setBulkResults(null); setShowBulkModal(true); }}
+                  onClick={() => { setBulkResults(null); setBulkQueue([]); setShowBulkModal(true); }}
                   disabled={iniciativas.length === 0}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-sans-tech text-sm font-medium"
                 >
