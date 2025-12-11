@@ -214,7 +214,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <HeroSection stats={stats} />
+      <HeroSection stats={stats} legStats={legStats} />
 
       {/* Sección: Cómo funciona - Observatorio Automatizado */}
       <section id="metodologia" className="bg-gray-50 border-y border-gray-300/5 py-10 sm:py-14 px-4">

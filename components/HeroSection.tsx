@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Activity, Eye, FileText, ChevronDown } from 'lucide-react';
+import { Activity, Eye, FileText, ChevronDown, Scale } from 'lucide-react';
+import Link from 'next/link';
 
 interface HeroSectionProps {
   stats: {
@@ -11,9 +12,13 @@ interface HeroSectionProps {
     incumplido: number;
     prometido: number;
   };
+  legStats?: {
+    total: number;
+    activas: number;
+  };
 }
 
-export default function HeroSection({ stats }: HeroSectionProps) {
+export default function HeroSection({ stats, legStats }: HeroSectionProps) {
   const [mounted, setMounted] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -121,15 +126,22 @@ export default function HeroSection({ stats }: HeroSectionProps) {
           </div>
 
           {/* STATS ROW */}
-          <div className="grid grid-cols-2 gap-8 mt-16 border-t border-gray-300/10 pt-8 max-w-2xl animate-reveal delay-400">
+          <div className="grid grid-cols-3 gap-6 md:gap-8 mt-16 border-t border-gray-300/10 pt-8 max-w-3xl animate-reveal delay-400">
             <div className="group cursor-default">
-              <div className="font-serif-display text-4xl md:text-5xl text-gray-900 group-hover:text-blue-400 transition-colors duration-300">{stats.total}</div>
-              <div className="font-sans-tech text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Anuncios Oficiales</div>
+              <div className="font-serif-display text-3xl md:text-5xl text-gray-900 group-hover:text-blue-400 transition-colors duration-300">{stats.total}</div>
+              <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Anuncios Oficiales</div>
             </div>
             <div className="group cursor-default">
-              <div className="font-serif-display text-4xl md:text-5xl text-blue-500 group-hover:text-gray-900 transition-colors duration-300">{stats.operando}</div>
-              <div className="font-sans-tech text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Productos Operativos</div>
+              <div className="font-serif-display text-3xl md:text-5xl text-blue-500 group-hover:text-gray-900 transition-colors duration-300">{stats.operando}</div>
+              <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Productos Operativos</div>
             </div>
+            <Link href="/legislacion" className="group cursor-pointer">
+              <div className="font-serif-display text-3xl md:text-5xl text-emerald-600 group-hover:text-gray-900 transition-colors duration-300">{legStats?.total || '80+'}</div>
+              <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <Scale size={10} className="hidden md:inline" />
+                Iniciativas de Ley
+              </div>
+            </Link>
           </div>
 
           {/* CTAs */}
