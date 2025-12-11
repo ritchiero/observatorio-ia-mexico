@@ -53,16 +53,18 @@ export async function GET() {
     const urlsExistentes = new Set(fuentesExistentes.map((f: { url: string }) => f.url));
     const fuentesSinDuplicar = nuevasFuentes.filter(f => !urlsExistentes.has(f.url));
 
+    // Si todas ya existen, retornar info
     if (fuentesSinDuplicar.length === 0) {
       return NextResponse.json({ 
         success: true,
         message: 'Todas las fuentes ya existían',
-        fuentesExistentes: fuentesExistentes.length
+        fuentesExistentes: fuentesExistentes.length,
+        urls: fuentesExistentes.map((f: { url: string }) => f.url)
       });
     }
 
-    // Combinar y actualizar
-    const todasLasFuentes = [...fuentesExistentes, ...fuentesSinDuplicar];
+    // Combinar y actualizar (nuevas al inicio para que aparezcan primero)
+    const todasLasFuentes = [...fuentesSinDuplicar, ...fuentesExistentes];
 
     await anuncioRef.update({
       fuentes: todasLasFuentes,
