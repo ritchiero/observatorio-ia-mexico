@@ -391,85 +391,101 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Vista móvil: Cards */}
-          <div className="md:hidden space-y-3">
+          {/* Grid de Cards Premium */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {anunciosFiltrados.map((item, index) => (
               <div
                 key={index}
                 onClick={() => router.push(`/anuncio/${item.id}`)}
-                className="bg-gray-100 border border-gray-300/10 rounded-lg p-4 hover:border-blue-500/30 hover:bg-gray-50/[0.07] cursor-pointer transition-all active:bg-gray-200 backdrop-blur-sm"
+                className="group relative bg-white border border-gray-200/80 rounded-2xl p-5 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 cursor-pointer transition-all duration-300 overflow-hidden"
               >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <img src={getLogo(item.responsable)} alt="" className="w-7 h-7 object-contain rounded" />
-                      <span className="text-xs text-gray-900/40 font-mono">{item.fecha}</span>
-                      <span className="text-xs text-gray-900/20">·</span>
-                      <span className="text-xs text-gray-900/40 font-sans-tech">{item.responsable}</span>
-                    </div>
-                    <h3 className="text-sm font-semibold text-gray-900 font-sans-tech">{item.anuncio}</h3>
-                  </div>
-                  <div className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded font-sans-tech ${getStatusColor(item.status)}`}>
-                    <span>{getStatusEmoji(item.status)}</span>
-                    <span className="hidden xs:inline">{item.statusLabel}</span>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-900/50 line-clamp-2 font-sans-tech">{item.detalle}</p>
-                {item.fechaPrometida && !item.cumplida && item.status === 'incumplido' && (
-                  <div className="text-xs text-red-400 mt-2 flex items-center gap-1 font-medium font-mono">
-                    <span>⏱️</span> Incumplido hace {item.diasVencidos || calcularDiasVencidos(item.fechaPrometida)} días
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Vista desktop: Tabla */}
-          <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-300/10 backdrop-blur-sm">
-            <table key={filtroStatus} className="w-full">
-              <thead className="bg-gray-100 text-gray-900/70 border-b border-gray-300/10">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium font-sans-tech">Fecha</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium font-sans-tech">Anuncio</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium font-sans-tech">Responsable</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium font-sans-tech">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {anunciosFiltrados.map((item, index) => (
-                  <tr 
-                    key={index}
-                    onClick={() => router.push(`/anuncio/${item.id}`)}
-                    className={`border-b border-gray-300/5 hover:bg-gray-50/[0.07] cursor-pointer transition-colors ${
-                      index % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.02]'
-                    }`}
-                  >
-                    <td className="px-4 py-4 text-sm text-gray-900/50 font-mono whitespace-nowrap">{item.fecha}</td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm font-medium text-gray-900 font-sans-tech">{item.anuncio}</div>
-                      <div className="text-xs text-gray-900/40 mt-1 font-sans-tech">{item.detalle}</div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <img src={getLogo(item.responsable)} alt="" className="w-8 h-8 object-contain rounded" />
-                        <span className="text-sm text-gray-900/60 font-sans-tech">{item.responsable}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 text-xs font-medium border rounded font-sans-tech ${getStatusColor(item.status)}`}>
-                        <span>{getStatusEmoji(item.status)}</span>
-                        <span>{item.statusLabel}</span>
-                      </div>
-                      {item.fechaPrometida && !item.cumplida && item.status === 'incumplido' && (
-                        <div className="text-xs text-red-400 mt-1 font-medium font-mono">
-                          ⏱️ Incumplido hace {item.diasVencidos || calcularDiasVencidos(item.fechaPrometida)} días
+                {/* Barra de estado lateral */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                  item.status === 'incumplido' ? 'bg-red-500' :
+                  item.status === 'en_desarrollo' ? 'bg-blue-500' :
+                  item.status === 'operando' ? 'bg-emerald-500' :
+                  'bg-gray-300'
+                }`} />
+                
+                {/* Header del card */}
+                <div className="flex items-start justify-between gap-4 mb-4 pl-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <img 
+                        src={getLogo(item.responsable)} 
+                        alt="" 
+                        className="w-12 h-12 object-contain rounded-xl border border-gray-100 bg-white p-1 group-hover:scale-105 transition-transform" 
+                      />
+                      {item.status === 'incumplido' && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                          <span className="text-[8px] text-white">!</span>
                         </div>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    <div>
+                      <div className="font-mono text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">
+                        {item.fecha} 2025
+                      </div>
+                      <div className="font-sans-tech text-xs text-gray-500">
+                        {item.responsable}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Badge de estado */}
+                  <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-sans-tech font-semibold uppercase tracking-wider ${
+                    item.status === 'incumplido' ? 'bg-red-50 text-red-600 border border-red-200' :
+                    item.status === 'en_desarrollo' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                    item.status === 'operando' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                    'bg-gray-100 text-gray-500 border border-gray-200'
+                  }`}>
+                    {item.statusLabel}
+                  </div>
+                </div>
+                
+                {/* Contenido */}
+                <div className="pl-3">
+                  <h3 className="font-sans-tech font-semibold text-gray-900 text-base mb-2 group-hover:text-blue-600 transition-colors">
+                    {item.anuncio}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 font-sans-tech">
+                    {item.detalle}
+                  </p>
+                  
+                  {/* Footer del card */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                    {item.fechaPrometida && !item.cumplida && item.status === 'incumplido' ? (
+                      <div className="flex items-center gap-2 text-red-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-xs font-mono font-medium">
+                          {item.diasVencidos || calcularDiasVencidos(item.fechaPrometida)} días de retraso
+                        </span>
+                      </div>
+                    ) : item.fechaPrometida ? (
+                      <div className="text-xs text-gray-400 font-mono">
+                        Meta: {item.fechaPrometida}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-300 font-mono">
+                        Sin fecha límite
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-1 text-xs text-blue-500 font-sans-tech opacity-0 group-hover:opacity-100 transition-opacity">
+                      Ver detalles
+                      <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Hover effect - gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/30 group-hover:to-transparent transition-all duration-500 pointer-events-none rounded-2xl" />
+              </div>
+            ))}
           </div>
 
 
