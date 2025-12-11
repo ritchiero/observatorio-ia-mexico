@@ -284,111 +284,16 @@ export default function LegislacionClient({ iniciativas }: Props) {
       </div>
 
       {/* Filters */}
-      <section className="bg-gray-50 border-b border-gray-200/50 py-6">
-        <div className="max-w-6xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="flex flex-wrap gap-3 mb-4">
-            <div>
-              <label className="block text-xs font-sans-tech font-medium text-gray-900/50 mb-1.5 uppercase tracking-wider">Cámara</label>
-              <select
-                value={filtroCamara}
-                onChange={(e) => setFiltroCamara(e.target.value)}
-                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
-              >
-                <option value="todos">Todas</option>
-                <option value="Diputados">🏛️ Diputados</option>
-                <option value="Senado">🏢 Senado</option>
-                <option value="Local">🏙️ Local</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-sans-tech font-medium text-gray-900/50 mb-1.5 uppercase tracking-wider">Estado</label>
-              <select
-                value={filtroStatus}
-                onChange={(e) => setFiltroStatus(e.target.value as IniciativaStatus | 'todos')}
-                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
-              >
-                <option value="todos">Todos</option>
-                <option value="en_comisiones">✅ En comisiones</option>
-                <option value="turnada">📋 Turnadas</option>
-                <option value="archivada">🗂️ Archivadas</option>
-                <option value="desechada_termino">❌ Desechadas</option>
-                <option value="aprobada">✅ Aprobadas</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-sans-tech font-medium text-gray-900/50 mb-1.5 uppercase tracking-wider">Legislatura</label>
-              <select
-                value={filtroLegislatura}
-                onChange={(e) => setFiltroLegislatura(e.target.value)}
-                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
-              >
-                <option value="todos">Todas</option>
-                <option value="LXVI">LXVI (2024-2027) ⭐</option>
-                <option value="LXV">LXV (2021-2024)</option>
-                <option value="LXIV">LXIV (2018-2021)</option>
-                <option value="III_CDMX">CDMX III</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-sans-tech font-medium text-gray-900/50 mb-1.5 uppercase tracking-wider">Tema</label>
-              <select
-                value={filtroTema}
-                onChange={(e) => setFiltroTema(e.target.value)}
-                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
-              >
-                <option value="todos">Todos</option>
-                <option value="Regulación General">📜 Regulación General</option>
-                <option value="Seguridad y Delitos">🔒 Seguridad y Delitos</option>
-                <option value="Privacidad y Datos">🛡️ Privacidad</option>
-                <option value="Deepfakes y Contenido">🎭 Deepfakes</option>
-                <option value="Propiedad Intelectual">©️ Prop. Intelectual</option>
-                <option value="Salud">🏥 Salud</option>
-                <option value="Laboral">💼 Laboral</option>
-                <option value="Educación">📚 Educación</option>
-                <option value="Sector Público">🏛️ Sector Público</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-sans-tech font-medium text-gray-900/50 mb-1.5 uppercase tracking-wider">Entidad</label>
-              <select
-                value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value)}
-                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
-              >
-                <option value="todos">Todas</option>
-                <option value="Federal">🇲🇽 Federal</option>
-                <option value="Ciudad de México">CDMX</option>
-                <option value="Campeche">Campeche</option>
-                <option value="Chihuahua">Chihuahua</option>
-                <option value="Guanajuato">Guanajuato</option>
-                <option value="Michoacán">Michoacán</option>
-                <option value="Oaxaca">Oaxaca</option>
-                <option value="Querétaro">Querétaro</option>
-                <option value="Quintana Roo">Quintana Roo</option>
-                <option value="Yucatán">Yucatán</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-sans-tech font-medium text-gray-900/50 mb-1.5 uppercase tracking-wider">Categoría</label>
-              <select
-                value={filtroCategoria}
-                onChange={(e) => setFiltroCategoria(e.target.value)}
-                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
-              >
-                <option value="todos">Todas</option>
-                {Object.entries(CATEGORIAS_TEMA).map(([key, { label, emoji }]) => (
-                  <option key={key} value={key}>{emoji} {label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="flex gap-3">
+      <section className="bg-gray-50 border-b border-gray-200/50 py-4 md:py-6">
+        <div className="max-w-6xl mx-auto px-4 md:px-12 lg:px-24">
+          {/* Búsqueda primero en móvil */}
+          <div className="flex gap-2 mb-4">
             <div className="flex-1">
               <input
                 type="search"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="🔍 Buscar por título, proponente o descripción..."
+                placeholder="🔍 Buscar iniciativa..."
                 className="w-full px-4 py-2.5 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech placeholder:text-gray-400"
               />
             </div>
@@ -403,20 +308,118 @@ export default function LegislacionClient({ iniciativas }: Props) {
                   setFiltroCategoria('todos');
                   setBusqueda('');
                 }}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300/20 rounded-lg hover:bg-white hover:border-blue-500/30 transition-all font-sans-tech"
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300/20 rounded-lg hover:bg-white hover:border-blue-500/30 transition-all font-sans-tech whitespace-nowrap"
               >
-                Limpiar
+                ✕
               </button>
             )}
+          </div>
+          
+          {/* Filtros en grid responsivo */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Cámara</label>
+              <select
+                value={filtroCamara}
+                onChange={(e) => setFiltroCamara(e.target.value)}
+                className="w-full px-2 py-2 border border-gray-300/20 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">Todas</option>
+                <option value="Diputados">Diputados</option>
+                <option value="Senado">Senado</option>
+                <option value="Local">Local</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Estado</label>
+              <select
+                value={filtroStatus}
+                onChange={(e) => setFiltroStatus(e.target.value as IniciativaStatus | 'todos')}
+                className="w-full px-2 py-2 border border-gray-300/20 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">Todos</option>
+                <option value="en_comisiones">En comisiones</option>
+                <option value="turnada">Turnadas</option>
+                <option value="archivada">Archivadas</option>
+                <option value="desechada_termino">Desechadas</option>
+                <option value="aprobada">Aprobadas</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Legislatura</label>
+              <select
+                value={filtroLegislatura}
+                onChange={(e) => setFiltroLegislatura(e.target.value)}
+                className="w-full px-2 py-2 border border-gray-300/20 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">Todas</option>
+                <option value="LXVI">LXVI (actual)</option>
+                <option value="LXV">LXV</option>
+                <option value="LXIV">LXIV</option>
+                <option value="III_CDMX">CDMX III</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Tema</label>
+              <select
+                value={filtroTema}
+                onChange={(e) => setFiltroTema(e.target.value)}
+                className="w-full px-2 py-2 border border-gray-300/20 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">Todos</option>
+                <option value="Regulación General">Regulación</option>
+                <option value="Seguridad y Delitos">Seguridad</option>
+                <option value="Privacidad y Datos">Privacidad</option>
+                <option value="Deepfakes y Contenido">Deepfakes</option>
+                <option value="Propiedad Intelectual">Prop. Intelectual</option>
+                <option value="Salud">Salud</option>
+                <option value="Laboral">Laboral</option>
+                <option value="Educación">Educación</option>
+                <option value="Sector Público">Sector Público</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Entidad</label>
+              <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                className="w-full px-2 py-2 border border-gray-300/20 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">Todas</option>
+                <option value="Federal">Federal</option>
+                <option value="Ciudad de México">CDMX</option>
+                <option value="Campeche">Campeche</option>
+                <option value="Chihuahua">Chihuahua</option>
+                <option value="Guanajuato">Guanajuato</option>
+                <option value="Michoacán">Michoacán</option>
+                <option value="Oaxaca">Oaxaca</option>
+                <option value="Querétaro">Querétaro</option>
+                <option value="Quintana Roo">Quintana Roo</option>
+                <option value="Yucatán">Yucatán</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Categoría</label>
+              <select
+                value={filtroCategoria}
+                onChange={(e) => setFiltroCategoria(e.target.value)}
+                className="w-full px-2 py-2 border border-gray-300/20 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">Todas</option>
+                {Object.entries(CATEGORIAS_TEMA).map(([key, { label }]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Table */}
-      <section className="py-8 md:py-12 bg-white">
-        <div className="max-w-6xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-serif-display text-2xl md:text-3xl font-light text-gray-900">
+      {/* Lista de iniciativas */}
+      <section className="py-6 md:py-12 bg-white">
+        <div className="max-w-6xl mx-auto px-4 md:px-12 lg:px-24">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h2 className="font-serif-display text-xl md:text-3xl font-light text-gray-900">
               Iniciativas <span className="italic text-blue-500">documentadas</span>
             </h2>
             <span className="text-xs font-mono text-gray-400">
@@ -424,7 +427,103 @@ export default function LegislacionClient({ iniciativas }: Props) {
             </span>
           </div>
           
-          <div className="overflow-x-auto rounded-xl border border-gray-200/50">
+          {/* Vista móvil: Cards */}
+          <div className="md:hidden space-y-3">
+            {iniciativasFiltradas.map((iniciativa) => {
+              const badge = getStatusBadge(iniciativa.status);
+              const isExpanded = expandedId === iniciativa.id;
+              
+              return (
+                <div 
+                  key={iniciativa.id}
+                  className="bg-white border border-gray-200 rounded-xl overflow-hidden"
+                >
+                  {/* Card header - siempre visible */}
+                  <div 
+                    className="p-4 cursor-pointer"
+                    onClick={() => setExpandedId(isExpanded ? null : iniciativa.id)}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium font-sans-tech border ${badge.color}`}>
+                        {badge.text}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {iniciativa.estadoVerificacion === 'verificado' && (
+                          <ShieldCheck size={14} className="text-emerald-500" />
+                        )}
+                        {isExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-sm font-sans-tech font-medium text-gray-900 leading-snug mb-2">
+                      {iniciativa.titulo}
+                    </h3>
+                    
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                      <span className="font-mono">{formatFecha(iniciativa.fecha)}</span>
+                      <span>·</span>
+                      <span>{iniciativa.camara}</span>
+                      <span>·</span>
+                      <span>{iniciativa.legislatura}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Contenido expandido */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-100 bg-gray-50/50 p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <span className="text-[10px] font-sans-tech font-medium text-gray-400 uppercase">Proponente</span>
+                          <p className="text-sm text-gray-900">{iniciativa.proponente}</p>
+                          {iniciativa.partido && <p className="text-xs text-gray-500">{iniciativa.partido}</p>}
+                        </div>
+                        
+                        {iniciativa.descripcion && (
+                          <div>
+                            <span className="text-[10px] font-sans-tech font-medium text-gray-400 uppercase">Descripción</span>
+                            <p className="text-sm text-gray-600 leading-relaxed">{iniciativa.descripcion}</p>
+                          </div>
+                        )}
+                        
+                        {iniciativa.estadoVerificacion === 'verificado' && (
+                          <div className="p-2 bg-emerald-50 border border-emerald-200/50 rounded-lg">
+                            <div className="flex items-center gap-1.5">
+                              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                              <span className="font-sans-tech text-xs text-emerald-700">Verificado por IA</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-2 pt-2">
+                          <Link 
+                            href={`/legislacion/${iniciativa.id}`}
+                            className="flex-1 text-center px-3 py-2 bg-blue-600 text-white font-sans-tech text-xs uppercase tracking-wider rounded-lg"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Ver detalles
+                          </Link>
+                          {iniciativa.urlPDF && (
+                            <a 
+                              href={iniciativa.urlPDF}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-2 border border-gray-300 text-gray-700 font-sans-tech text-xs uppercase tracking-wider rounded-lg"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              PDF
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Vista desktop: Tabla */}
+          <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-200/50">
             <table className="min-w-full">
               <thead className="bg-gray-50 border-b border-gray-200/50">
                 <tr>
@@ -635,7 +734,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
           </div>
           
           {/* Footer info */}
-          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200/50 text-xs font-sans-tech text-gray-400">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mt-6 pt-4 border-t border-gray-200/50 text-xs font-sans-tech text-gray-400">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
               <span>Datos actualizados automáticamente</span>
