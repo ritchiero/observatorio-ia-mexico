@@ -6,11 +6,50 @@ import HeroSection from '@/components/HeroSection';
 import Link from 'next/link';
 import { Scale, ArrowRight, ShieldCheck } from 'lucide-react';
 
+interface AnuncioData {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  fechaAnuncio: string;
+  fechaPrometida?: string;
+  responsable: string;
+  dependencia: string;
+  status: string;
+  imagen?: string;
+}
+
 export default function Home() {
   const router = useRouter();
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [legStats, setLegStats] = useState({ total: 0, activas: 0, aprobadas: 0, verificadas: 0 });
-  const [iniciativasDestacadas, setIniciativasDestacadas] = useState<any[]>([]);
+  const [iniciativasDestacadas, setIniciativasDestacadas] = useState<Array<{
+    id: string;
+    titulo: string;
+    status?: string;
+    proponente?: string;
+    fecha?: string;
+    estadoVerificacion?: string;
+  }>>([]);
+  const [anuncios, setAnuncios] = useState<AnuncioData[]>([]);
+  const [loadingAnuncios, setLoadingAnuncios] = useState(true);
+
+  // Cargar anuncios/promesas de IA
+  useEffect(() => {
+    async function fetchAnuncios() {
+      try {
+        const response = await fetch('/api/anuncios');
+        const data = await response.json();
+        if (data.anuncios) {
+          setAnuncios(data.anuncios);
+        }
+      } catch (error) {
+        console.error('Error fetching anuncios:', error);
+      } finally {
+        setLoadingAnuncios(false);
+      }
+    }
+    fetchAnuncios();
+  }, []);
 
   // Cargar estadísticas de legislación
   useEffect(() => {
@@ -31,14 +70,14 @@ export default function Home() {
           
           setLegStats({
             total: iniciativas.length,
-            activas: iniciativas.filter((i: any) => normalizeStatus(i.status) === 'activa').length,
-            aprobadas: iniciativas.filter((i: any) => normalizeStatus(i.status) === 'aprobada').length,
-            verificadas: iniciativas.filter((i: any) => i.estadoVerificacion === 'verificado').length,
+            activas: iniciativas.filter((i: { status?: string }) => normalizeStatus(i.status || '') === 'activa').length,
+            aprobadas: iniciativas.filter((i: { status?: string }) => normalizeStatus(i.status || '') === 'aprobada').length,
+            verificadas: iniciativas.filter((i: { estadoVerificacion?: string }) => i.estadoVerificacion === 'verificado').length,
           });
           
           // Obtener 3 iniciativas destacadas (verificadas y recientes)
           const destacadas = iniciativas
-            .filter((i: any) => i.estadoVerificacion === 'verificado')
+            .filter((i: { estadoVerificacion?: string }) => i.estadoVerificacion === 'verificado')
             .slice(0, 3);
           setIniciativasDestacadas(destacadas);
         }
@@ -51,141 +90,68 @@ export default function Home() {
   
   // Función para calcular días vencidos
   const calcularDiasVencidos = (fechaPrometida: string): number => {
-    const meses: {[key: string]: number} = {
-      'Ene': 0, 'Feb': 1, 'Mar': 2, 'Abr': 3, 'May': 4, 'Jun': 5,
-      'Jul': 6, 'Ago': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dic': 11
-    };
-    const [mesStr, yearStr] = fechaPrometida.split(' ');
-    const mes = meses[mesStr];
-    const year = parseInt(yearStr);
-    // Último día del mes prometido
-    const fechaLimite = new Date(year, mes + 1, 0);
-    const hoy = new Date();
-    const diffTime = hoy.getTime() - fechaLimite.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
+    if (!fechaPrometida) return 0;
+    try {
+      const fecha = new Date(fechaPrometida);
+      const hoy = new Date();
+      const diffTime = hoy.getTime() - fecha.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 0;
+    } catch {
+      return 0;
+    }
   };
-  const anuncios = [
-    // Mapeo: título hardcodeado → ID de Firestore
-    {
-      id: 'UfSnLrpDhXrNnqy0BKC1',
-      fecha: 'Abril',
-      anuncio: 'Laboratorio Nacional de IA',
-      responsable: 'Sheinbaum',
-      status: 'en_desarrollo',
-      statusLabel: 'EN DESARROLLO',
-      fechaPrometida: 'Oct 2025',
-      cumplida: false,
-      diasVencidos: 0,
-      detalle: 'Anunciado en abril, con avances continuos. En noviembre se inauguró el Centro Público de Formación en IA como componente del laboratorio.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/vWlpUPGmNCRynBBg.jpg',
-    },
-    {
-      id: 'vfAcJmOlrgAVbwrwU9bA',
-      fecha: 'Julio',
-      anuncio: 'Modelo de lenguaje propio',
-      responsable: 'Ebrard',
-      status: 'prometido',
-      statusLabel: 'PROMETIDO',
-      detalle: 'Anunciado en julio por Marcelo Ebrard. Sin documentación técnica ni código público.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/cRuNsvInvCDgIgUq.jpg',
-    },
-    {
-      id: 'fpQIXV5So7Df0Y0TYqaW',
-      fecha: 'Julio',
-      anuncio: 'Plataforma México IA+',
-      responsable: 'Economía + CCE',
-      status: 'prometido',
-      statusLabel: 'PROMETIDO',
-      detalle: 'Evento realizado. Sin productos concretos.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/dgPGwodCvkthApkQ.jpg',
-    },
-    {
-      id: 'zSmTpbbyDUtKxc3bhT3a',
-      fecha: 'Sept',
-      anuncio: 'Inversión CloudHQ $4.8B USD',
-      responsable: 'Sheinbaum / Ebrard',
-      status: 'prometido',
-      statusLabel: 'PROMETIDO',
-      detalle: 'Anunciado. En planeación.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/TGlZKZptwmHoTYAN.jpeg',
-    },
-    {
-      id: 'BUqQ3xZSWblpv5Qb46vB',
-      fecha: 'Oct',
-      anuncio: 'Marco normativo de IA',
-      responsable: 'Senado',
-      status: 'prometido',
-      statusLabel: 'PROMETIDO',
-      detalle: 'Propuesta publicada. Sin aprobación.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/CBknYpnmRnbmDeJt.jpg',
-    },
-    {
-      id: 'ADyLAhTng95KSjFPUzfO',
-      fecha: 'Nov',
-      anuncio: 'Centro Público de Formación en IA',
-      responsable: 'ATDT + Infotec + TecNM',
-      status: 'en_desarrollo',
-      statusLabel: 'EN DESARROLLO',
-      detalle: 'Convocatoria cerrada. Las clases inician en enero de 2026.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/QMxTxEKxNqvltEgD.jpg',
-    },
-    {
-      id: 'VqNqNJqNGIWqHMsQYGHV',
-      fecha: 'Nov',
-      anuncio: 'KAL - Modelo de lenguaje mexicano',
-      responsable: 'Saptiva + SE',
-      status: 'en_desarrollo',
-      statusLabel: 'EN DESARROLLO',
-      detalle: 'Presentado sin documentación técnica, sin código público, sin benchmarks.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/gPUyghuxjLlrWlEF.jpg',
-    },
-    {
-      id: 'zzNvFLxYWkQrFMZhXOxo',
-      fecha: 'Nov',
-      anuncio: 'Coatlicue - Supercomputadora',
-      responsable: 'Sheinbaum',
-      status: 'prometido',
-      statusLabel: 'PROMETIDO',
-      detalle: 'Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/cPHIQHfzPUmENWeJ.jpg',
-    },
-    {
-      id: 'bfPbGHMxbgHOxNgMJzpH',
-      fecha: 'Nov',
-      anuncio: 'Regulación regional IA (APEC)',
-      responsable: 'Marcelo Ebrard',
-      status: 'prometido',
-      statusLabel: 'PROMETIDO',
-      detalle: 'Propuesta diplomática. Sin acuerdo vinculante.',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/nmFjYwmVYwCjlgnB.jpg',
-    },
-    {
-      id: 'RNMzXVQQOJZZZBHhxlbV',
-      fecha: 'Dic',
-      anuncio: '15 carreras de bachillerato con IA',
-      responsable: 'SEP',
-      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/UDSNUMkFOpNGaory.jpeg',
-      status: 'prometido',
-      statusLabel: 'PROMETIDO',
-      detalle: 'Aprobadas. Implementación: próximo ciclo escolar.',
-    },
-  ];
+
+  // Formatear fecha para mostrar mes
+  const formatearMes = (fechaStr: string): string => {
+    if (!fechaStr) return '';
+    try {
+      const fecha = new Date(fechaStr);
+      const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      return meses[fecha.getMonth()];
+    } catch {
+      return '';
+    }
+  };
+
+  // Formatear fecha prometida
+  const formatearFechaPrometida = (fechaStr: string): string => {
+    if (!fechaStr) return '';
+    try {
+      const fecha = new Date(fechaStr);
+      const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      return `${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
+    } catch {
+      return '';
+    }
+  };
+
+  // Obtener label del status
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      'prometido': 'PROMETIDO',
+      'en_desarrollo': 'EN DESARROLLO',
+      'operando': 'OPERANDO',
+      'incumplido': 'INCUMPLIDO',
+      'abandonado': 'ABANDONADO'
+    };
+    return labels[status] || status.toUpperCase();
+  };
 
   // Filtrar anuncios
   const anunciosFiltrados = useMemo(() => {
     if (filtroStatus === 'todos') return anuncios;
     return anuncios.filter(item => item.status === filtroStatus);
-  }, [filtroStatus]);
+  }, [filtroStatus, anuncios]);
 
   // Calcular estadísticas
-  const stats = {
+  const stats = useMemo(() => ({
     total: anuncios.length,
     operando: anuncios.filter(a => a.status === 'operando').length,
     enDesarrollo: anuncios.filter(a => a.status === 'en_desarrollo').length,
     incumplido: anuncios.filter(a => a.status === 'incumplido').length,
     prometido: anuncios.filter(a => a.status === 'prometido').length,
-  };
+  }), [anuncios]);
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -365,13 +331,13 @@ export default function Home() {
               <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Última actualización: 6 dic 2025
+              Actualización automática
             </div>
           </div>
           
           {/* Fecha de actualización móvil */}
           <div className="sm:hidden text-center mt-2">
-            <span className="text-[10px] text-gray-900/30 font-mono">Última actualización: 6 dic 2025</span>
+            <span className="text-[10px] text-gray-900/30 font-mono">Datos en tiempo real</span>
           </div>
         </div>
       </section>
@@ -402,10 +368,13 @@ export default function Home() {
           </div>
 
           {/* Grid de Cards Premium con Imagen */}
+          {loadingAnuncios ? (
+            <div className="text-center py-12 text-gray-400">Cargando promesas...</div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {anunciosFiltrados.map((item, index) => (
+            {anunciosFiltrados.map((item) => (
               <div
-                key={index}
+                key={item.id}
                 onClick={() => router.push(`/anuncio/${item.id}`)}
                 className="group relative bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10 cursor-pointer transition-all duration-500"
               >
@@ -414,10 +383,9 @@ export default function Home() {
                   {item.imagen ? (
                     <img 
                       src={item.imagen} 
-                      alt={item.anuncio}
+                      alt={item.titulo}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       onError={(e) => {
-                        // Fallback si la imagen no existe
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
@@ -433,20 +401,20 @@ export default function Home() {
                     item.status === 'operando' ? 'bg-emerald-500/90 text-white' :
                     'bg-white/90 text-gray-700'
                   }`}>
-                    {item.statusLabel}
+                    {getStatusLabel(item.status)}
                   </div>
                   
                   {/* Fecha sobre la imagen */}
                   <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full">
                     <span className="font-mono text-[10px] text-white uppercase tracking-wider">
-                      {item.fecha} 2025
+                      {formatearMes(item.fechaAnuncio)} {new Date(item.fechaAnuncio).getFullYear()}
                     </span>
                   </div>
                   
                   {/* Título sobre la imagen */}
                   <div className="absolute bottom-4 left-4 right-4">
                     <h3 className="font-sans-tech font-bold text-white text-xl leading-tight drop-shadow-lg">
-                      {item.anuncio}
+                      {item.titulo}
                     </h3>
                   </div>
                   
@@ -472,25 +440,25 @@ export default function Home() {
                         {item.responsable}
                       </div>
                       <div className="font-sans-tech text-xs text-gray-400">
-                        Responsable
+                        {item.dependencia || 'Responsable'}
                       </div>
                     </div>
                   </div>
                   
                   {/* Detalle */}
                   <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 font-sans-tech mb-4">
-                    {item.detalle}
+                    {item.descripcion}
                   </p>
                   
                   {/* Footer del card */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    {item.fechaPrometida && !item.cumplida && item.status === 'incumplido' ? (
+                    {item.fechaPrometida && item.status === 'incumplido' ? (
                       <div className="flex items-center gap-2 text-red-500">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-xs font-mono font-bold">
-                          {item.diasVencidos || calcularDiasVencidos(item.fechaPrometida)} días de retraso
+                          {calcularDiasVencidos(item.fechaPrometida)} días de retraso
                         </span>
                       </div>
                     ) : item.fechaPrometida ? (
@@ -499,7 +467,7 @@ export default function Home() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <span className="text-xs font-mono">
-                          Meta: {item.fechaPrometida}
+                          Meta: {formatearFechaPrometida(item.fechaPrometida)}
                         </span>
                       </div>
                     ) : (
@@ -519,6 +487,7 @@ export default function Home() {
               </div>
             ))}
           </div>
+          )}
 
 
         </div>
