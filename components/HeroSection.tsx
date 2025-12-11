@@ -84,6 +84,7 @@ export default function HeroSection({ stats, legStats, loading, loadingLeg }: He
           <div className="hidden md:flex items-center gap-8 font-sans-tech text-sm tracking-wide text-gray-900/70">
             <a href="#tracker" className="hover:text-blue-400 transition-colors">Tracker</a>
             <a href="/legislacion" className="hover:text-blue-400 transition-colors">Legislación</a>
+            <a href="/casos-ia" className="hover:text-purple-400 transition-colors">Casos</a>
             <a href="#metodologia" className="hover:text-blue-400 transition-colors">Metodología</a>
             <a href="/actividad" className="hover:text-blue-400 transition-colors">Actividad</a>
           </div>
