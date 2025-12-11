@@ -66,6 +66,7 @@ interface Anuncio {
   fuenteOriginal?: string;
   fuentes?: Fuente[];
   resumenAgente?: string;
+  imagen?: string;
 }
 
 const STATUS_OPTIONS = [
@@ -378,7 +379,8 @@ export default function AdminAnunciosPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newAnuncio,
-          fechaAnuncio: newAnuncio.fechaAnuncio || new Date().toISOString().split('T')[0]
+          fechaAnuncio: newAnuncio.fechaAnuncio || new Date().toISOString().split('T')[0],
+          imagen: newAnuncio.imagen || ''
         })
       });
       
@@ -1122,6 +1124,29 @@ export default function AdminAnunciosPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-50"
                   />
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Imagen (URL)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={editForm.imagen || ''}
+                      onChange={e => setEditForm({ ...editForm, imagen: e.target.value })}
+                      disabled={!editMode}
+                      placeholder="https://..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-50"
+                    />
+                    {editForm.imagen && (
+                      <img 
+                        src={editForm.imagen} 
+                        alt="Preview" 
+                        className="w-12 h-12 object-cover rounded-lg border"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Esta imagen aparece en la landing page</p>
+                </div>
               </div>
 
               {/* Fuentes */}
@@ -1387,6 +1412,15 @@ export default function AdminAnunciosPage() {
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Cita de la Promesa</label>
                   <textarea value={newAnuncio.citaPromesa || ''} onChange={e => setNewAnuncio({ ...newAnuncio, citaPromesa: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" placeholder="Cita textual de la promesa..." />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Imagen (URL)</label>
+                  <div className="flex gap-2">
+                    <input type="url" value={newAnuncio.imagen || ''} onChange={e => setNewAnuncio({ ...newAnuncio, imagen: e.target.value })} className="flex-1 px-3 py-2 border rounded-lg" placeholder="https://..." />
+                    {newAnuncio.imagen && (
+                      <img src={newAnuncio.imagen} alt="Preview" className="w-12 h-12 object-cover rounded-lg border" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

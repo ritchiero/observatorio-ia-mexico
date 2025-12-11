@@ -37,6 +37,7 @@ export async function PUT(request: NextRequest) {
     if (updateData.citaPromesa !== undefined) dataToUpdate.citaPromesa = updateData.citaPromesa;
     if (updateData.resumenAgente !== undefined) dataToUpdate.resumenAgente = updateData.resumenAgente;
     if (updateData.fuenteOriginal !== undefined) dataToUpdate.fuenteOriginal = updateData.fuenteOriginal;
+    if (updateData.imagen !== undefined) dataToUpdate.imagen = updateData.imagen;
 
     // Campos de fecha
     if (updateData.fechaAnuncio) {

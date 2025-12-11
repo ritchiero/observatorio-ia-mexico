@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       fuenteOriginal,
       citaPromesa,
       status,
+      imagen,
     } = body;
 
     // Validación básica
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
       fuenteOriginal: fuenteOriginal || '',
       citaPromesa: citaPromesa || '',
       status: status || 'prometido',
+      imagen: imagen || '',
       actualizaciones: [],
       creadoManualmente: true,
       createdAt: Timestamp.now(),
