@@ -101,6 +101,12 @@ export default function DashboardPage() {
   const [bulkResults, setBulkResults] = useState<any>(null);
   const [bulkLimit, setBulkLimit] = useState(10);
   const [excludeVerified, setExcludeVerified] = useState(true);
+  const [bulkQueue, setBulkQueue] = useState<Array<{
+    id: string;
+    titulo: string;
+    status: 'pending' | 'verifying' | 'verified' | 'revision' | 'error';
+    error?: string;
+  }>>([]);
 
   // JSON edit mode
   const [jsonEditMode, setJsonEditMode] = useState(false);
@@ -479,35 +485,98 @@ export default function DashboardPage() {
 
   // Verificar iniciativas (con opciones)
   const handleBulkVerify = async () => {
+    // Filtrar iniciativas según configuración
+    let toVerify = [...iniciativas];
+    
+    if (excludeVerified) {
+      toVerify = toVerify.filter(ini => !ini.estadoVerificacion || ini.estadoVerificacion === 'pendiente');
+    }
+    
+    toVerify = toVerify.slice(0, bulkLimit);
+    
+    if (toVerify.length === 0) {
+      alert('No hay iniciativas pendientes de verificar');
+      return;
+    }
+    
+    // Inicializar cola con estado pending
+    const queue = toVerify.map(ini => ({
+      id: ini.id,
+      titulo: ini.titulo,
+      status: 'pending' as const
+    }));
+    
+    setBulkQueue(queue);
     setIsBulkVerifying(true);
     setBulkResults(null);
     setShowBulkModal(true);
 
-    try {
-      const response = await fetch('/api/admin/verify-initiatives-bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          excludeVerified,
-          limit: bulkLimit
-        })
-      });
+    let verificados = 0;
+    let revision = 0;
+    let errores = 0;
 
-      const data = await response.json();
+    // Verificar una por una
+    for (let i = 0; i < toVerify.length; i++) {
+      const iniciativa = toVerify[i];
+      
+      // Actualizar estado a "verifying"
+      setBulkQueue(prev => prev.map((item, idx) => 
+        idx === i ? { ...item, status: 'verifying' } : item
+      ));
 
-      if (data.success) {
-        setBulkResults(data);
-        // Recargar iniciativas para mostrar estados actualizados
-        loadIniciativas();
-      } else {
-        alert('Error: ' + data.error);
+      try {
+        const response = await fetch('/api/admin/verify-initiative', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(iniciativa)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const newStatus = data.estadoVerificacion === 'verificado' ? 'verified' : 'revision';
+          
+          if (newStatus === 'verified') verificados++;
+          else revision++;
+
+          setBulkQueue(prev => prev.map((item, idx) => 
+            idx === i ? { ...item, status: newStatus } : item
+          ));
+
+          // Actualizar la lista local de iniciativas
+          setIniciativas(prev => prev.map(ini => 
+            ini.id === iniciativa.id 
+              ? { ...ini, estadoVerificacion: data.estadoVerificacion, fechaVerificacion: data.fechaVerificacion }
+              : ini
+          ));
+        } else {
+          errores++;
+          setBulkQueue(prev => prev.map((item, idx) => 
+            idx === i ? { ...item, status: 'error', error: data.error } : item
+          ));
+        }
+      } catch (error: any) {
+        errores++;
+        setBulkQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'error', error: error.message || 'Error de conexión' } : item
+        ));
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error de conexión');
-    } finally {
-      setIsBulkVerifying(false);
+
+      // Pausa entre verificaciones (excepto la última)
+      if (i < toVerify.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
+
+    // Guardar resultados finales
+    setBulkResults({
+      total: toVerify.length,
+      verificados,
+      revision,
+      errores
+    });
+    
+    setIsBulkVerifying(false);
   };
 
   const filteredIniciativas = iniciativas.filter(ini =>
@@ -1622,19 +1691,109 @@ export default function DashboardPage() {
                     🚀 Iniciar Verificación
                   </button>
                 </div>
-              ) : isBulkVerifying ? (
-                <div className="text-center py-8">
-                  <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-                  <p className="font-sans-tech text-gray-600">
-                    Verificando hasta {bulkLimit} iniciativas...
-                  </p>
-                  <p className="font-sans-tech text-sm text-gray-400 mt-2">
-                    Esto puede tomar varios minutos. No cierres esta ventana.
-                  </p>
+              ) : isBulkVerifying || bulkQueue.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Resumen en tiempo real */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="bg-gray-50 rounded-lg p-3 text-center">
+                      <p className="font-sans-tech text-xl font-bold text-gray-900">{bulkQueue.length}</p>
+                      <p className="font-sans-tech text-[10px] text-gray-500">Total</p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <p className="font-sans-tech text-xl font-bold text-green-600">
+                        {bulkQueue.filter(i => i.status === 'verified').length}
+                      </p>
+                      <p className="font-sans-tech text-[10px] text-green-600">Verificados</p>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-3 text-center">
+                      <p className="font-sans-tech text-xl font-bold text-orange-600">
+                        {bulkQueue.filter(i => i.status === 'revision').length}
+                      </p>
+                      <p className="font-sans-tech text-[10px] text-orange-600">Revisión</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-3 text-center">
+                      <p className="font-sans-tech text-xl font-bold text-blue-600">
+                        {bulkQueue.filter(i => i.status === 'pending' || i.status === 'verifying').length}
+                      </p>
+                      <p className="font-sans-tech text-[10px] text-blue-600">Pendientes</p>
+                    </div>
+                  </div>
+
+                  {/* Lista con progreso en tiempo real */}
+                  <div className="space-y-2 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                    {bulkQueue.map((item, idx) => (
+                      <div 
+                        key={item.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                          item.status === 'verified' ? 'bg-green-50' :
+                          item.status === 'revision' ? 'bg-orange-50' :
+                          item.status === 'verifying' ? 'bg-blue-50 animate-pulse' :
+                          item.status === 'error' ? 'bg-red-50' :
+                          'bg-gray-50'
+                        }`}
+                      >
+                        {/* Icono de estado */}
+                        <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                          {item.status === 'pending' && (
+                            <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                          )}
+                          {item.status === 'verifying' && (
+                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          )}
+                          {item.status === 'verified' && (
+                            <CheckCircle size={18} className="text-green-500" />
+                          )}
+                          {item.status === 'revision' && (
+                            <AlertCircle size={18} className="text-orange-500" />
+                          )}
+                          {item.status === 'error' && (
+                            <X size={18} className="text-red-500" />
+                          )}
+                        </div>
+
+                        {/* Contenido */}
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-sans-tech text-sm truncate ${
+                            item.status === 'verifying' ? 'text-blue-700 font-medium' :
+                            item.status === 'verified' ? 'text-green-700' :
+                            item.status === 'revision' ? 'text-orange-700' :
+                            item.status === 'error' ? 'text-red-700' :
+                            'text-gray-600'
+                          }`}>
+                            {item.titulo}
+                          </p>
+                          {item.status === 'verifying' && (
+                            <p className="font-sans-tech text-[10px] text-blue-500">Verificando con Claude Sonnet 4...</p>
+                          )}
+                          {item.status === 'error' && item.error && (
+                            <p className="font-sans-tech text-[10px] text-red-500">{item.error}</p>
+                          )}
+                        </div>
+
+                        {/* Número */}
+                        <span className="font-mono text-[10px] text-gray-400">
+                          {idx + 1}/{bulkQueue.length}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Botón de cerrar cuando termine */}
+                  {!isBulkVerifying && (
+                    <button
+                      onClick={() => {
+                        setShowBulkModal(false);
+                        setBulkQueue([]);
+                      }}
+                      className="w-full py-3 bg-gray-100 text-gray-700 font-sans-tech font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Cerrar
+                    </button>
+                  )}
                 </div>
               ) : bulkResults ? (
                 <div className="space-y-4">
-                  {/* Resumen */}
+                  {/* Resumen final */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <p className="font-sans-tech text-2xl font-bold text-gray-900">{bulkResults.total}</p>
@@ -1650,7 +1809,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Lista de resultados */}
+                  {/* Lista de resultados legacy */}
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {bulkResults.results?.map((result: any, idx: number) => (
                       <div 
