@@ -162,6 +162,8 @@ export default function AdminAnunciosPage() {
   const [newEventoFuente, setNewEventoFuente] = useState<Partial<Fuente>>({
     tipo: 'nota_prensa'
   });
+  const [eventoJsonMode, setEventoJsonMode] = useState(false);
+  const [eventoJsonText, setEventoJsonText] = useState('');
 
   // Auth check
   useEffect(() => {
@@ -578,6 +580,75 @@ export default function AdminAnunciosPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAddEventosFromJson = async () => {
+    if (!selectedAnuncio || !eventoJsonText.trim()) {
+      setMessage({ type: 'error', text: 'Ingresa el JSON de los eventos' });
+      return;
+    }
+
+    let eventosToAdd: Partial<EventoTimeline>[];
+    try {
+      const parsed = JSON.parse(eventoJsonText);
+      // Soporta array de eventos o un solo evento
+      eventosToAdd = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      setMessage({ type: 'error', text: 'JSON inválido. Verifica el formato.' });
+      return;
+    }
+
+    // Validar estructura mínima
+    for (const evento of eventosToAdd) {
+      if (!evento.titulo || !evento.fecha) {
+        setMessage({ type: 'error', text: 'Cada evento necesita al menos "titulo" y "fecha"' });
+        return;
+      }
+    }
+
+    setSaving(true);
+    let added = 0;
+    let errors = 0;
+
+    for (const evento of eventosToAdd) {
+      try {
+        const response = await fetch('/api/admin/add-evento-timeline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            anuncioId: selectedAnuncio.id,
+            evento: {
+              titulo: evento.titulo,
+              descripcion: evento.descripcion || evento.titulo,
+              fecha: evento.fecha,
+              tipo: evento.tipo || 'actualizacion',
+              impacto: evento.impacto || 'neutral',
+              citaTextual: evento.citaTextual || '',
+              responsable: evento.responsable || '',
+              fuentes: evento.fuentes || []
+            }
+          })
+        });
+        if (response.ok) {
+          added++;
+        } else {
+          errors++;
+        }
+      } catch {
+        errors++;
+      }
+    }
+
+    if (added > 0) {
+      setMessage({ type: 'success', text: `${added} evento(s) agregado(s)${errors > 0 ? `, ${errors} error(es)` : ''}` });
+      setShowAddEvento(false);
+      setEventoJsonMode(false);
+      setEventoJsonText('');
+      loadEventos(selectedAnuncio.id);
+    } else {
+      setMessage({ type: 'error', text: 'No se pudo agregar ningún evento' });
+    }
+    setSaving(false);
   };
 
   const handleEditEvento = (evento: EventoTimeline) => {
@@ -1255,54 +1326,106 @@ export default function AdminAnunciosPage() {
                 {/* Form agregar/editar evento */}
                 {(showAddEvento || editingEventoId !== null) && (
                   <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <h4 className="font-medium text-green-900 mb-3">
-                      {editingEventoId ? 'Editar Evento' : 'Nuevo Evento'}
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-3 gap-3">
-                        <input type="date" value={newEvento.fecha || ''} onChange={e => setNewEvento({ ...newEvento, fecha: e.target.value })} className="px-3 py-2 border rounded-lg" />
-                        <select value={newEvento.tipo || 'actualizacion'} onChange={e => setNewEvento({ ...newEvento, tipo: e.target.value })} className="px-3 py-2 border rounded-lg">
-                          {TIPO_EVENTO_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
-                        </select>
-                        <select value={newEvento.impacto || 'neutral'} onChange={e => setNewEvento({ ...newEvento, impacto: e.target.value as 'positivo' | 'neutral' | 'negativo' })} className="px-3 py-2 border rounded-lg">
-                          {IMPACTO_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
-                        </select>
-                      </div>
-                      <input type="text" placeholder="Título *" value={newEvento.titulo || ''} onChange={e => setNewEvento({ ...newEvento, titulo: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-                      <textarea placeholder="Descripción *" value={newEvento.descripcion || ''} onChange={e => setNewEvento({ ...newEvento, descripcion: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" />
-                      <textarea placeholder="Cita textual (opcional)" value={newEvento.citaTextual || ''} onChange={e => setNewEvento({ ...newEvento, citaTextual: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" />
-                      <input type="text" placeholder="Responsable (opcional)" value={newEvento.responsable || ''} onChange={e => setNewEvento({ ...newEvento, responsable: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-                      
-                      <div className="border-t pt-3">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Fuentes del evento:</p>
-                        {newEvento.fuentes && newEvento.fuentes.length > 0 && (
-                          <div className="mb-2 space-y-1">
-                            {newEvento.fuentes.map((f, i) => (
-                              <div key={i} className="text-xs bg-white p-2 rounded flex justify-between">
-                                <span>{f.titulo}</span>
-                                <button onClick={() => setNewEvento({ ...newEvento, fuentes: newEvento.fuentes?.filter((_, idx) => idx !== i) })} className="text-red-500"><X size={12} /></button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex gap-2">
-                          <input type="url" placeholder="URL" value={newEventoFuente.url || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, url: e.target.value })} className="flex-1 px-2 py-1 border rounded text-sm" />
-                          <input type="text" placeholder="Título" value={newEventoFuente.titulo || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, titulo: e.target.value })} className="flex-1 px-2 py-1 border rounded text-sm" />
-                          <input type="text" placeholder="Medio" value={newEventoFuente.medio || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, medio: e.target.value })} className="w-24 px-2 py-1 border rounded text-sm" />
-                          <button onClick={addFuenteToEvento} className="px-2 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300">+</button>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-green-900">
+                        {editingEventoId ? 'Editar Evento' : 'Nuevo Evento'}
+                      </h4>
+                      {!editingEventoId && (
+                        <button
+                          onClick={() => setEventoJsonMode(!eventoJsonMode)}
+                          className={`text-xs px-2 py-1 rounded ${eventoJsonMode ? 'bg-green-600 text-white' : 'bg-white text-green-700 border border-green-300'}`}
+                        >
+                          {eventoJsonMode ? '📝 Formulario' : '{ } JSON'}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {eventoJsonMode && !editingEventoId ? (
+                      /* Modo JSON */
+                      <div className="space-y-3">
+                        <textarea
+                          placeholder={`Pega un evento o array de eventos en JSON:
+{
+  "titulo": "Título del evento",
+  "fecha": "2025-01-15",
+  "descripcion": "Descripción...",
+  "tipo": "actualizacion",
+  "impacto": "positivo",
+  "citaTextual": "Cita opcional...",
+  "fuentes": [
+    { "url": "https://...", "titulo": "Nota", "medio": "El Universal" }
+  ]
+}`}
+                          value={eventoJsonText}
+                          onChange={e => setEventoJsonText(e.target.value)}
+                          rows={12}
+                          className="w-full px-3 py-2 border rounded-lg font-mono text-sm"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Campos requeridos: <code>titulo</code>, <code>fecha</code> (YYYY-MM-DD). 
+                          Puedes pegar un array <code>[{'{...}'}, {'{...}'}]</code> para agregar múltiples.
+                        </p>
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => { setShowAddEvento(false); setEventoJsonMode(false); setEventoJsonText(''); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                          <button 
+                            onClick={handleAddEventosFromJson} 
+                            disabled={saving} 
+                            className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                          >
+                            {saving ? 'Importando...' : 'Importar JSON'}
+                          </button>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex justify-end gap-2 mt-3">
-                      <button onClick={() => { setShowAddEvento(false); setEditingEventoId(null); setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] }); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
-                      <button 
-                        onClick={editingEventoId ? handleSaveEvento : handleAddEvento} 
-                        disabled={saving} 
-                        className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {saving ? 'Guardando...' : (editingEventoId ? 'Actualizar' : 'Agregar')}
-                      </button>
-                    </div>
+                    ) : (
+                      /* Modo Formulario */
+                      <>
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-3 gap-3">
+                            <input type="date" value={newEvento.fecha || ''} onChange={e => setNewEvento({ ...newEvento, fecha: e.target.value })} className="px-3 py-2 border rounded-lg" />
+                            <select value={newEvento.tipo || 'actualizacion'} onChange={e => setNewEvento({ ...newEvento, tipo: e.target.value })} className="px-3 py-2 border rounded-lg">
+                              {TIPO_EVENTO_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                            </select>
+                            <select value={newEvento.impacto || 'neutral'} onChange={e => setNewEvento({ ...newEvento, impacto: e.target.value as 'positivo' | 'neutral' | 'negativo' })} className="px-3 py-2 border rounded-lg">
+                              {IMPACTO_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                            </select>
+                          </div>
+                          <input type="text" placeholder="Título *" value={newEvento.titulo || ''} onChange={e => setNewEvento({ ...newEvento, titulo: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                          <textarea placeholder="Descripción *" value={newEvento.descripcion || ''} onChange={e => setNewEvento({ ...newEvento, descripcion: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" />
+                          <textarea placeholder="Cita textual (opcional)" value={newEvento.citaTextual || ''} onChange={e => setNewEvento({ ...newEvento, citaTextual: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" />
+                          <input type="text" placeholder="Responsable (opcional)" value={newEvento.responsable || ''} onChange={e => setNewEvento({ ...newEvento, responsable: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                          
+                          <div className="border-t pt-3">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Fuentes del evento:</p>
+                            {newEvento.fuentes && newEvento.fuentes.length > 0 && (
+                              <div className="mb-2 space-y-1">
+                                {newEvento.fuentes.map((f, i) => (
+                                  <div key={i} className="text-xs bg-white p-2 rounded flex justify-between">
+                                    <span>{f.titulo}</span>
+                                    <button onClick={() => setNewEvento({ ...newEvento, fuentes: newEvento.fuentes?.filter((_, idx) => idx !== i) })} className="text-red-500"><X size={12} /></button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <input type="url" placeholder="URL" value={newEventoFuente.url || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, url: e.target.value })} className="flex-1 px-2 py-1 border rounded text-sm" />
+                              <input type="text" placeholder="Título" value={newEventoFuente.titulo || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, titulo: e.target.value })} className="flex-1 px-2 py-1 border rounded text-sm" />
+                              <input type="text" placeholder="Medio" value={newEventoFuente.medio || ''} onChange={e => setNewEventoFuente({ ...newEventoFuente, medio: e.target.value })} className="w-24 px-2 py-1 border rounded text-sm" />
+                              <button onClick={addFuenteToEvento} className="px-2 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300">+</button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-3">
+                          <button onClick={() => { setShowAddEvento(false); setEditingEventoId(null); setNewEvento({ tipo: 'actualizacion', impacto: 'neutral', fuentes: [] }); }} className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                          <button 
+                            onClick={editingEventoId ? handleSaveEvento : handleAddEvento} 
+                            disabled={saving} 
+                            className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                          >
+                            {saving ? 'Guardando...' : (editingEventoId ? 'Actualizar' : 'Agregar')}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
                 
