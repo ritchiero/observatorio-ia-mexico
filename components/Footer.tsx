@@ -17,7 +17,7 @@ export default function Footer() {
             <p className="text-sm text-gray-600">
               Una iniciativa de{' '}
               <a 
-                href="https://lawgic.com" 
+                href="https://lawgic-pi.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="font-semibold text-cyan-600 hover:text-cyan-700 transition-colors"
