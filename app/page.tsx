@@ -78,7 +78,7 @@ export default function Home() {
       cumplida: false,
       diasVencidos: 67,
       detalle: 'Prometido para octubre por la presidenta Sheinbaum. Octubre llegó y el laboratorio no.',
-      imagen: '/eventos/laboratorio-ia.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/vWlpUPGmNCRynBBg.jpg',
     },
     {
       id: 'vfAcJmOlrgAVbwrwU9bA',
@@ -88,7 +88,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Anunciado en julio por Marcelo Ebrard. Sin documentación técnica ni código público.',
-      imagen: '/eventos/modelo-lenguaje.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/cRuNsvInvCDgIgUq.jpg',
     },
     {
       id: 'fpQIXV5So7Df0Y0TYqaW',
@@ -98,7 +98,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Evento realizado. Sin productos concretos.',
-      imagen: '/eventos/mexico-ia-plus.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/dgPGwodCvkthApkQ.jpg',
     },
     {
       id: 'zSmTpbbyDUtKxc3bhT3a',
@@ -108,7 +108,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Anunciado. En planeación.',
-      imagen: '/eventos/cloudhq.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/TGlZKZptwmHoTYAN.jpeg',
     },
     {
       id: 'BUqQ3xZSWblpv5Qb46vB',
@@ -118,7 +118,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Propuesta publicada. Sin aprobación.',
-      imagen: '/eventos/marco-normativo.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/VMqlwqeFZkSQZhxe.jpg',
     },
     {
       id: 'ADyLAhTng95KSjFPUzfO',
@@ -128,7 +128,7 @@ export default function Home() {
       status: 'en_desarrollo',
       statusLabel: 'EN DESARROLLO',
       detalle: 'Convocatoria cerrada. Las clases inician en enero de 2026.',
-      imagen: '/eventos/centro-formacion.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/QaRztStQjmxjfOWP.jpg',
     },
     {
       id: 'VqNqNJqNGIWqHMsQYGHV',
@@ -138,7 +138,7 @@ export default function Home() {
       status: 'en_desarrollo',
       statusLabel: 'EN DESARROLLO',
       detalle: 'Presentado sin documentación técnica, sin código público, sin benchmarks.',
-      imagen: '/eventos/kal-modelo.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/gPUyghuxjLlrWlEF.jpg',
     },
     {
       id: 'zzNvFLxYWkQrFMZhXOxo',
@@ -148,7 +148,7 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Será "la más poderosa de América Latina" cuando se construya en 2026, si todo sale bien.',
-      imagen: '/eventos/coatlicue.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/cPHIQHfzPUmENWeJ.jpg',
     },
     {
       id: 'bfPbGHMxbgHOxNgMJzpH',
@@ -158,14 +158,14 @@ export default function Home() {
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Propuesta diplomática. Sin acuerdo vinculante.',
-      imagen: '/eventos/apec-regulacion.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/nmFjYwmVYwCjlgnB.jpg',
     },
     {
       id: 'RNMzXVQQOJZZZBHhxlbV',
       fecha: 'Dic',
       anuncio: '15 carreras de bachillerato con IA',
       responsable: 'SEP',
-      imagen: '/eventos/carreras-sep.jpg',
+      imagen: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663029088508/UDSNUMkFOpNGaory.jpeg',
       status: 'prometido',
       statusLabel: 'PROMETIDO',
       detalle: 'Aprobadas. Implementación: próximo ciclo escolar.',
