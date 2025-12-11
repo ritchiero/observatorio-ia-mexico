@@ -30,22 +30,62 @@ export interface Instancia {
   documentos?: Documento[];
 }
 
+export interface FundamentoLegal {
+  articulo: string;
+  ley: string;
+  contenido: string;
+}
+
 export interface Criterio {
   tiene: boolean;
   tipo: 'tesis_aislada' | 'jurisprudencia';
+  clave?: string;
   registro: string;
   epoca: string;
   instanciaEmisora: string;
   materia: string;
   rubro: string;
   texto: string;
+  
+  // Datos de publicación
+  fechaResolucion?: string;
+  fechaPublicacion?: string;
+  votacion?: string;
+  magistradoPonente?: string;
+  secretario?: string;
+  expedienteOrigen?: string;
+  publicacion?: string;
+  
+  // Fundamentos
+  fundamentosLegales?: FundamentoLegal[];
+  definicionesJuridicas?: Record<string, string>;
+  razonamientoJuridico?: {
+    premisaMayor: string;
+    premisaMenor: string;
+    conclusion: string;
+  };
+  
   // Interpretación
   reglasPrincipales: string[];
   alcance: string;
+  elementosDistintivos?: Record<string, string>;
+  
   // Impacto
   relevancia: string;
-  casosAplicables: string;
-  implicaciones: string;
+  casosAplicables: string | string[];
+  implicaciones: string | {
+    juridicas?: string[];
+    practicas?: string[];
+    futuras?: string[];
+  };
+  
+  // Contexto
+  precedenteEstablecido?: string;
+  confirmacionPosterior?: {
+    tribunal: string;
+    expediente: string;
+    sentido: string;
+  };
 }
 
 export type TemaIA = 
@@ -96,8 +136,9 @@ export interface CasoIA {
   // Trayectoria procesal
   trayectoria: Instancia[];
   
-  // El criterio (lo más importante)
+  // Los criterios generados (lo más importante)
   criterio?: Criterio;
+  criterios?: Criterio[];
   
   // Documentos y fuentes
   documentos: Documento[];

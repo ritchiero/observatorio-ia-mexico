@@ -75,7 +75,12 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
 
   const estadoBadge = getEstadoBadge(caso.estado);
   const temaInfo = getTemaInfo(caso.temaIA);
-  const tieneCriterio = caso.criterio?.tiene;
+  
+  // Soportar múltiples criterios o criterio individual
+  const criteriosArray = caso.criterios && caso.criterios.length > 0 
+    ? caso.criterios 
+    : (caso.criterio?.tiene ? [caso.criterio] : []);
+  const tieneCriterio = criteriosArray.length > 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -128,9 +133,9 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-sans-tech bg-gray-100 text-gray-600">
               {MATERIAS[caso.materia]}
             </span>
-            {tieneCriterio && caso.criterio && (
+            {tieneCriterio && (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold font-sans-tech bg-purple-100 text-purple-700 border border-purple-200">
-                {TIPOS_CRITERIO[caso.criterio.tipo].emoji} {TIPOS_CRITERIO[caso.criterio.tipo].label}
+                📜 {criteriosArray.length} Criterio{criteriosArray.length > 1 ? 's' : ''}
               </span>
             )}
           </div>
@@ -166,59 +171,101 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
           {/* Columna principal (2/3) */}
           <div className="lg:col-span-2 space-y-8">
             
-            {/* ===== CRITERIO (Lo más importante) ===== */}
-            {tieneCriterio && caso.criterio && (
-              <section className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-6 md:p-8">
+            {/* ===== CRITERIOS (Lo más importante) ===== */}
+            {tieneCriterio && criteriosArray.map((criterio, criterioIdx) => (
+              <section key={criterioIdx} className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-6 md:p-8">
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   <h2 className="font-serif-display text-2xl font-light text-purple-900">
                     <Scale className="inline-block mr-2 text-purple-500" size={24} />
-                    Criterio generado
+                    Criterio {criteriosArray.length > 1 ? `${criterioIdx + 1}` : 'generado'}
                   </h2>
-                  {caso.criterio.registro && (
+                  {criterio.clave && (
+                    <span className="text-xs font-mono px-2 py-1 bg-purple-200 text-purple-700 rounded-lg font-semibold">
+                      {criterio.clave}
+                    </span>
+                  )}
+                  {criterio.registro && criterio.registro !== 'No aplica' && (
                     <span className="text-xs font-mono px-2 py-1 bg-purple-100 text-purple-600 rounded-lg">
-                      Registro: {caso.criterio.registro}
+                      Registro: {criterio.registro}
                     </span>
                   )}
                 </div>
 
-                {/* Tipo y época */}
+                {/* Tipo, época y datos */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold font-sans-tech bg-purple-100 text-purple-700 border border-purple-200">
-                    {TIPOS_CRITERIO[caso.criterio.tipo].emoji} {TIPOS_CRITERIO[caso.criterio.tipo].label}
+                    {TIPOS_CRITERIO[criterio.tipo].emoji} {TIPOS_CRITERIO[criterio.tipo].label}
                   </span>
-                  {caso.criterio.epoca && (
+                  {criterio.epoca && (
                     <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-sans-tech bg-white/50 text-purple-700">
-                      {caso.criterio.epoca}
+                      {criterio.epoca}
                     </span>
                   )}
-                  {caso.criterio.materia && (
+                  {criterio.materia && (
                     <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-sans-tech bg-white/50 text-purple-700">
-                      {caso.criterio.materia}
+                      {criterio.materia}
+                    </span>
+                  )}
+                  {criterio.votacion && (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-sans-tech bg-green-100 text-green-700">
+                      ✓ {criterio.votacion}
                     </span>
                   )}
                 </div>
 
                 {/* Rubro */}
                 <h3 className="font-sans-tech font-bold text-purple-900 text-xl md:text-2xl mb-4 uppercase tracking-wide leading-snug">
-                  {caso.criterio.rubro}
+                  {criterio.rubro}
                 </h3>
 
                 {/* Texto */}
                 <div className="bg-white/60 rounded-xl p-5 mb-6">
                   <p className="text-purple-900/90 font-serif-display text-lg leading-relaxed italic">
-                    "{caso.criterio.texto}"
+                    "{criterio.texto}"
                   </p>
                 </div>
 
+                {/* Fundamentos Legales */}
+                {criterio.fundamentosLegales && criterio.fundamentosLegales.length > 0 && (
+                  <div className="bg-white rounded-xl p-5 mb-6 border border-purple-100">
+                    <h4 className="text-sm font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-3">
+                      📖 Fundamentos Legales
+                    </h4>
+                    <div className="space-y-2">
+                      {criterio.fundamentosLegales.map((fund, idx) => (
+                        <div key={idx} className="text-sm">
+                          <span className="font-semibold text-purple-800">Art. {fund.articulo}</span>
+                          <span className="text-purple-600"> - {fund.ley}</span>
+                          <p className="text-purple-700 mt-1">{fund.contenido}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Razonamiento jurídico */}
+                {criterio.razonamientoJuridico && (
+                  <div className="bg-indigo-50 rounded-xl p-5 mb-6 border border-indigo-100">
+                    <h4 className="text-sm font-sans-tech font-semibold text-indigo-700 uppercase tracking-wider mb-3">
+                      ⚖️ Razonamiento Jurídico
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-semibold text-indigo-800">Premisa Mayor:</span> <span className="text-indigo-700">{criterio.razonamientoJuridico.premisaMayor}</span></p>
+                      <p><span className="font-semibold text-indigo-800">Premisa Menor:</span> <span className="text-indigo-700">{criterio.razonamientoJuridico.premisaMenor}</span></p>
+                      <p className="pt-2 border-t border-indigo-200"><span className="font-semibold text-indigo-900">∴ Conclusión:</span> <span className="text-indigo-800 font-medium">{criterio.razonamientoJuridico.conclusion}</span></p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Qué establece */}
-                {caso.criterio.reglasPrincipales && caso.criterio.reglasPrincipales.length > 0 && (
+                {criterio.reglasPrincipales && criterio.reglasPrincipales.length > 0 && (
                   <div className="bg-white rounded-xl p-5 mb-6 border border-purple-100">
                     <h4 className="text-sm font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <BookOpen size={16} />
                       Qué establece
                     </h4>
                     <ul className="space-y-2">
-                      {caso.criterio.reglasPrincipales.map((regla, idx) => (
+                      {criterio.reglasPrincipales.map((regla, idx) => (
                         <li key={idx} className="text-purple-900 font-sans-tech flex items-start gap-3">
                           <span className="flex-shrink-0 w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-xs text-purple-600 font-bold mt-0.5">
                             {idx + 1}
@@ -231,58 +278,131 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
                 )}
 
                 {/* Alcance */}
-                {caso.criterio.alcance && (
+                {criterio.alcance && (
                   <div className="mb-6">
                     <h4 className="text-sm font-sans-tech font-medium text-purple-600 mb-2">Alcance</h4>
-                    <p className="text-purple-800 font-sans-tech leading-relaxed">{caso.criterio.alcance}</p>
+                    <p className="text-purple-800 font-sans-tech leading-relaxed">{criterio.alcance}</p>
                   </div>
                 )}
 
                 <div className="grid md:grid-cols-2 gap-4">
                   {/* Relevancia */}
-                  {caso.criterio.relevancia && (
+                  {criterio.relevancia && (
                     <div className="bg-white/60 rounded-lg p-4">
                       <h4 className="text-xs font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-2">
                         ⚡ Relevancia
                       </h4>
                       <p className="text-purple-800 font-sans-tech text-sm leading-relaxed">
-                        {caso.criterio.relevancia}
+                        {criterio.relevancia}
                       </p>
                     </div>
                   )}
 
                   {/* Casos aplicables */}
-                  {caso.criterio.casosAplicables && (
+                  {criterio.casosAplicables && (
                     <div className="bg-white/60 rounded-lg p-4">
                       <h4 className="text-xs font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-2">
                         📋 Casos aplicables
                       </h4>
-                      <p className="text-purple-800 font-sans-tech text-sm leading-relaxed">
-                        {caso.criterio.casosAplicables}
-                      </p>
+                      {Array.isArray(criterio.casosAplicables) ? (
+                        <ul className="text-purple-800 font-sans-tech text-sm space-y-1">
+                          {criterio.casosAplicables.map((c, i) => (
+                            <li key={i} className="flex items-start gap-1">
+                              <span className="text-purple-400">•</span> {c}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-purple-800 font-sans-tech text-sm leading-relaxed">
+                          {criterio.casosAplicables}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
 
                 {/* Implicaciones */}
-                {caso.criterio.implicaciones && (
+                {criterio.implicaciones && (
                   <div className="mt-4 bg-purple-100/50 rounded-lg p-4 border border-purple-200/50">
                     <h4 className="text-xs font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-2">
                       🔮 Implicaciones
                     </h4>
-                    <p className="text-purple-800 font-sans-tech text-sm leading-relaxed">
-                      {caso.criterio.implicaciones}
-                    </p>
+                    {typeof criterio.implicaciones === 'string' ? (
+                      <p className="text-purple-800 font-sans-tech text-sm leading-relaxed">
+                        {criterio.implicaciones}
+                      </p>
+                    ) : (
+                      <div className="space-y-3 text-sm">
+                        {criterio.implicaciones.juridicas && (
+                          <div>
+                            <span className="font-semibold text-purple-700">Jurídicas:</span>
+                            <ul className="mt-1 space-y-1">
+                              {criterio.implicaciones.juridicas.map((imp, i) => (
+                                <li key={i} className="text-purple-800 flex items-start gap-1">
+                                  <span className="text-purple-400">•</span> {imp}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {criterio.implicaciones.practicas && (
+                          <div>
+                            <span className="font-semibold text-purple-700">Prácticas:</span>
+                            <ul className="mt-1 space-y-1">
+                              {criterio.implicaciones.practicas.map((imp, i) => (
+                                <li key={i} className="text-purple-800 flex items-start gap-1">
+                                  <span className="text-purple-400">•</span> {imp}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {criterio.implicaciones.futuras && (
+                          <div>
+                            <span className="font-semibold text-purple-700">Futuras:</span>
+                            <ul className="mt-1 space-y-1">
+                              {criterio.implicaciones.futuras.map((imp, i) => (
+                                <li key={i} className="text-purple-800 flex items-start gap-1">
+                                  <span className="text-purple-400">•</span> {imp}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Instancia emisora */}
-                <div className="mt-6 pt-4 border-t border-purple-200/50 text-sm text-purple-600 font-sans-tech flex items-center gap-2">
-                  <Building size={14} />
-                  {caso.criterio.instanciaEmisora}
+                {/* Confirmación posterior */}
+                {criterio.confirmacionPosterior && (
+                  <div className="mt-4 bg-green-50 rounded-lg p-4 border border-green-200">
+                    <h4 className="text-xs font-sans-tech font-semibold text-green-700 uppercase tracking-wider mb-2">
+                      ✓ Confirmado posteriormente
+                    </h4>
+                    <p className="text-green-800 font-sans-tech text-sm">
+                      <span className="font-semibold">{criterio.confirmacionPosterior.tribunal}</span>
+                      <span className="text-green-600"> · {criterio.confirmacionPosterior.expediente}</span>
+                    </p>
+                    <p className="text-green-700 text-sm mt-1">{criterio.confirmacionPosterior.sentido}</p>
+                  </div>
+                )}
+
+                {/* Datos de publicación y emisor */}
+                <div className="mt-6 pt-4 border-t border-purple-200/50 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-purple-600 font-sans-tech">
+                  <span className="flex items-center gap-1">
+                    <Building size={14} />
+                    {criterio.instanciaEmisora}
+                  </span>
+                  {criterio.magistradoPonente && (
+                    <span>· Ponente: {criterio.magistradoPonente}</span>
+                  )}
+                  {criterio.publicacion && (
+                    <span className="text-xs text-purple-500">· {criterio.publicacion}</span>
+                  )}
                 </div>
               </section>
-            )}
+            ))}
 
             {/* ===== RESUMEN ===== */}
             <section>
