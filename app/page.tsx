@@ -32,6 +32,7 @@ export default function Home() {
   }>>([]);
   const [anuncios, setAnuncios] = useState<AnuncioData[]>([]);
   const [loadingAnuncios, setLoadingAnuncios] = useState(true);
+  const [errorAnuncios, setErrorAnuncios] = useState<string | null>(null);
   const [loadingLegStats, setLoadingLegStats] = useState(true);
 
   // Cargar anuncios/promesas de IA
@@ -39,12 +40,16 @@ export default function Home() {
     async function fetchAnuncios() {
       try {
         const response = await fetch('/api/anuncios');
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}`);
+        }
         const data = await response.json();
         if (data.anuncios) {
           setAnuncios(data.anuncios);
         }
       } catch (error) {
         console.error('Error fetching anuncios:', error);
+        setErrorAnuncios('No se pudieron cargar las promesas');
       } finally {
         setLoadingAnuncios(false);
       }
@@ -385,7 +390,32 @@ export default function Home() {
 
           {/* Grid de Cards Premium con Imagen */}
           {loadingAnuncios ? (
-            <div className="text-center py-12 text-gray-400">Cargando promesas...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden animate-pulse">
+                  <div className="h-48 bg-gray-200" />
+                  <div className="p-6 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-100 rounded w-1/2" />
+                    <div className="h-3 bg-gray-100 rounded w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : errorAnuncios ? (
+            <div className="text-center py-12">
+              <div className="text-red-400 mb-2">⚠️ {errorAnuncios}</div>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="text-sm text-blue-500 hover:underline"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : anunciosFiltrados.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              {filtroStatus === 'todos' ? 'No hay promesas registradas aún' : `No hay promesas con estado "${filtroStatus}"`}
+            </div>
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {anunciosFiltrados.map((item) => (
