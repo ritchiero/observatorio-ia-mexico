@@ -132,7 +132,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
 
             {/* Subheadline */}
             <p className="font-sans-tech text-lg md:text-xl text-gray-900/60 max-w-2xl leading-relaxed animate-reveal delay-300 border-l border-blue-500/30 pl-6 ml-1">
-              Documentamos la brecha sistémica entre la narrativa gubernamental de innovación y la realidad operativa. <span className="text-gray-900/90">{isLoading ? 'Cargando datos...' : `${stats.total} anuncios en 2025. ${stats.operando} implementaciones verificadas.`}</span>
+              Seguimiento integral de la IA en el estado mexicano. <span className="text-gray-900/90">Anuncios oficiales, legislación activa y precedentes judiciales en un solo lugar.</span>
             </p>
           </div>
 
