@@ -31,6 +31,46 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
   const isLoadingCasos = loadingCasos !== false && (!casosStats || casosStats.total === 0);
   const [mounted, setMounted] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  
+  // Estado del modal de suscripción
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({ nombre: '', email: '', telefono: '' });
+  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [formMessage, setFormMessage] = useState('');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormStatus('loading');
+    setFormMessage('');
+
+    try {
+      const response = await fetch('/api/suscripciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al suscribirse');
+      }
+
+      setFormStatus('success');
+      setFormMessage(data.message);
+      setFormData({ nombre: '', email: '', telefono: '' });
+      
+      // Cerrar modal después de 3 segundos
+      setTimeout(() => {
+        setShowModal(false);
+        setFormStatus('idle');
+        setFormMessage('');
+      }, 3000);
+    } catch (error) {
+      setFormStatus('error');
+      setFormMessage(error instanceof Error ? error.message : 'Error al suscribirse');
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -95,11 +135,143 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
             <a href="/actividad" className="hover:text-blue-400 transition-colors">Actividad</a>
           </div>
 
-          <button className="hidden md:flex items-center gap-2 px-5 py-2 border border-gray-300/20 text-xs uppercase tracking-widest hover:bg-gray-50 hover:text-gray-900 transition-all duration-300 group">
+          <button 
+            onClick={() => setShowModal(true)}
+            className="hidden md:flex items-center gap-2 px-5 py-2 border border-gray-300/20 text-xs uppercase tracking-widest hover:bg-gray-50 hover:text-gray-900 transition-all duration-300 group"
+          >
             Suscribirse
             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full group-hover:bg-gray-50 transition-colors"></div>
           </button>
         </nav>
+
+        {/* Modal de suscripción */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Overlay */}
+            <div 
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => formStatus !== 'loading' && setShowModal(false)}
+            />
+            
+            {/* Modal */}
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8 animate-reveal">
+              {/* Close button */}
+              <button
+                onClick={() => formStatus !== 'loading' && setShowModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={formStatus === 'loading'}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {formStatus === 'success' ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="font-serif-display text-2xl text-gray-900 mb-2">¡Gracias!</h3>
+                  <p className="text-gray-600 font-sans-tech">{formMessage}</p>
+                </div>
+              ) : (
+                <>
+                  {/* Header */}
+                  <div className="text-center mb-6">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                      <Eye size={24} className="text-blue-500" />
+                    </div>
+                    <h3 className="font-serif-display text-2xl text-gray-900 mb-2">
+                      Únete al Observatorio
+                    </h3>
+                    <p className="text-gray-600 font-sans-tech text-sm">
+                      Recibe actualizaciones sobre IA en México: nuevos anuncios, legislación y casos judiciales.
+                    </p>
+                  </div>
+
+                  {/* Form */}
+                  <form onSubmit={handleSubscribe} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">
+                        Nombre completo *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.nombre}
+                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                        placeholder="Tu nombre completo"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        required
+                        disabled={formStatus === 'loading'}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">
+                        Correo electrónico *
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="tu@email.com"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        required
+                        disabled={formStatus === 'loading'}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">
+                        WhatsApp *
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.telefono}
+                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                        placeholder="55 1234 5678"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        required
+                        disabled={formStatus === 'loading'}
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">Para enviarte alertas importantes</p>
+                    </div>
+
+                    {formStatus === 'error' && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-600 font-sans-tech">{formMessage}</p>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={formStatus === 'loading'}
+                      className="w-full py-3 bg-blue-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {formStatus === 'loading' ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Registrando...
+                        </>
+                      ) : (
+                        'Suscribirme'
+                      )}
+                    </button>
+
+                    <p className="text-[10px] text-gray-400 text-center">
+                      Al suscribirte aceptas recibir comunicaciones del Observatorio IA México.
+                    </p>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* MAIN CONTENT */}
         <div className="flex flex-col justify-center flex-grow mt-12 md:mt-0">

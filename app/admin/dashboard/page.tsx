@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle, Edit, Search, Save, RefreshCw, Trash2, Copy } from 'lucide-react';
+import { Eye, LogOut, ExternalLink, FileText, Upload, Calendar, Megaphone, Scale, Info, X, CheckCircle, AlertCircle, Edit, Search, Save, RefreshCw, Trash2, Copy, Users } from 'lucide-react';
 
 interface ImportResult {
   id: string;
@@ -997,6 +997,21 @@ export default function DashboardPage() {
           icon: Copy,
           href: '#duplicates',
           method: 'ACTION',
+        },
+      ]
+    },
+    {
+      id: 'suscripciones',
+      title: 'Suscripciones',
+      subtitle: 'Usuarios registrados al observatorio',
+      icon: Users,
+      actions: [
+        {
+          title: 'Ver Suscritos',
+          description: 'Lista de todos los usuarios suscritos',
+          icon: Users,
+          href: '/admin/suscripciones',
+          method: 'LINK',
         },
       ]
     },
