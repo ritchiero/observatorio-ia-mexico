@@ -59,7 +59,7 @@ export async function GET() {
         judicial_cases: { calls: 0, tokens: 0, costUsd: 0 },
         criteria: { calls: 0, tokens: 0, costUsd: 0 },
       },
-      byModel: {},
+      byModel: {} as Record<string, { calls: number; tokens: number; costUsd: number }>,
     };
 
     const response: AgentUsageResponse = {
