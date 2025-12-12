@@ -23,17 +23,6 @@ export const maxDuration = 120; // 2 minutos max
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autorización
-    const authKey = 
-      request.headers.get('x-admin-key') ||
-      request.nextUrl.searchParams.get('key');
-
-    const validKey = process.env.ADMIN_KEY || process.env.CRON_SECRET;
-
-    if (!validKey || authKey !== validKey) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const body = await request.json() as ExecuteAgentRequest;
     const { agentType, mode, model, maxItems } = body;
 

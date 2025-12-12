@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import type { 
   MasterConfig, 
   AgentConfig, 
@@ -16,8 +15,6 @@ import type {
 // ============================================
 
 function AgentesContent() {
-  const searchParams = useSearchParams();
-  const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,28 +26,21 @@ function AgentesContent() {
   const [lastRun, setLastRun] = useState<AgentRunResult | null>(null);
   const [selectedMode, setSelectedMode] = useState<ExecutionMode>('test');
 
-  const adminKey = searchParams.get('key') || '';
-
-  // Verificar autorización
+  // Cargar datos al montar
   useEffect(() => {
-    if (adminKey) {
-      setAuthorized(true);
-      loadData();
-    }
+    loadData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminKey]);
+  }, []);
 
   // Cargar datos
   const loadData = useCallback(async () => {
-    if (!adminKey) return;
-    
     setLoading(true);
     setError(null);
 
     try {
       const [configRes, usageRes] = await Promise.all([
-        fetch(`/api/admin/agentes/config?key=${adminKey}`),
-        fetch(`/api/admin/agentes/usage?key=${adminKey}`),
+        fetch('/api/admin/agentes/config'),
+        fetch('/api/admin/agentes/usage'),
       ]);
 
       if (!configRes.ok || !usageRes.ok) {
@@ -69,7 +59,7 @@ function AgentesContent() {
     } finally {
       setLoading(false);
     }
-  }, [adminKey]);
+  }, []);
 
   // Toggle master switch
   const toggleMaster = async () => {
@@ -77,7 +67,7 @@ function AgentesContent() {
 
     try {
       const newEnabled = !masterConfig.enabled;
-      const res = await fetch(`/api/admin/agentes/config?key=${adminKey}`, {
+      const res = await fetch('/api/admin/agentes/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -100,7 +90,7 @@ function AgentesContent() {
   // Cambiar modo
   const changeMode = async (mode: ExecutionMode) => {
     try {
-      const res = await fetch(`/api/admin/agentes/config?key=${adminKey}`, {
+      const res = await fetch('/api/admin/agentes/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,7 +114,7 @@ function AgentesContent() {
     setLastRun(null);
 
     try {
-      const res = await fetch(`/api/admin/agentes/execute?key=${adminKey}`, {
+      const res = await fetch('/api/admin/agentes/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -148,17 +138,6 @@ function AgentesContent() {
   // ============================================
   // RENDER
   // ============================================
-
-  if (!authorized) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Acceso Restringido</h1>
-          <p className="text-gray-600">Agrega <code className="bg-gray-100 px-2 py-1 rounded">?key=TU_CLAVE</code> a la URL</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -494,7 +473,7 @@ function AgentesContent() {
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-500">
-          <a href={`/admin?key=${adminKey}`} className="text-blue-600 hover:underline">
+          <a href="/admin" className="text-blue-600 hover:underline">
             ← Volver a Admin General
           </a>
         </div>

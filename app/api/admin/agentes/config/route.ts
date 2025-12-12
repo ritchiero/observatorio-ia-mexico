@@ -13,14 +13,8 @@ import type { AgentConfigResponse, MasterConfig, AgentConfig, AgentType } from '
 // GET - Obtener configuración
 // ============================================
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Verificar autorización
-    const authResult = verifyAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const [master, agents] = await Promise.all([
       usageTracker.getMasterConfig(),
       usageTracker.getAgentConfigs(),
@@ -47,12 +41,6 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Verificar autorización
-    const authResult = verifyAuth(request);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const body = await request.json();
     const { type, data } = body as {
       type: 'master' | 'agent';
@@ -62,7 +50,7 @@ export async function PUT(request: NextRequest) {
     if (type === 'master') {
       const updated = await usageTracker.updateMasterConfig(
         data as Partial<MasterConfig>,
-        authResult.user || 'admin'
+        'admin'
       );
       return NextResponse.json({ success: true, config: updated });
     }
@@ -89,21 +77,3 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// ============================================
-// AUTH HELPER
-// ============================================
-
-function verifyAuth(request: NextRequest): { authorized: boolean; user?: string } {
-  // Verificar por header o query param
-  const authKey = 
-    request.headers.get('x-admin-key') ||
-    request.nextUrl.searchParams.get('key');
-
-  const validKey = process.env.ADMIN_KEY || process.env.CRON_SECRET;
-
-  if (!validKey || authKey !== validKey) {
-    return { authorized: false };
-  }
-
-  return { authorized: true, user: 'admin' };
-}

@@ -4,7 +4,7 @@
  * GET: Obtener métricas de uso
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { usageTracker } from '@/lib/agents/usage-tracker';
 import type { AgentUsageResponse } from '@/types/agents';
 
@@ -12,19 +12,8 @@ import type { AgentUsageResponse } from '@/types/agents';
 // GET - Obtener métricas de uso
 // ============================================
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Verificar autorización
-    const authKey = 
-      request.headers.get('x-admin-key') ||
-      request.nextUrl.searchParams.get('key');
-
-    const validKey = process.env.ADMIN_KEY || process.env.CRON_SECRET;
-
-    if (!validKey || authKey !== validKey) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     // Obtener datos en paralelo
     const [master, todayUsage, monthlyUsage, recentCalls] = await Promise.all([
       usageTracker.getMasterConfig(),

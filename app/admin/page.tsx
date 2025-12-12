@@ -1,27 +1,12 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
 import AdminForm from '@/components/AdminForm';
 
 function AdminContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [authorized, setAuthorized] = useState(false);
   const [detectLoading, setDetectLoading] = useState(false);
   const [monitorLoading, setMonitorLoading] = useState(false);
   const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    const key = searchParams.get('key');
-    // En producción, esto debería compararse con una variable de entorno
-    // Por ahora, aceptamos cualquier key para desarrollo
-    if (key) {
-      setAuthorized(true);
-    } else {
-      setAuthorized(false);
-    }
-  }, [searchParams]);
 
   const ejecutarDeteccion = async () => {
     setDetectLoading(true);
@@ -59,28 +44,6 @@ function AdminContent() {
     }
   };
 
-  if (!authorized) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-        <div className="max-w-md text-center">
-          <div className="text-5xl mb-4">🔐</div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Acceso Restringido
-          </h1>
-          <p className="text-gray-400 mb-6">
-            Necesitas una clave de acceso para ver esta página.
-          </p>
-          <button
-            onClick={() => router.push('/')}
-            className="text-cyan-400 hover:text-cyan-300 transition-colors"
-          >
-            ← Volver al inicio
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-950 py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -92,7 +55,7 @@ function AdminContent() {
         {/* Navegación rápida */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <a
-            href={`/admin/agentes?key=${searchParams.get('key')}`}
+            href="/admin/agentes"
             className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4 rounded-xl hover:from-emerald-400 hover:to-teal-500 transition-all group"
           >
             <div className="text-2xl mb-2">🤖</div>
@@ -100,7 +63,7 @@ function AdminContent() {
             <div className="text-sm opacity-80">Control y métricas</div>
           </a>
           <a
-            href={`/admin/anuncios?key=${searchParams.get('key')}`}
+            href="/admin/anuncios"
             className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 rounded-xl hover:from-blue-400 hover:to-indigo-500 transition-all group"
           >
             <div className="text-2xl mb-2">📢</div>
@@ -108,7 +71,7 @@ function AdminContent() {
             <div className="text-sm opacity-80">Gestionar contenido</div>
           </a>
           <a
-            href={`/admin/dashboard?key=${searchParams.get('key')}`}
+            href="/admin/dashboard"
             className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-4 rounded-xl hover:from-purple-400 hover:to-pink-500 transition-all group"
           >
             <div className="text-2xl mb-2">📊</div>
@@ -116,7 +79,7 @@ function AdminContent() {
             <div className="text-sm opacity-80">Legislación</div>
           </a>
           <a
-            href={`/admin/suscripciones?key=${searchParams.get('key')}`}
+            href="/admin/suscripciones"
             className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-4 rounded-xl hover:from-amber-400 hover:to-orange-500 transition-all group"
           >
             <div className="text-2xl mb-2">📧</div>
