@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { usageTracker } from '@/lib/agents/usage-tracker';
+import { DEFAULT_MASTER_CONFIG, DEFAULT_AGENT_CONFIGS } from '@/lib/agents/config';
 import type { AgentConfigResponse, MasterConfig, AgentConfig, AgentType } from '@/types/agents';
 
 // ============================================
@@ -28,10 +29,14 @@ export async function GET() {
     return NextResponse.json(response);
   } catch (error) {
     console.error('[api/agentes/config] Error:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener configuración' },
-      { status: 500 }
-    );
+    
+    // Devolver configuración por defecto si hay error
+    const response: AgentConfigResponse = {
+      master: DEFAULT_MASTER_CONFIG,
+      agents: DEFAULT_AGENT_CONFIGS,
+    };
+    
+    return NextResponse.json(response);
   }
 }
 
@@ -71,9 +76,8 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('[api/agentes/config] Error:', error);
     return NextResponse.json(
-      { error: 'Error al actualizar configuración' },
+      { error: 'Error al actualizar configuración. Verifica las credenciales de Firebase.' },
       { status: 500 }
     );
   }
 }
-
