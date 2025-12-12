@@ -120,8 +120,8 @@ export default function Home() {
               c.criterio?.tiene || (c.criterios && c.criterios.length > 0)
             ).length,
           });
-          // Guardar los primeros 4 casos para mostrar en home
-          setCasosDestacados(casos.slice(0, 4));
+          // Guardar todos los casos para mostrar en home
+          setCasosDestacados(casos);
         }
       } catch (error) {
         console.error('Error fetching casos:', error);
@@ -722,7 +722,7 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               {casosDestacados.map((caso) => {
                 const tieneCriterio = caso.criterio?.tiene || (caso.criterios && caso.criterios.length > 0);
                 return (
