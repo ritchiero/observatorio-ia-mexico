@@ -100,12 +100,15 @@ export async function POST(request: NextRequest) {
         run.status = 'success';
       }
 
-      // Actualizar estado del agente
-      await usageTracker.updateAgentConfig(agentType, {
+      // Actualizar estado del agente (sin valores undefined)
+      const updateData: Record<string, unknown> = {
         lastRunAt: run.completedAt,
         lastRunStatus: run.status,
-        lastRunError: run.error,
-      });
+      };
+      if (run.error) {
+        updateData.lastRunError = run.error;
+      }
+      await usageTracker.updateAgentConfig(agentType, updateData);
 
       const response: ExecuteAgentResponse = {
         success: run.status === 'success',
