@@ -98,6 +98,7 @@ export type TemaIA =
   | 'evidencia_ia'
   | 'herramientas_jurisdiccionales'
   | 'delitos_informaticos'
+  | 'etica_judicial'
   | 'otro';
 
 export type MateriaCaso = 
@@ -162,6 +163,7 @@ export const TEMAS_IA: Record<TemaIA, { label: string; emoji: string; color: str
   evidencia_ia: { label: 'Evidencia con IA', emoji: '🔍', color: 'teal' },
   herramientas_jurisdiccionales: { label: 'Herramientas Jurisdiccionales', emoji: '⚙️', color: 'emerald' },
   delitos_informaticos: { label: 'Delitos Informáticos', emoji: '🔐', color: 'rose' },
+  etica_judicial: { label: 'Ética Judicial', emoji: '⚖️', color: 'amber' },
   otro: { label: 'Otro', emoji: '📁', color: 'gray' },
 };
 
