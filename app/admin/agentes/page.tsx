@@ -360,10 +360,10 @@ function AgentesContent() {
                   disabled={
                     executingAgent !== null ||
                     !agent.enabled ||
-                    agent.id !== 'detection'
+                    (agent.id !== 'detection' && agent.id !== 'monitoring')
                   }
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    !agent.enabled || agent.id !== 'detection'
+                    !agent.enabled || (agent.id !== 'detection' && agent.id !== 'monitoring')
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : executingAgent === agent.id
                       ? 'bg-gray-100 text-gray-400 cursor-wait'
@@ -372,7 +372,7 @@ function AgentesContent() {
                 >
                   {!agent.enabled
                     ? 'Inactivo'
-                    : agent.id !== 'detection'
+                    : agent.id !== 'detection' && agent.id !== 'monitoring'
                     ? 'No implementado'
                     : executingAgent === agent.id
                     ? 'Ejecutando...'

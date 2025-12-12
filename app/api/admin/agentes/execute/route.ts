@@ -15,7 +15,9 @@ import type {
   AgentRunResult,
   AgentResultItem 
 } from '@/types/agents';
-import { getDeteccionPrompt } from '@/lib/prompts';
+import { getDeteccionPrompt, getMonitoreoPrompt } from '@/lib/prompts';
+import { crearEventoTimeline } from '@/lib/timeline';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // ============================================
 // POST - Ejecutar agente
@@ -211,15 +213,204 @@ async function executeMonitoring(
   model: string,
   maxItems: number
 ): Promise<void> {
-  // Por ahora, solo un mensaje de no implementado
-  run.status = 'error';
-  run.error = 'El agente de monitoreo requiere acceso a anuncios existentes. Por implementar.';
-  
-  // En el futuro:
-  // 1. Obtener anuncios existentes de Firestore
-  // 2. Para cada anuncio (limitado por maxItems), llamar a Claude
-  // 3. Acumular tokens y costos
-  // 4. Parsear actualizaciones
+  const db = getAdminDb();
+
+  // Leer anuncios (los más recientes). Si no hay, terminar sin error.
+  const snap = await db
+    .collection('anuncios')
+    .orderBy('updatedAt', 'desc')
+    .limit(Math.max(1, maxItems))
+    .get();
+
+  if (snap.empty) {
+    run.itemsFound = 0;
+    run.apiCalls = 0;
+    run.totalTokens = 0;
+    run.estimatedCostUsd = 0;
+    return;
+  }
+
+  let calls = 0;
+  let totalTokens = 0;
+  let totalCost = 0;
+  const results: AgentResultItem[] = [];
+
+  for (const doc of snap.docs) {
+    const anuncio = doc.data() as any;
+    const anuncioId = doc.id;
+
+    const titulo = typeof anuncio.titulo === 'string' ? anuncio.titulo : anuncioId;
+    const descripcion = typeof anuncio.descripcion === 'string' ? anuncio.descripcion : '';
+    const responsable = typeof anuncio.responsable === 'string' ? anuncio.responsable : '';
+    const status = typeof anuncio.status === 'string' ? anuncio.status : 'prometido';
+
+    const fechaAnuncio = anuncio.fechaAnuncio?.toDate
+      ? anuncio.fechaAnuncio.toDate().toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0];
+
+    const fechaPrometida = anuncio.fechaPrometida?.toDate
+      ? anuncio.fechaPrometida.toDate().toISOString().split('T')[0]
+      : null;
+
+    const prompt = getMonitoreoPrompt({
+      titulo,
+      descripcion,
+      fechaAnuncio,
+      fechaPrometida,
+      responsable,
+      status,
+    });
+
+    const call = await trackedClaudeCall({
+      agentType: 'monitoring',
+      mode: run.mode,
+      model: model as any,
+      systemPrompt: 'Eres un analista de seguimiento de políticas públicas de inteligencia artificial en México.',
+      userPrompt: prompt,
+      maxTokens: 2000,
+      enableWebSearch: model !== 'claude-3-5-haiku-20241022',
+    });
+
+    calls += 1;
+    totalTokens += call.usage.totalTokens;
+    totalCost += call.costUsd;
+
+    if (!call.success) {
+      results.push({
+        id: `mon_${anuncioId}`,
+        type: 'anuncio',
+        title: titulo,
+        preview: `Error: ${call.error || 'falló la llamada a Claude'}`.substring(0, 100),
+        data: { anuncioId, error: call.error || 'falló la llamada a Claude' },
+      });
+      continue;
+    }
+
+    let parsed: any;
+    try {
+      parsed = extractJsonObject(call.text);
+    } catch (e) {
+      results.push({
+        id: `mon_${anuncioId}`,
+        type: 'anuncio',
+        title: titulo,
+        preview: 'Error parseando respuesta de Claude'.substring(0, 100),
+        data: { anuncioId, raw: call.text },
+      });
+      continue;
+    }
+
+    const hayActualizacion = !!parsed?.hay_actualizacion;
+    if (!hayActualizacion) {
+      continue;
+    }
+
+    const actualizacion = parsed?.actualizacion;
+    const fuenteUrl = actualizacion?.fuente_url;
+    const desc = actualizacion?.descripcion;
+
+    const cambioStatus = !!parsed?.cambio_status_recomendado;
+    const nuevoStatus = parsed?.nuevo_status;
+    const justificacion = parsed?.justificacion;
+
+    const tipoEvento = actualizacion?.tipo_evento || (cambioStatus ? 'cambio_status' : 'actualizacion');
+    const impacto = actualizacion?.impacto || 'neutral';
+    const citaTextual = actualizacion?.cita_textual;
+
+    const fuentes = extractSourcesFromMonitoringItem(parsed);
+
+    // Resultado para UI (preview/live)
+    results.push({
+      id: `mon_${anuncioId}`,
+      type: 'anuncio',
+      title: titulo,
+      preview: (typeof desc === 'string' ? desc : 'Actualización detectada').substring(0, 100),
+      data: {
+        anuncioId,
+        hay_actualizacion: true,
+        actualizacion,
+        cambio_status_recomendado: cambioStatus,
+        nuevo_status: nuevoStatus,
+        justificacion,
+      },
+      sources: fuentes,
+    });
+
+    // Solo escribir en modo live
+    if (run.mode !== 'live') {
+      continue;
+    }
+
+    // Actualizar anuncio: agregar actualizacion y opcionalmente cambiar status
+    const anuncioRef = db.collection('anuncios').doc(anuncioId);
+    const docLatest = await anuncioRef.get();
+    if (!docLatest.exists) continue;
+    const dataLatest = docLatest.data() as any;
+    const actualizacionesArr = Array.isArray(dataLatest.actualizaciones) ? [...dataLatest.actualizaciones] : [];
+
+    actualizacionesArr.push({
+      fecha: Timestamp.now(),
+      descripcion: typeof desc === 'string' ? desc : 'Actualización detectada',
+      fuente: typeof fuenteUrl === 'string' ? fuenteUrl : (fuentes[0] || ''),
+      cambioStatus,
+      statusAnterior: cambioStatus ? (dataLatest.status || status) : undefined,
+      statusNuevo: cambioStatus ? (typeof nuevoStatus === 'string' ? nuevoStatus : undefined) : undefined,
+    });
+
+    const updateData: Record<string, unknown> = {
+      actualizaciones: actualizacionesArr,
+      updatedAt: Timestamp.now(),
+    };
+
+    if (cambioStatus && typeof nuevoStatus === 'string' && nuevoStatus.length > 0) {
+      updateData.status = nuevoStatus;
+    }
+
+    await anuncioRef.update(updateData);
+
+    // Crear evento de timeline (best-effort)
+    try {
+      const fuentesTimeline = buildTimelineSourcesFromMonitoring(actualizacion);
+      await crearEventoTimeline({
+        anuncioId,
+        fecha: new Date(),
+        tipo: tipoEvento,
+        titulo: cambioStatus ? `Cambio de status: ${nuevoStatus || ''}`.trim() : 'Actualización detectada',
+        descripcion: typeof desc === 'string' ? desc : 'Actualización detectada',
+        fuentes: fuentesTimeline,
+        citaTextual: typeof citaTextual === 'string' ? citaTextual : undefined,
+        responsable,
+        impacto,
+      } as any);
+    } catch {
+      // No tumbar la ejecución si el timeline falla
+    }
+
+    // Registrar actividad (best-effort)
+    try {
+      await db.collection('actividad').add({
+        fecha: Timestamp.now(),
+        tipo: cambioStatus ? 'cambio_status' : 'actualizacion',
+        anuncioId,
+        anuncioTitulo: titulo,
+        descripcion: cambioStatus
+          ? `Status cambió a "${nuevoStatus || ''}". ${typeof justificacion === 'string' ? justificacion : ''}`.trim()
+          : (typeof desc === 'string' ? desc : 'Actualización detectada'),
+      });
+    } catch {
+      // noop
+    }
+  }
+
+  run.apiCalls = calls;
+  run.totalTokens = totalTokens;
+  run.estimatedCostUsd = totalCost;
+  run.results = results;
+  run.itemsFound = results.length;
+
+  if (run.mode === 'live') {
+    run.itemsSaved = results.length;
+  }
 }
 
 function extractJsonObject(text: string): any {
@@ -255,6 +446,61 @@ function extractSourcesFromDeteccionItem(item: Record<string, unknown>): string[
   }
 
   return Array.from(sources);
+}
+
+function extractSourcesFromMonitoringItem(parsed: Record<string, unknown>): string[] {
+  const sources = new Set<string>();
+  const actualizacion = (parsed as any)?.actualizacion;
+  const fuenteUrl = actualizacion?.fuente_url;
+  if (typeof fuenteUrl === 'string' && fuenteUrl.trim()) sources.add(fuenteUrl.trim());
+
+  const adicionales = actualizacion?.fuentes_adicionales;
+  if (Array.isArray(adicionales)) {
+    for (const f of adicionales) {
+      const url = (f as any)?.url;
+      if (typeof url === 'string' && url.trim()) sources.add(url.trim());
+    }
+  }
+
+  return Array.from(sources);
+}
+
+function buildTimelineSourcesFromMonitoring(actualizacion: any): Array<any> {
+  const fuentes: Array<any> = [];
+  const mainUrl = actualizacion?.fuente_url;
+  const mainDesc = actualizacion?.descripcion;
+  if (typeof mainUrl === 'string' && mainUrl.trim()) {
+    fuentes.push({
+      tipo: 'nota_prensa',
+      url: mainUrl.trim(),
+      titulo: typeof mainDesc === 'string' && mainDesc.trim() ? mainDesc.trim() : 'Fuente',
+      medio: null,
+      fecha: Timestamp.now(),
+      fechaPublicacion: new Date(),
+    });
+  }
+
+  const adicionales = actualizacion?.fuentes_adicionales;
+  if (Array.isArray(adicionales)) {
+    for (const f of adicionales) {
+      const url = (f as any)?.url;
+      const titulo = (f as any)?.titulo;
+      const tipo = (f as any)?.tipo;
+      const medio = (f as any)?.medio;
+      if (typeof url === 'string' && url.trim()) {
+        fuentes.push({
+          tipo: typeof tipo === 'string' && tipo.length > 0 ? tipo : 'nota_prensa',
+          url: url.trim(),
+          titulo: typeof titulo === 'string' && titulo.trim() ? titulo.trim() : 'Fuente',
+          medio: typeof medio === 'string' ? medio : null,
+          fecha: Timestamp.now(),
+          fechaPublicacion: new Date(),
+        });
+      }
+    }
+  }
+
+  return fuentes;
 }
 
 async function getExistingAnuncioTitles(limit: number): Promise<string[]> {
