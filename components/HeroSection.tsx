@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Activity, Eye, FileText, ChevronDown, Scale } from 'lucide-react';
+import { Activity, Eye, FileText, ChevronDown, Scale, Gavel } from 'lucide-react';
 import Link from 'next/link';
 
 interface HeroSectionProps {
@@ -16,13 +16,19 @@ interface HeroSectionProps {
     total: number;
     activas: number;
   };
+  casosStats?: {
+    total: number;
+    conCriterio: number;
+  };
   loading?: boolean;
   loadingLeg?: boolean;
+  loadingCasos?: boolean;
 }
 
-export default function HeroSection({ stats, legStats, loading, loadingLeg }: HeroSectionProps) {
+export default function HeroSection({ stats, legStats, casosStats, loading, loadingLeg, loadingCasos }: HeroSectionProps) {
   const isLoading = loading || stats.total === 0;
   const isLoadingLeg = loadingLeg !== false && (!legStats || legStats.total === 0);
+  const isLoadingCasos = loadingCasos !== false && (!casosStats || casosStats.total === 0);
   const [mounted, setMounted] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -131,7 +137,7 @@ export default function HeroSection({ stats, legStats, loading, loadingLeg }: He
           </div>
 
           {/* STATS ROW */}
-          <div className="grid grid-cols-3 gap-6 md:gap-8 mt-16 border-t border-gray-300/10 pt-8 max-w-3xl animate-reveal delay-400">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mt-16 border-t border-gray-300/10 pt-8 max-w-4xl animate-reveal delay-400">
             <div className="group cursor-default">
               <div className={`font-serif-display text-3xl md:text-5xl text-gray-900 group-hover:text-blue-400 transition-colors duration-300 ${isLoading ? 'animate-pulse' : ''}`}>
                 {isLoading ? '—' : stats.total}
@@ -151,6 +157,15 @@ export default function HeroSection({ stats, legStats, loading, loadingLeg }: He
               <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
                 <Scale size={10} className="hidden md:inline" />
                 Iniciativas de Ley
+              </div>
+            </Link>
+            <Link href="/casos-ia" className="group cursor-pointer">
+              <div className={`font-serif-display text-3xl md:text-5xl text-purple-500 group-hover:text-gray-900 transition-colors duration-300 ${isLoadingCasos ? 'animate-pulse' : ''}`}>
+                {isLoadingCasos ? '—' : casosStats?.total}
+              </div>
+              <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <Gavel size={10} className="hidden md:inline" />
+                Casos Judiciales
               </div>
             </Link>
           </div>

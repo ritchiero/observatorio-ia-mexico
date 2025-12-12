@@ -34,6 +34,8 @@ export default function Home() {
   const [loadingAnuncios, setLoadingAnuncios] = useState(true);
   const [errorAnuncios, setErrorAnuncios] = useState<string | null>(null);
   const [loadingLegStats, setLoadingLegStats] = useState(true);
+  const [casosStats, setCasosStats] = useState({ total: 0, conCriterio: 0 });
+  const [loadingCasos, setLoadingCasos] = useState(true);
 
   // Cargar anuncios/promesas de IA
   useEffect(() => {
@@ -94,6 +96,30 @@ export default function Home() {
       }
     }
     fetchLegislacion();
+  }, []);
+
+  // Cargar estadísticas de casos judiciales
+  useEffect(() => {
+    async function fetchCasos() {
+      try {
+        const response = await fetch('/api/casos-ia');
+        const data = await response.json();
+        if (data.casos) {
+          const casos = data.casos;
+          setCasosStats({
+            total: casos.length,
+            conCriterio: casos.filter((c: { criterio?: { tiene?: boolean }, criterios?: Array<{ tiene?: boolean }> }) => 
+              c.criterio?.tiene || (c.criterios && c.criterios.length > 0)
+            ).length,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching casos:', error);
+      } finally {
+        setLoadingCasos(false);
+      }
+    }
+    fetchCasos();
   }, []);
   
   // Función para calcular días vencidos (usando UTC)
@@ -211,7 +237,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <HeroSection stats={stats} legStats={legStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} />
+      <HeroSection stats={stats} legStats={legStats} casosStats={casosStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} loadingCasos={loadingCasos} />
 
       {/* Sección: Cómo funciona - Observatorio Automatizado */}
       <section id="metodologia" className="bg-gray-50 border-y border-gray-300/5 py-10 sm:py-14 px-4">
