@@ -485,76 +485,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Barra de estadísticas de anuncios */}
-      <section className="bg-white border-b border-gray-200/50 py-3 sm:py-4 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Vista móvil: grid compacto */}
-          <div className="grid grid-cols-5 gap-2 text-center sm:hidden">
-            <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
-              <div className="text-lg font-bold text-gray-900">{stats.total}</div>
-              <div className="text-[10px] text-gray-900/40">Total</div>
-            </div>
-            <div className="bg-emerald-50 rounded-lg py-2 px-1 border border-emerald-200">
-              <div className="text-lg font-bold text-emerald-500">{stats.operando}</div>
-              <div className="text-[10px] text-gray-900/40">Operando</div>
-            </div>
-            <div className="bg-blue-50 rounded-lg py-2 px-1 border border-blue-200">
-              <div className="text-lg font-bold text-blue-500">{stats.enDesarrollo}</div>
-              <div className="text-[10px] text-gray-900/40">Desarrollo</div>
-            </div>
-            <div className="bg-red-50 rounded-lg py-2 px-1 border border-red-200">
-              <div className="text-lg font-bold text-red-500">{stats.incumplido}</div>
-              <div className="text-[10px] text-gray-900/40">Incumplido</div>
-            </div>
-            <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
-              <div className="text-lg font-bold text-gray-900/60">{stats.prometido}</div>
-              <div className="text-[10px] text-gray-900/40">Prometido</div>
-            </div>
-          </div>
-
-          {/* Vista desktop: horizontal */}
-          <div className="hidden sm:flex flex-wrap items-center justify-between gap-4 text-sm font-sans-tech">
-            <div className="flex flex-wrap items-center gap-4 md:gap-6">
-              <div>
-                <span className="font-medium text-gray-900/50">Total:</span>{' '}
-                <span className="text-gray-900 font-semibold">{stats.total}</span>
-              </div>
-              <div className="h-4 w-px bg-gray-200 hidden md:block" />
-              <div>
-                <span className="font-medium text-emerald-500">Operando:</span>{' '}
-                <span className="font-bold text-emerald-500">{stats.operando}</span>
-              </div>
-              <div className="h-4 w-px bg-gray-200 hidden md:block" />
-              <div>
-                <span className="font-medium text-blue-500">En desarrollo:</span>{' '}
-                <span className="text-blue-500">{stats.enDesarrollo}</span>
-              </div>
-              <div className="h-4 w-px bg-gray-200 hidden md:block" />
-              <div>
-                <span className="font-medium text-red-500">Incumplido:</span>{' '}
-                <span className="text-red-500">{stats.incumplido}</span>
-              </div>
-              <div className="h-4 w-px bg-gray-200 hidden md:block" />
-              <div>
-                <span className="font-medium text-gray-900/50">Prometido:</span>{' '}
-                <span className="text-gray-900/60">{stats.prometido}</span>
-              </div>
-            </div>
-            <div className="text-xs text-gray-900/30 flex items-center gap-1.5 font-mono">
-              <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Actualización automática
-            </div>
-          </div>
-          
-          {/* Fecha de actualización móvil */}
-          <div className="sm:hidden text-center mt-2">
-            <span className="text-[10px] text-gray-900/30 font-mono">Datos en tiempo real</span>
-          </div>
-        </div>
-      </section>
-
       {/* Sección: Casos de IA */}
       <section className="bg-gray-50 border-t border-gray-200/50 py-12 sm:py-16 px-4">
         <div className="max-w-6xl mx-auto">
@@ -644,6 +574,76 @@ export default function Home() {
               Ver todos los casos
               <ArrowRight size={16} />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Barra de estadísticas de anuncios */}
+      <section className="bg-white border-b border-gray-200/50 py-3 sm:py-4 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Vista móvil: grid compacto */}
+          <div className="grid grid-cols-5 gap-2 text-center sm:hidden">
+            <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
+              <div className="text-lg font-bold text-gray-900">{stats.total}</div>
+              <div className="text-[10px] text-gray-900/40">Total</div>
+            </div>
+            <div className="bg-emerald-50 rounded-lg py-2 px-1 border border-emerald-200">
+              <div className="text-lg font-bold text-emerald-500">{stats.operando}</div>
+              <div className="text-[10px] text-gray-900/40">Operando</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg py-2 px-1 border border-blue-200">
+              <div className="text-lg font-bold text-blue-500">{stats.enDesarrollo}</div>
+              <div className="text-[10px] text-gray-900/40">Desarrollo</div>
+            </div>
+            <div className="bg-red-50 rounded-lg py-2 px-1 border border-red-200">
+              <div className="text-lg font-bold text-red-500">{stats.incumplido}</div>
+              <div className="text-[10px] text-gray-900/40">Incumplido</div>
+            </div>
+            <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
+              <div className="text-lg font-bold text-gray-900/60">{stats.prometido}</div>
+              <div className="text-[10px] text-gray-900/40">Prometido</div>
+            </div>
+          </div>
+
+          {/* Vista desktop: horizontal */}
+          <div className="hidden sm:flex flex-wrap items-center justify-between gap-4 text-sm font-sans-tech">
+            <div className="flex flex-wrap items-center gap-4 md:gap-6">
+              <div>
+                <span className="font-medium text-gray-900/50">Total:</span>{' '}
+                <span className="text-gray-900 font-semibold">{stats.total}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-200 hidden md:block" />
+              <div>
+                <span className="font-medium text-emerald-500">Operando:</span>{' '}
+                <span className="font-bold text-emerald-500">{stats.operando}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-200 hidden md:block" />
+              <div>
+                <span className="font-medium text-blue-500">En desarrollo:</span>{' '}
+                <span className="text-blue-500">{stats.enDesarrollo}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-200 hidden md:block" />
+              <div>
+                <span className="font-medium text-red-500">Incumplido:</span>{' '}
+                <span className="text-red-500">{stats.incumplido}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-200 hidden md:block" />
+              <div>
+                <span className="font-medium text-gray-900/50">Prometido:</span>{' '}
+                <span className="text-gray-900/60">{stats.prometido}</span>
+              </div>
+            </div>
+            <div className="text-xs text-gray-900/30 flex items-center gap-1.5 font-mono">
+              <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Actualización mensual
+            </div>
+          </div>
+          
+          {/* Fecha de actualización móvil */}
+          <div className="sm:hidden text-center mt-2">
+            <span className="text-[10px] text-gray-900/30 font-mono">Actualización mensual</span>
           </div>
         </div>
       </section>
