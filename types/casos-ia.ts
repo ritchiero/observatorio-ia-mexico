@@ -99,6 +99,7 @@ export type TemaIA =
   | 'herramientas_jurisdiccionales'
   | 'delitos_informaticos'
   | 'etica_judicial'
+  | 'violencia_digital'
   | 'otro';
 
 export type MateriaCaso = 
@@ -164,6 +165,7 @@ export const TEMAS_IA: Record<TemaIA, { label: string; emoji: string; color: str
   herramientas_jurisdiccionales: { label: 'Herramientas Jurisdiccionales', emoji: '⚙️', color: 'emerald' },
   delitos_informaticos: { label: 'Delitos Informáticos', emoji: '🔐', color: 'rose' },
   etica_judicial: { label: 'Ética Judicial', emoji: '⚖️', color: 'amber' },
+  violencia_digital: { label: 'Violencia Digital', emoji: '🎭', color: 'pink' },
   otro: { label: 'Otro', emoji: '📁', color: 'gray' },
 };
 
@@ -181,4 +183,5 @@ export const TIPOS_CRITERIO: Record<string, { label: string; emoji: string }> = 
   tesis_aislada: { label: 'Tesis Aislada', emoji: '📜' },
   jurisprudencia: { label: 'Jurisprudencia', emoji: '⚖️' },
   sentencia_pleno_desestimada: { label: 'Sentencia Pleno (Desestimada)', emoji: '🏛️' },
+  sentencia_pleno_validez: { label: 'Sentencia Pleno (Validez)', emoji: '✅' },
 };
