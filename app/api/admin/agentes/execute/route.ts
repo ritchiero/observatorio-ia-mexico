@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import { usageTracker } from '@/lib/agents/usage-tracker';
 import { trackedClaudeCall } from '@/lib/agents/claude-tracked';
+import { getAdminDb } from '@/lib/firebase-admin';
 import type { 
   ExecuteAgentRequest, 
   ExecuteAgentResponse, 
@@ -48,6 +49,13 @@ export async function POST(request: NextRequest) {
         success: false,
         error: `Agente "${agentType}" no encontrado`,
       }, { status: 404 });
+    }
+
+    if (!agentConfig.enabled) {
+      return NextResponse.json({
+        success: false,
+        error: `Agente "${agentType}" está inactivo`,
+      }, { status: 403 });
     }
 
     // Iniciar ejecución
@@ -141,8 +149,9 @@ async function executeDetection(
   model: string,
   maxItems: number
 ): Promise<void> {
-  // Generar el prompt con lista vacía (en producción se pasarían títulos existentes)
-  const fullPrompt = getDeteccionPrompt([]);
+  // Generar el prompt con títulos existentes (para evitar duplicados)
+  const existingTitles = await getExistingAnuncioTitles(200).catch(() => []);
+  const fullPrompt = getDeteccionPrompt(existingTitles);
   
   // Llamar a Claude
   const result = await trackedClaudeCall({
@@ -167,23 +176,28 @@ async function executeDetection(
 
   // Parsear respuesta
   try {
-    const data = JSON.parse(result.text);
+    const data = extractJsonObject(result.text);
     const anuncios = data.nuevos_anuncios || [];
 
     run.itemsFound = anuncios.length;
-    run.results = anuncios.slice(0, maxItems).map((a: Record<string, unknown>, i: number) => ({
-      id: `detect_${i}`,
+    run.results = anuncios.slice(0, maxItems).map((a: Record<string, unknown>, i: number) => {
+      const title = (a.titulo as string) || 'Sin título';
+      const preview = ((a.descripcion as string) || '').substring(0, 100);
+      const sources = extractSourcesFromDeteccionItem(a);
+      return {
+        id: `detect_${i}`,
       type: 'anuncio' as const,
-      title: a.titulo || 'Sin título',
-      preview: (a.descripcion as string)?.substring(0, 100) || '',
-      data: a,
-      sources: a.fuentes as string[] || [],
-    }));
+        title,
+        preview,
+        data: a,
+        sources,
+      };
+    });
 
     // En modo live, guardar en cola de revisión
     if (run.mode === 'live' && run.results && run.results.length > 0) {
-      // TODO: Implementar guardado en cola
-      run.itemsSaved = run.results.length;
+      const saved = await enqueueResults(run, run.results);
+      run.itemsSaved = saved;
     }
 
   } catch {
@@ -206,4 +220,82 @@ async function executeMonitoring(
   // 2. Para cada anuncio (limitado por maxItems), llamar a Claude
   // 3. Acumular tokens y costos
   // 4. Parsear actualizaciones
+}
+
+function extractJsonObject(text: string): any {
+  // Claude suele cumplir el JSON, pero si incluye texto extra, extraemos el primer bloque JSON.
+  try {
+    return JSON.parse(text);
+  } catch {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('No se encontró JSON en la respuesta');
+    return JSON.parse(match[0]);
+  }
+}
+
+function extractSourcesFromDeteccionItem(item: Record<string, unknown>): string[] {
+  const sources = new Set<string>();
+  const fuenteUrl = item.fuente_url;
+  if (typeof fuenteUrl === 'string' && fuenteUrl.trim()) sources.add(fuenteUrl.trim());
+
+  const adicionales = item.fuentes_adicionales;
+  if (Array.isArray(adicionales)) {
+    for (const f of adicionales) {
+      const url = (f as any)?.url;
+      if (typeof url === 'string' && url.trim()) sources.add(url.trim());
+    }
+  }
+
+  // Compatibilidad con el mock anterior (si viniera como `fuentes: string[]`)
+  const fuentes = item.fuentes;
+  if (Array.isArray(fuentes)) {
+    for (const u of fuentes) {
+      if (typeof u === 'string' && u.trim()) sources.add(u.trim());
+    }
+  }
+
+  return Array.from(sources);
+}
+
+async function getExistingAnuncioTitles(limit: number): Promise<string[]> {
+  const db = getAdminDb();
+  const snap = await db.collection('anuncios').select('titulo').limit(limit).get();
+  const titles = snap.docs
+    .map((d) => d.get('titulo'))
+    .filter((t): t is string => typeof t === 'string' && t.trim().length > 0)
+    .map((t) => t.trim());
+
+  // Deduplicar (por si hay títulos repetidos)
+  return Array.from(new Set(titles));
+}
+
+async function enqueueResults(run: AgentRunResult, results: AgentResultItem[]): Promise<number> {
+  const db = getAdminDb();
+  const batch = db.batch();
+  const detectedAt = new Date().toISOString();
+
+  let count = 0;
+  for (const item of results) {
+    const id = `queue_${run.runId}_${count}`;
+    const ref = db.collection('agent_queue').doc(id);
+    batch.set(ref, {
+      id,
+      type: item.type,
+      status: 'pending',
+      data: item.data,
+      title: item.title,
+      preview: item.preview,
+      detectedAt,
+      detectedBy: run.agentType,
+      runId: run.runId,
+      confidence: item.confidence ?? null,
+      sources: item.sources ?? [],
+    });
+    count++;
+  }
+
+  if (count > 0) {
+    await batch.commit();
+  }
+  return count;
 }

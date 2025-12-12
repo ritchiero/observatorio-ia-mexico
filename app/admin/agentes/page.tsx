@@ -357,14 +357,26 @@ function AgentesContent() {
                 </div>
                 <button
                   onClick={() => executeAgent(agent.id as AgentType)}
-                  disabled={executingAgent !== null}
+                  disabled={
+                    executingAgent !== null ||
+                    !agent.enabled ||
+                    agent.id !== 'detection'
+                  }
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    executingAgent === agent.id
+                    !agent.enabled || agent.id !== 'detection'
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : executingAgent === agent.id
                       ? 'bg-gray-100 text-gray-400 cursor-wait'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  {executingAgent === agent.id ? 'Ejecutando...' : 'Ejecutar'}
+                  {!agent.enabled
+                    ? 'Inactivo'
+                    : agent.id !== 'detection'
+                    ? 'No implementado'
+                    : executingAgent === agent.id
+                    ? 'Ejecutando...'
+                    : 'Ejecutar'}
                 </button>
               </div>
             ))}
