@@ -242,8 +242,15 @@ class UsageTracker {
     config: Partial<MasterConfig>,
     updatedBy: string = 'system'
   ): Promise<MasterConfig> {
-    const current = await this.getMasterConfig().catch(() => DEFAULT_MASTER_CONFIG);
-    
+    const docRef = this.db
+      .collection(COLLECTIONS.masterConfig)
+      .doc('master');
+
+    const doc = await docRef.get();
+    const current = doc.exists
+      ? (doc.data() as MasterConfig)
+      : DEFAULT_MASTER_CONFIG;
+
     const updated: MasterConfig = {
       ...current,
       ...config,
@@ -251,10 +258,7 @@ class UsageTracker {
       updatedBy,
     };
 
-    await this.db
-      .collection(COLLECTIONS.masterConfig)
-      .doc('master')
-      .set(updated);
+    await docRef.set(updated);
 
     return updated;
   }

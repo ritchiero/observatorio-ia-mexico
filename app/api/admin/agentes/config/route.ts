@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
 import { usageTracker } from '@/lib/agents/usage-tracker';
 import { DEFAULT_MASTER_CONFIG, DEFAULT_AGENT_CONFIGS } from '@/lib/agents/config';
 import type { AgentConfigResponse, MasterConfig, AgentConfig, AgentType } from '@/types/agents';
@@ -15,6 +16,9 @@ import type { AgentConfigResponse, MasterConfig, AgentConfig, AgentType } from '
 // ============================================
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (auth) return auth;
+
   try {
     const [master, agents] = await Promise.all([
       usageTracker.getMasterConfig(),
@@ -45,6 +49,9 @@ export async function GET() {
 // ============================================
 
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth) return auth;
+
   try {
     const body = await request.json();
     const { type, data } = body as {

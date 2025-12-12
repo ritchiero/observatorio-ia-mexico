@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import type { 
   MasterConfig, 
   AgentConfig, 
@@ -12,6 +14,9 @@ import type {
 } from '@/types/agents';
 
 function AgentesContent() {
+  const router = useRouter();
+  const { status } = useSession();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,11 +26,6 @@ function AgentesContent() {
   const [executingAgent, setExecutingAgent] = useState<string | null>(null);
   const [lastRun, setLastRun] = useState<AgentRunResult | null>(null);
   const [selectedMode, setSelectedMode] = useState<ExecutionMode>('test');
-
-  useEffect(() => {
-    loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -38,6 +38,10 @@ function AgentesContent() {
       ]);
 
       if (!configRes.ok || !usageRes.ok) {
+        if (configRes.status === 401 || usageRes.status === 401) {
+          router.replace('/admin/login');
+          return;
+        }
         throw new Error('Error al cargar datos');
       }
 
@@ -53,7 +57,17 @@ function AgentesContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/admin/login');
+      return;
+    }
+    if (status === 'authenticated') {
+      loadData();
+    }
+  }, [status, router, loadData]);
 
   const toggleMaster = async () => {
     if (!masterConfig) return;
@@ -72,6 +86,10 @@ function AgentesContent() {
         }),
       });
 
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
       if (res.ok) {
         setMasterConfig(prev => prev ? { ...prev, enabled: newEnabled } : null);
       }
@@ -91,6 +109,10 @@ function AgentesContent() {
         }),
       });
 
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
       if (res.ok) {
         setMasterConfig(prev => prev ? { ...prev, mode } : null);
         setSelectedMode(mode);
@@ -114,6 +136,10 @@ function AgentesContent() {
         }),
       });
 
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
       const data = await res.json();
       setLastRun(data.run);
       await loadData();

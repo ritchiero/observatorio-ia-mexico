@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
 import { usageTracker } from '@/lib/agents/usage-tracker';
 import { trackedClaudeCall } from '@/lib/agents/claude-tracked';
 import type { 
@@ -22,6 +23,9 @@ import { getDeteccionPrompt } from '@/lib/prompts';
 export const maxDuration = 120; // 2 minutos max
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth) return auth;
+
   try {
     const body = await request.json() as ExecuteAgentRequest;
     const { agentType, mode, model, maxItems } = body;
