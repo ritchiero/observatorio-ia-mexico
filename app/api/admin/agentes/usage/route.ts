@@ -5,6 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
 import { usageTracker } from '@/lib/agents/usage-tracker';
 import { DEFAULT_MASTER_CONFIG } from '@/lib/agents/config';
 import type { AgentUsageResponse, DailyUsage } from '@/types/agents';
@@ -14,6 +15,9 @@ import type { AgentUsageResponse, DailyUsage } from '@/types/agents';
 // ============================================
 
 export async function GET() {
+  const auth = await requireAdmin();
+  if (auth) return auth;
+
   try {
     // Obtener datos en paralelo
     const [master, todayUsage, monthlyUsage, recentCalls] = await Promise.all([
