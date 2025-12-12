@@ -89,6 +89,42 @@ function AdminContent() {
           Panel de Administración
         </h1>
 
+        {/* Navegación rápida */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <a
+            href={`/admin/agentes?key=${searchParams.get('key')}`}
+            className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4 rounded-xl hover:from-emerald-400 hover:to-teal-500 transition-all group"
+          >
+            <div className="text-2xl mb-2">🤖</div>
+            <div className="font-semibold">Agentes IA</div>
+            <div className="text-sm opacity-80">Control y métricas</div>
+          </a>
+          <a
+            href={`/admin/anuncios?key=${searchParams.get('key')}`}
+            className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 rounded-xl hover:from-blue-400 hover:to-indigo-500 transition-all group"
+          >
+            <div className="text-2xl mb-2">📢</div>
+            <div className="font-semibold">Anuncios</div>
+            <div className="text-sm opacity-80">Gestionar contenido</div>
+          </a>
+          <a
+            href={`/admin/dashboard?key=${searchParams.get('key')}`}
+            className="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-4 rounded-xl hover:from-purple-400 hover:to-pink-500 transition-all group"
+          >
+            <div className="text-2xl mb-2">📊</div>
+            <div className="font-semibold">Dashboard</div>
+            <div className="text-sm opacity-80">Legislación</div>
+          </a>
+          <a
+            href={`/admin/suscripciones?key=${searchParams.get('key')}`}
+            className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-4 rounded-xl hover:from-amber-400 hover:to-orange-500 transition-all group"
+          >
+            <div className="text-2xl mb-2">📧</div>
+            <div className="font-semibold">Suscripciones</div>
+            <div className="text-sm opacity-80">Lista de emails</div>
+          </a>
+        </section>
+
         {/* Ejecutar agentes */}
         <section className="bg-white border border-gray-200 rounded-xl p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
