@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import AdminForm from '@/components/AdminForm';
 
 function AdminContent() {
   const [detectLoading, setDetectLoading] = useState(false);
@@ -145,14 +144,6 @@ function AdminContent() {
           )}
         </section>
 
-        {/* Agregar anuncio manualmente */}
-        <section className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-sm">📝</span>
-            Agregar Anuncio Manualmente
-          </h2>
-          <AdminForm />
-        </section>
       </div>
     </div>
   );
