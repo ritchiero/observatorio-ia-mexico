@@ -137,10 +137,14 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
 
           <button 
             onClick={() => setShowModal(true)}
-            className="hidden md:flex items-center gap-2 px-5 py-2 border border-gray-300/20 text-xs uppercase tracking-widest hover:bg-gray-50 hover:text-gray-900 transition-all duration-300 group"
+            className="relative flex items-center gap-2 px-4 md:px-5 py-2 border border-blue-500/30 bg-blue-500/5 text-xs uppercase tracking-widest hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300 group rounded-full"
           >
-            Suscribirse
-            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full group-hover:bg-gray-50 transition-colors"></div>
+            {/* Efecto de pulso */}
+            <span className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping opacity-75"></span>
+            <span className="absolute inset-0 rounded-full bg-blue-400/10 animate-pulse"></span>
+            
+            <span className="relative z-10 text-blue-600 group-hover:text-white transition-colors">Suscribirse</span>
+            <span className="relative z-10 w-2 h-2 bg-blue-500 rounded-full group-hover:bg-white transition-colors animate-pulse"></span>
           </button>
         </nav>
 
