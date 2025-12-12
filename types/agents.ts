@@ -141,6 +141,11 @@ export interface AgentRunResult {
   
   // Resultados (para preview)
   results?: AgentResultItem[];
+  
+  // Logs de ejecución (para debug)
+  logs?: string[];
+  promptPreview?: string;
+  rawResponse?: string;
 }
 
 export interface AgentResultItem {

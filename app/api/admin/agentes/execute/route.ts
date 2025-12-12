@@ -150,15 +150,29 @@ export async function POST(request: NextRequest) {
 // ============================================
 
 async function executeDetection(
-  run: AgentRunResult,
+  run: AgentRunResult & { logs?: string[]; rawResponse?: string; promptPreview?: string },
   model: string,
   maxItems: number
 ): Promise<void> {
-  // Generar el prompt con títulos existentes (para evitar duplicados)
+  const logs: string[] = [];
+  
+  // Obtener títulos existentes para evitar duplicados
+  logs.push('📋 Obteniendo títulos existentes de anuncios...');
   const existingTitles = await getExistingAnuncioTitles(200).catch(() => []);
+  logs.push(`✓ Se encontraron ${existingTitles.length} anuncios existentes para filtrar`);
+  
+  // Generar el prompt
   const fullPrompt = getDeteccionPrompt(existingTitles);
+  logs.push(`📝 Prompt generado (${fullPrompt.length} caracteres)`);
+  
+  // Guardar preview del prompt
+  run.promptPreview = fullPrompt.substring(0, 500) + (fullPrompt.length > 500 ? '...' : '');
   
   // Llamar a Claude
+  const webSearchEnabled = model !== 'claude-3-5-haiku-20241022';
+  logs.push(`🤖 Llamando a Claude (modelo: ${model}, web_search: ${webSearchEnabled ? 'SÍ' : 'NO'})`);
+  logs.push(`⚙️ Modo: ${run.mode}`);
+  
   const result = await trackedClaudeCall({
     agentType: 'detection',
     mode: run.mode,
@@ -166,32 +180,45 @@ async function executeDetection(
     systemPrompt: 'Eres un analista de políticas públicas de inteligencia artificial en México.',
     userPrompt: fullPrompt,
     maxTokens: 2000,
-    enableWebSearch: model !== 'claude-3-5-haiku-20241022',
+    enableWebSearch: webSearchEnabled,
   });
 
   run.apiCalls = 1;
   run.totalTokens = result.usage.totalTokens;
   run.estimatedCostUsd = result.costUsd;
+  
+  logs.push(`✓ Respuesta recibida en ${result.durationMs}ms`);
+  logs.push(`📊 Tokens: ${result.usage.inputTokens} entrada + ${result.usage.outputTokens} salida = ${result.usage.totalTokens} total`);
+  logs.push(`💰 Costo estimado: $${result.costUsd.toFixed(4)}`);
 
   if (!result.success) {
     run.status = 'error';
     run.error = result.error;
+    logs.push(`❌ Error: ${result.error}`);
+    run.logs = logs;
     return;
   }
+
+  // Guardar respuesta raw para debug
+  run.rawResponse = result.text.substring(0, 2000) + (result.text.length > 2000 ? '...' : '');
+  logs.push(`📄 Respuesta: ${result.text.length} caracteres`);
 
   // Parsear respuesta
   try {
     const data = extractJsonObject(result.text);
     const anuncios = data.nuevos_anuncios || [];
 
+    logs.push(`🔍 Anuncios detectados: ${anuncios.length}`);
+    
     run.itemsFound = anuncios.length;
     run.results = anuncios.slice(0, maxItems).map((a: Record<string, unknown>, i: number) => {
       const title = (a.titulo as string) || 'Sin título';
       const preview = ((a.descripcion as string) || '').substring(0, 100);
       const sources = extractSourcesFromDeteccionItem(a);
+      logs.push(`  ${i + 1}. "${title}" (${sources.length} fuentes)`);
       return {
         id: `detect_${i}`,
-      type: 'anuncio' as const,
+        type: 'anuncio' as const,
         title,
         preview,
         data: a,
@@ -201,14 +228,23 @@ async function executeDetection(
 
     // En modo live, guardar en cola de revisión
     if (run.mode === 'live' && run.results && run.results.length > 0) {
+      logs.push(`💾 Guardando ${run.results.length} items en cola de revisión...`);
       const saved = await enqueueResults(run, run.results);
       run.itemsSaved = saved;
+      logs.push(`✓ ${saved} items guardados en agent_queue`);
+    } else if (run.mode === 'preview') {
+      logs.push(`👁️ Modo preview: no se guardó en base de datos`);
+    } else if (run.mode === 'test') {
+      logs.push(`🧪 Modo test: datos simulados, sin llamada real a Claude`);
     }
 
-  } catch {
+  } catch (err) {
     run.status = 'error';
     run.error = 'Error parseando respuesta de Claude';
+    logs.push(`❌ Error parseando JSON: ${err instanceof Error ? err.message : 'desconocido'}`);
   }
+  
+  run.logs = logs;
 }
 
 async function executeMonitoring(

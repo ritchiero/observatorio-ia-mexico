@@ -445,8 +445,61 @@ function AgentesContent() {
                       >
                         <div className="font-medium text-gray-900">{item.title}</div>
                         <div className="text-gray-500 mt-1">{item.preview}</div>
+                        {item.sources && item.sources.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {item.sources.map((src, idx) => (
+                              <a
+                                key={idx}
+                                href={src}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:underline"
+                              >
+                                🔗 Fuente {idx + 1}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Logs de ejecución */}
+              {lastRun.logs && lastRun.logs.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    📋 Logs de Ejecución:
+                  </h3>
+                  <div className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs font-mono overflow-x-auto max-h-64 overflow-y-auto">
+                    {lastRun.logs.map((log, idx) => (
+                      <div key={idx} className="py-0.5">{log}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Prompt Preview */}
+              {lastRun.promptPreview && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    📝 Prompt (preview):
+                  </h3>
+                  <div className="bg-blue-50 text-blue-900 p-4 rounded-lg text-xs font-mono overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap">
+                    {lastRun.promptPreview}
+                  </div>
+                </div>
+              )}
+
+              {/* Raw Response */}
+              {lastRun.rawResponse && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    📄 Respuesta de Claude (raw):
+                  </h3>
+                  <div className="bg-emerald-50 text-emerald-900 p-4 rounded-lg text-xs font-mono overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap">
+                    {lastRun.rawResponse}
                   </div>
                 </div>
               )}
