@@ -653,7 +653,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
             <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 flex items-center gap-3">
-              Anuncios de <span className="italic text-blue-500">IA</span> en 2025
+              Anuncios de <span className="italic text-blue-500">IA</span> en {new Date().getFullYear()}
             </h2>
             
             {/* Filtro por status */}
