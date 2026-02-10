@@ -6,7 +6,7 @@ export default function Footer() {
           <div className="text-center md:text-left">
             <p className="text-sm text-gray-600 flex items-center justify-center md:justify-start gap-2">
               <span className="text-lg">🇲🇽</span>
-              <span>© 2025 Observatorio IA México · Iniciativa ciudadana</span>
+              <span>© {new Date().getFullYear()} Observatorio IA México · Iniciativa ciudadana</span>
             </p>
             <p className="text-xs text-gray-500 mt-1 flex items-center justify-center md:justify-start gap-1.5">
               <span className="text-cyan-600">🤖</span>
