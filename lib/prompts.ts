@@ -140,3 +140,111 @@ INCLUYE MÚLTIPLES FUENTES cuando sea posible para mayor credibilidad.
 
 Si no hay actualizaciones, responde: {"hay_actualizacion": false, "cambio_status_recomendado": false}`;
 }
+
+export function getRecapMensualPrompt(datos: {
+    mes: string;
+    anio: string;
+    anuncios: {
+          titulo: string;
+          status: string;
+          statusAnterior?: string;
+          responsable: string;
+          dependencia: string;
+          actualizacionesDelMes: string[];
+    }[];
+    iniciativas: {
+          total: number;
+          activas: number;
+          aprobadas: number;
+          desechadas: number;
+          nuevasDelMes: number;
+          cambiosStatusDelMes: { titulo: string; statusAnterior: string; statusNuevo: string }[];
+    };
+    casosJudiciales: {
+          total: number;
+          conCriterio: number;
+          nuevosDelMes: number;
+          resumenNuevos: string[];
+    };
+    statsTracker: {
+          totalAnuncios: number;
+          operando: number;
+          enDesarrollo: number;
+          prometido: number;
+          incumplido: number;
+          abandonado: number;
+    };
+}): string {
+    const anunciosConActividad = datos.anuncios
+      .filter(a => a.actualizacionesDelMes.length > 0)
+      .map(a =>
+              `- "${a.titulo}" (${a.responsable}, ${a.dependencia}): Status ${a.statusAnterior ? `cambió de ${a.statusAnterior} a ` : ''}${a.status}. Actualizaciones: ${a.actualizacionesDelMes.join('; ')}`
+               ).join('\n') || '(Sin actividad en anuncios este mes)';
+
+    const cambiosLeg = datos.iniciativas.cambiosStatusDelMes.length > 0
+      ? `Cambios de status:\n${datos.iniciativas.cambiosStatusDelMes.map(c => `- "${c.titulo}": ${c.statusAnterior} → ${c.statusNuevo}`).join('\n')}`
+          : '(Sin cambios legislativos este mes)';
+
+    const resumenCasos = datos.casosJudiciales.resumenNuevos.length > 0
+      ? datos.casosJudiciales.resumenNuevos.map(r => `- ${r}`).join('\n')
+            : '(Sin nuevos casos este mes)';
+
+    return `Eres el editor del Observatorio de IA México, un observatorio ciudadano que monitorea la inteligencia artificial en el estado mexicano.
+
+    Tu tarea es redactar el RECAP MENSUAL de ${datos.mes} ${datos.anio}: un resumen ejecutivo breve, directo y con datos duros sobre el estado de la IA gubernamental en México.
+
+    DATOS DEL MES:
+
+    === TRACKER DE PROMESAS ===
+    Total anuncios: ${datos.statsTracker.totalAnuncios}
+    - Operando: ${datos.statsTracker.operando}
+    - En desarrollo: ${datos.statsTracker.enDesarrollo}
+    - Prometido: ${datos.statsTracker.prometido}
+    - Incumplido: ${datos.statsTracker.incumplido}
+      - Abandonado: ${datos.statsTracker.abandonado}
+
+      Detalle de anuncios con actividad este mes:
+      ${anunciosConActividad}
+
+      === LEGISLACIÓN ===
+      Total iniciativas: ${datos.iniciativas.total}
+      Activas: ${datos.iniciativas.activas} | Aprobadas: ${datos.iniciativas.aprobadas} | Desechadas: ${datos.iniciativas.desechadas}
+      Nuevas este mes: ${datos.iniciativas.nuevasDelMes}
+      ${cambiosLeg}
+
+      === CASOS JUDICIALES ===
+      Total casos: ${datos.casosJudiciales.total} | Con criterio: ${datos.casosJudiciales.conCriterio}
+      Nuevos este mes: ${datos.casosJudiciales.nuevosDelMes}
+      ${resumenCasos}
+
+      USA WEB SEARCH para buscar si hubo noticias relevantes adicionales sobre IA y gobierno en México durante ${datos.mes} ${datos.anio} que complementen este recap.
+
+      INSTRUCCIONES DE REDACCIÓN:
+      1. Tono: periodístico, directo, sin adjetivos vacíos. Estilo "The Economist" en español.
+      2. Extensión: 300-500 palabras máximo.
+      3. Estructura del JSON de respuesta (responde SOLO en JSON válido):
+
+      {
+        "titulo": "Título editorial breve y llamativo para el recap del mes",
+          "subtitulo": "Una línea que resuma el estado general",
+            "contenido": "El cuerpo del recap en texto plano. Usa saltos de línea (\\n\\n) para separar párrafos. NO uses markdown.",
+              "datos_clave": [
+                  "Dato duro 1 (ej: '0 de 9 proyectos de IA operando')",
+                      "Dato duro 2",
+                          "Dato duro 3"
+                            ],
+                              "veredicto": "Una frase final tipo sentencia editorial (máx 15 palabras)",
+                                "fuentes_consultadas": [
+                                    {
+                                          "url": "URL consultada via web search",
+                                                "titulo": "Descripción de la fuente"
+                                                    }
+                                                      ]
+                                                      }
+
+                                                      REGLAS:
+                                                      - Si no pasó nada relevante, el recap debe decirlo explícitamente: el silencio gubernamental ES noticia.
+                                                      - Siempre incluye el porcentaje de cumplimiento del tracker.
+                                                      - Compara con el mes anterior si hay datos para hacerlo.
+                                                      - NO inventes datos. Si algo no está en los datos proporcionados, no lo incluyas.`;
+}
