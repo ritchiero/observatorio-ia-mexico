@@ -1,12 +1,16 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/deteccion",
-      "schedule": "0 10 * * 1"
-    },
-    {
-      "path": "/api/cron/monitoreo", 
-      "schedule": "0 9 * * 1,3,5"
-    }
-  ]
+    "crons": [
+          {
+                  "path": "/api/cron/deteccion",
+                  "schedule": "0 10 * * 1"
+          },
+          {
+                  "path": "/api/cron/monitoreo",
+                  "schedule": "0 9 * * 1,3,5"
+          },
+          {
+                  "path": "/api/cron/recap",
+                  "schedule": "0 11 1 * *"
+          }
+    ]
 }
