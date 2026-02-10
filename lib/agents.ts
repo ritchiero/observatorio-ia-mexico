@@ -1,6 +1,6 @@
 import { getAdminDb } from './firebase-admin';
 import { searchWithClaude } from './claude';
-import { getDeteccionPrompt, getMonitoreoPrompt } from './prompts';
+import { getDeteccionPrompt, getMonitoreoPrompt, getRecapMensualPrompt } from './prompts';
 import { DeteccionResponse, MonitoreoResponse, TriggerTipo, DeteccionResponseConFuentes, MonitoreoResponseConFuentes, TipoFuente, FuenteTipo } from '@/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { crearEventoInicial, crearEventoTimeline } from './timeline';
@@ -338,4 +338,190 @@ export async function ejecutarAgenteMonitoreo(trigger: TriggerTipo = 'manual') {
       duracionMs,
     };
   }
+}
+
+export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual') {
+    const startTime = Date.now();
+    const db = getAdminDb();
+    const errores: string[] = [];
+
+    try {
+          const ahora = new Date();
+          const mesRecap = ahora.getMonth() === 0 ? 12 : ahora.getMonth();
+          const anioRecap = ahora.getMonth() === 0 ? ahora.getFullYear() - 1 : ahora.getFullYear();
+          const meses = ['enero','febrero','marzo','abril','mayo','junio',
+                                            'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+          const mesLabel = meses[mesRecap - 1];
+
+          // Verificar si ya existe recap de este mes
+          const existente = await db.collection('recapsMensuales')
+            .where('mes', '==', mesRecap)
+            .where('anio', '==', anioRecap)
+            .get();
+
+          if (!existente.empty) {
+                  return {
+                            success: true,
+                            mensaje: `Recap de ${mesLabel} ${anioRecap} ya existe. Saltando.`,
+                            duracionMs: Date.now() - startTime,
+                            errores: [],
+                  };
+          }
+
+          // Recopilar datos de anuncios
+          const anunciosSnap = await db.collection('anuncios').get();
+          const anuncios = anunciosSnap.docs.map(doc => {
+                  const d = doc.data();
+                  const actualizaciones = (d.actualizaciones || []);
+                  const inicioMes = new Date(anioRecap, mesRecap - 1, 1);
+                  const finMes = new Date(anioRecap, mesRecap, 0, 23, 59, 59);
+                  const actualizacionesDelMes = actualizaciones
+                    .filter((a: any) => {
+                                const fecha = a.fecha?.toDate ? a.fecha.toDate() : new Date(a.fecha);
+                                return fecha >= inicioMes && fecha <= finMes;
+                    })
+                    .map((a: any) => a.descripcion || '');
+
+                  return {
+                            titulo: d.titulo,
+                            status: d.status,
+                            statusAnterior: actualizaciones.find((a: any) => a.statusAnterior)?.statusAnterior,
+                            responsable: d.responsable,
+                            dependencia: d.dependencia,
+                            actualizacionesDelMes,
+                  };
+          });
+
+          const statsTracker = {
+                  totalAnuncios: anuncios.length,
+                  operando: anuncios.filter(a => a.status === 'operando').length,
+                  enDesarrollo: anuncios.filter(a => a.status === 'en_desarrollo').length,
+                  prometido: anuncios.filter(a => a.status === 'prometido').length,
+                  incumplido: anuncios.filter(a => a.status === 'incumplido').length,
+                  abandonado: anuncios.filter(a => a.status === 'abandonado').length,
+          };
+
+          // Recopilar datos de iniciativas
+          const iniciativasSnap = await db.collection('iniciativas').get();
+          const totalIniciativas = iniciativasSnap.size;
+          const iniciativasDocs = iniciativasSnap.docs.map(d => d.data());
+          const activas = iniciativasDocs.filter((i: any) =>
+                  i.status === 'en_comisiones' || i.status === 'turnada'
+                                                     ).length;
+          const aprobadas = iniciativasDocs.filter((i: any) => i.status === 'aprobada').length;
+          const desechadas = iniciativasDocs.filter((i: any) =>
+                  i.status === 'desechada_termino' || i.status === 'archivada' || i.status === 'rechazada'
+                                                        ).length;
+
+          // Recopilar datos de casos judiciales
+          const casosSnap = await db.collection('casosIA').get();
+          const totalCasos = casosSnap.size;
+          const casosDocs = casosSnap.docs.map(d => d.data());
+          const conCriterio = casosDocs.filter((c: any) => c.criterio || c.tipoCriterio).length;
+
+          // Construir prompt y llamar a Claude
+          const prompt = getRecapMensualPrompt({
+                  mes: mesLabel,
+                  anio: String(anioRecap),
+                  anuncios,
+                  iniciativas: {
+                            total: totalIniciativas,
+                            activas,
+                            aprobadas,
+                            desechadas,
+                            nuevasDelMes: 0,
+                            cambiosStatusDelMes: [],
+                  },
+                  casosJudiciales: {
+                            total: totalCasos,
+                            conCriterio,
+                            nuevosDelMes: 0,
+                            resumenNuevos: [],
+                  },
+                  statsTracker,
+          });
+
+          const rawResponse = await searchWithClaude({ prompt, maxTokens: 4096 });
+
+          // Parsear respuesta
+          let recap: any;
+          try {
+                  const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+                  if (!jsonMatch) throw new Error('No se encontró JSON en la respuesta');
+                  recap = JSON.parse(jsonMatch[0]);
+          } catch (parseError) {
+                  errores.push(`Error al parsear respuesta: ${parseError}`);
+                  throw parseError;
+          }
+
+          // Guardar recap en Firestore
+          const recapRef = db.collection('recapsMensuales').doc();
+          await recapRef.set({
+                  id: recapRef.id,
+                  mes: mesRecap,
+                  anio: anioRecap,
+                  mesLabel,
+                  titulo: recap.titulo,
+                  subtitulo: recap.subtitulo,
+                  contenido: recap.contenido,
+                  datosClave: recap.datos_clave || [],
+                  veredicto: recap.veredicto,
+                  fuentesConsultadas: recap.fuentes_consultadas || [],
+                  statsSnapshot: {
+                            ...statsTracker,
+                            totalIniciativas,
+                            iniciativasActivas: activas,
+                            totalCasos,
+                  },
+                  rawResponse,
+                  duracionMs: Date.now() - startTime,
+                  trigger,
+                  createdAt: Timestamp.now(),
+          });
+
+          // Log del agente
+          const duracionMs = Date.now() - startTime;
+          await db.collection('agenteLogs').add({
+                  tipo: 'recap_mensual',
+                  fecha: Timestamp.now(),
+                  duracionMs,
+                  anunciosEncontrados: 0,
+                  actualizacionesDetectadas: 0,
+                  errores,
+                  rawResponse,
+                  trigger,
+          });
+
+          // Registrar en actividad
+          await db.collection('actividad').add({
+                  fecha: Timestamp.now(),
+                  tipo: 'agente_ejecutado',
+                  descripcion: `Recap mensual de ${mesLabel} ${anioRecap} generado: "${recap.titulo}"`,
+          });
+
+          return {
+                  success: true,
+                  recapId: recapRef.id,
+                  titulo: recap.titulo,
+                  errores,
+                  duracionMs,
+          };
+    } catch (error) {
+          const duracionMs = Date.now() - startTime;
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          errores.push(`Error general: ${errorMsg}`);
+
+          await db.collection('agenteLogs').add({
+                  tipo: 'recap_mensual',
+                  fecha: Timestamp.now(),
+                  duracionMs,
+                  anunciosEncontrados: 0,
+                  actualizacionesDetectadas: 0,
+                  errores,
+                  rawResponse: '',
+                  trigger,
+          });
+
+          return { success: false, errores, duracionMs };
+    }
 }
