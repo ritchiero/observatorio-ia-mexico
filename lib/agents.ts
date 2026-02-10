@@ -414,7 +414,7 @@ export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual'
                                                         ).length;
 
           // Recopilar datos de casos judiciales
-          const casosSnap = await db.collection('casosIA').get();
+          const casosSnap = await db.collection('casos_ia').get();
           const totalCasos = casosSnap.size;
           const casosDocs = casosSnap.docs.map(d => d.data());
           const conCriterio = casosDocs.filter((c: any) => c.criterio || c.tipoCriterio).length;
