@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Activity, Eye, FileText, ChevronDown, Scale, Gavel } from 'lucide-react';
+import { Activity, Eye, FileText, ChevronDown, Scale, Gavel, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 interface HeroSectionProps {
@@ -92,6 +92,19 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
     <div className="relative w-full min-h-screen bg-white text-gray-900 overflow-hidden font-sans selection:bg-blue-50/500 selection:text-blue-700">
       {/* Textura de ruido */}
       <div className="noise-bg"></div>
+
+      {/* Banner Legislativo */}
+      <Link href="/anuncio/5ZS5BxrNE7nTBBNVdaEG" className="relative z-50 block w-full bg-emerald-600 hover:bg-emerald-700 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 text-white text-sm font-sans-tech">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+          </span>
+          <span className="font-medium">Sigue el proceso legislativo: Ley General de IA en el Senado</span>
+          <ArrowRight size={16} />
+        </div>
+      </Link>
+
       
       {/* Radar / Grid Effect */}
       <div className="absolute inset-0 z-0 overflow-hidden">
