@@ -5,6 +5,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SessionProvider from '@/components/SessionProvider';
+import { Analytics } from '@vercel/analytics/react';
 
 const GTM_ID = 'GTM-KCCM2HNW';
 
@@ -75,6 +76,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </SessionProvider>
+                  <Analytics />
       </body>
     </html>
   );
