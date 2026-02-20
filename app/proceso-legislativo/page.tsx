@@ -657,6 +657,7 @@ export default function ProcesoLegislativoPage() {
               { titulo: 'Legislar IA sin definirla: Artículo 19 critica reforma aprobada en SLP — La Orquesta', url: 'https://laorquesta.mx/legislar-ia-sin-definirla-articulo-19-critica-reforma-aprobada-en-slp/' },
               { titulo: '¿Regulación de la Inteligencia Artificial en México? — El Economista', url: 'https://www.eleconomista.com.mx/opinion/regulacion-inteligencia-artificial-mexico-20250929-779193.html' },
               { titulo: 'México: Las diversas iniciativas de regulación de la IA — CeCo', url: 'https://centrocompetencia.com/mexico-las-diversas-iniciativas-de-regulacion-de-la-ia/' },
+              { titulo: 'Mexico\'s Sandbox Dilemma: Aligning Institutions for Adaptive Tech Regulation — Sissi De La Peña (UC Berkeley, 2024–2025)', url: 'https://gspp.berkeley.edu/assets/uploads/page/Sissi_De_La_Pena_Mexico_Sandbox_Dilemma.pdf' },
             ].map((ref, i) => (
               <a key={i} href={ref.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors group">
                 <span className="text-xs font-sans-tech text-gray-400 font-mono w-5 text-right flex-shrink-0">{i + 1}.</span>
