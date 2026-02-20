@@ -293,25 +293,21 @@ export default function ProcesoLegislativoPage() {
               <ExternalLink size={16} className="text-teal-400 flex-shrink-0 group-hover:text-teal-600" />
             </a>
 
-            <a
-              href="https://sil.gobernacion.gob.mx/Archivos/Documentos/2026/02/asun_5015352_20260217_1771358138.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-5 hover:border-teal-300 transition-colors group"
+            <div
+              className="flex items-center gap-4 bg-amber-50 border border-amber-200 rounded-xl p-5"
             >
-              <div className="w-12 h-12 bg-gray-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-teal-600 transition-colors">
-                <FileText size={20} className="text-white" />
+              <div className="w-12 h-12 bg-amber-400 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Clock size={20} className="text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-sans-tech font-semibold text-gray-900 group-hover:text-teal-700">
+                <p className="text-sm font-sans-tech font-semibold text-amber-900">
                   Ley General de Inteligencia Artificial — Dictamen
                 </p>
-                <p className="text-xs text-gray-500 font-sans-tech mt-1">
-                  Documento oficial — PDF (SIL Gobernación)
+                <p className="text-xs text-amber-700 font-sans-tech mt-1">
+                  Pendiente de publicación oficial — El texto final que se votará el 25 de febrero aún no ha sido publicado en los portales del Senado.
                 </p>
               </div>
-              <ExternalLink size={16} className="text-gray-400 flex-shrink-0 group-hover:text-teal-500" />
-            </a>
+            </div>
 
             <a
               href="https://sil.gobernacion.gob.mx/"
@@ -333,7 +329,7 @@ export default function ProcesoLegislativoPage() {
           </div>
 
           <p className="text-xs text-gray-400 font-sans-tech mt-3 italic">
-            Nota: El texto de la Ley General de IA que será votado el 25 de febrero se basa en la "Propuesta de Marco Normativo" de octubre de 2025. Su contenido ha sido ampliamente difundido y analizado en medios y foros especializados.
+            Nota: El dictamen de la Ley General de IA que se votará el 25 de febrero aún no ha sido publicado oficialmente. Su contenido se basa en la "Propuesta de Marco Normativo" de octubre de 2025, ampliamente difundida en medios y foros especializados. Actualizaremos esta sección cuando el documento esté disponible.
           </p>
         </section>
 
