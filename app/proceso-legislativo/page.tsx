@@ -100,7 +100,7 @@ export default function ProcesoLegislativoPage() {
                 <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 text-white font-sans-tech text-xs font-bold">1</div>
                 <div>
                   <p className="text-sm font-sans-tech font-medium text-gray-900">Reformas Constitucionales</p>
-                  <p className="text-xs text-gray-600 font-sans-tech mt-1">Modificación de los artículos 3 y 73 para reconocer el derecho de acceso a los beneficios de la IA y facultar al Congreso para legislar en la materia.</p>
+                  <p className="text-xs text-gray-600 font-sans-tech mt-1">Modificación de los Artículo 73 para facultar al Congreso para legislar en la materia.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
@@ -268,7 +268,7 @@ export default function ProcesoLegislativoPage() {
 
           <div className="space-y-4 font-sans-tech text-sm text-gray-700 leading-relaxed mb-4">
             <p>
-              El documento clave que da origen a la Ley General es la Iniciativa con Proyecto de Decreto para reformar el Artículo 73 de la Constitución, presentada por el Senador Saúl Monreal Ávila.
+              El proceso legislativo involucra dos documentos distintos: la Iniciativa de Reforma al Artículo 73 Constitucional, presentada por el Sen. Saúl Monreal Ávila (que habilita al Congreso a legislar en materia de IA), y el texto de la Ley General de IA elaborado por la Comisión de IA del Senado, presidida por el Sen. Rolando Zapata Bello.
             </p>
           </div>
 
@@ -453,7 +453,7 @@ export default function ProcesoLegislativoPage() {
                     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                     CLAVE
                   </span>
-                  <span className="text-sm font-sans-tech font-medium text-gray-900">Martes 25 de febrero</span>
+                  <span className="text-sm font-sans-tech font-medium text-gray-900">Miércoles 25 de febrero</span>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-700 font-sans-tech">Sesión Ordinaria del Pleno del Senado — <strong>Votación prevista de la Ley General de IA</strong></p>
