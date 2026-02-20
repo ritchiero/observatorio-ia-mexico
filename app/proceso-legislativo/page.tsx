@@ -43,7 +43,7 @@ export default function ProcesoLegislativoPage() {
             <div>
               <h3 className="font-sans-tech text-sm font-semibold text-emerald-800 mb-2">Resumen Ejecutivo</h3>
               <p className="text-emerald-900 font-sans-tech text-sm leading-relaxed">
-                El Congreso de la Unión de México se encuentra en una fase decisiva para establecer el primer marco regulatorio integral en materia de Inteligencia Artificial. La sesión clave es la del <strong>martes 25 de febrero</strong>, donde se espera la votación de la Ley General de IA. Al día siguiente, el <strong>jueves 26 de febrero a las 10:00 a.m.</strong>, el Secretario Técnico de la Comisión de IA del Senado impartirá un webinar gratuito para la industria explicando los alcances de la nueva ley.
+                El Congreso de la Unión de México se encuentra en una fase decisiva para establecer el primer marco regulatorio integral en materia de Inteligencia Artificial. La sesión clave es la del <strong>miércoles 25 de febrero</strong>, donde se espera la votación de la Ley General de IA. Al día siguiente, el <strong>jueves 26 de febrero a las 10:00 a.m.</strong>, el Secretario Técnico de la Comisión de IA del Senado impartirá un webinar exclusivo para socios CANACINTRA explicando los alcances de la nueva ley.
               </p>
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function ProcesoLegislativoPage() {
             <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
               <h4 className="font-sans-tech text-sm font-semibold text-indigo-900 mb-1">Iniciativas Precursoras</h4>
               <p className="text-xs text-gray-700 font-sans-tech leading-relaxed">
-                Desde 2023, se presentaron en el Congreso al menos seis iniciativas de ley relacionadas con la IA, incluyendo propuestas de los senadores Ricardo Monreal y Clemente Castañeda, que sentaron las bases para la discusión actual.
+                Desde 2023, se presentaron en el Congreso al menos seis iniciativas de ley relacionadas con la IA, incluyendo propuestas de el Dip. Ricardo Monreal y el Sen. Clemente Castañeda, que sentaron las bases para la discusión actual.
               </p>
             </div>
             <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
@@ -351,9 +351,9 @@ export default function ProcesoLegislativoPage() {
 
             <div className="space-y-4">
               {[
-                { fecha: '23 abr. 2023', texto: 'Se presenta la primera iniciativa de "Ley para la regulación ética de la IA y la robótica".' },
+                { fecha: '30 mar. 2023', texto: 'Se presenta la primera iniciativa de "Ley para la regulación ética de la IA y la robótica".' },
                 { fecha: '20 sep. 2023', texto: 'Se presenta la propuesta de reforma al Artículo 73 constitucional para incluir IA, ciberseguridad y neuroderechos.' },
-                { fecha: 'Oct 2024 – Jul 2025', texto: 'La Comisión de IA del Senado realiza 6 conversatorios con 72 expertos de la industria, academia, gobierno y sociedad civil.' },
+                { fecha: 'Oct 2024 – Abr 2025', texto: 'La Comisión de IA del Senado realiza 6 conversatorios con 72 expertos de la industria, academia, gobierno y sociedad civil.' },
                 { fecha: '3 oct. 2025', texto: 'La Comisión de IA publica la "Propuesta de Marco Normativo para la Inteligencia Artificial en México".' },
                 { fecha: '16 oct. 2025', texto: 'La Comisión de IA aprueba su plan de trabajo anual, priorizando la creación de la Ley General de IA.' },
                 { fecha: '3 feb. 2026', texto: 'El Sen. Saúl Monreal Ávila presenta la iniciativa formal para reformar el Artículo 73 de la Constitución.' },
@@ -473,7 +473,7 @@ export default function ProcesoLegislativoPage() {
                     <Clock size={12} />
                     SESIÓN
                   </span>
-                  <span className="text-sm font-sans-tech font-medium text-gray-900">Miércoles 26 de febrero</span>
+                  <span className="text-sm font-sans-tech font-medium text-gray-900">Jueves 26 de febrero</span>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-700 font-sans-tech">Sesión Ordinaria del Pleno del Senado</p>
