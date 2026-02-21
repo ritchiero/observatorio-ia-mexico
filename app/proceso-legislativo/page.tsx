@@ -702,7 +702,6 @@ export default function ProcesoLegislativoPage() {
             </div>
           </div>
 
-        </section>
 
         {/* ===== SECTION: Línea de Tiempo ===== */}
         <section className="mb-12">
