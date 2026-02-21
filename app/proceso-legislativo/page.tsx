@@ -10,7 +10,7 @@ export const metadata = {
   description: 'Análisis completo de la Ley General de Inteligencia Artificial en México: contenido de la propuesta, línea de tiempo, preocupaciones, sesiones del Senado y recursos.',
 };
 
-export default function ProcesoLegislativoPage() 
+export default function ProcesoLegislativoPage() {
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
