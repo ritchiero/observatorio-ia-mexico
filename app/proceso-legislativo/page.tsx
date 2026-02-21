@@ -10,7 +10,7 @@ export const metadata = {
   description: 'Análisis completo de la Ley General de Inteligencia Artificial en México: contenido de la propuesta, línea de tiempo, preocupaciones, sesiones del Senado y recursos.',
 };
 
-export default function ProcesoLegislativoPage() {
+export default function ProcesoLegislativoPage() 
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
@@ -293,21 +293,25 @@ export default function ProcesoLegislativoPage() {
               <ExternalLink size={16} className="text-teal-400 flex-shrink-0 group-hover:text-teal-600" />
             </a>
 
-            <div
-              className="flex items-center gap-4 bg-amber-50 border border-amber-200 rounded-xl p-5"
+            <a
+              href="https://drive.google.com/file/d/1IVWTfK74RSVAMDs6cZ8B-WLuafOygFmO/view?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 bg-teal-50 border border-teal-200 rounded-xl p-5 hover:border-teal-400 transition-colors group"
             >
-              <div className="w-12 h-12 bg-amber-400 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Clock size={20} className="text-white" />
+              <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-teal-700 transition-colors">
+                <FileText size={20} className="text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-sans-tech font-semibold text-amber-900">
+                <p className="text-sm font-sans-tech font-semibold text-teal-900 group-hover:text-teal-700">
                   Ley General de Inteligencia Artificial — Dictamen
                 </p>
-                <p className="text-xs text-amber-700 font-sans-tech mt-1">
-                  Pendiente de publicación oficial — El texto final que se votará el 25 de febrero aún no ha sido publicado en los portales del Senado.
+                <p className="text-xs text-teal-700 font-sans-tech mt-1">
+                  LGIA v1 — PDF publicado por la Comisión de IA del Senado
                 </p>
               </div>
-            </div>
+              <ExternalLink size={16} className="text-teal-400 flex-shrink-0 group-hover:text-teal-600" />
+            </a>
 
             <a
               href="https://sil.gobernacion.gob.mx/"
