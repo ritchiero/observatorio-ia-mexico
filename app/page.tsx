@@ -376,8 +376,13 @@ export default function Home() {
               IA + Verificación humana
             </span>
             <span className="text-gray-300 hidden sm:inline">•</span>
-            <span className="text-xs text-gray-400 font-mono">
-              Powered by Claude AI
+            <span className="text-xs text-gray-400 font-mono inline-flex items-center gap-1.5">
+              Powered by
+              <img
+                src="https://ik.imagekit.io/lawgic/Claude%20(1).png"
+                alt="Claude AI"
+                className="h-5 w-auto inline-block align-middle"
+              />
             </span>
           </div>
         </div>
