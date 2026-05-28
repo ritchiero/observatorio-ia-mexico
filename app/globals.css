@@ -126,6 +126,18 @@ body {
   100% { transform: translateX(200%) skewX(-12deg); }
 }
 
+/* Hero Glass (Holographic) */
+@keyframes glass-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(0.85); }
+}
+@keyframes glass-stream {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
 /* Utilidades de animación */
 .animate-reveal {
   animation: revealUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
