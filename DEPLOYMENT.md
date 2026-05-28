@@ -184,8 +184,8 @@ Deberías recibir:
 1. Ve a tu proyecto en Vercel Dashboard
 2. Ve a "Settings" → "Cron Jobs"
 3. Deberías ver dos cron jobs configurados:
-   - `/api/cron/detect` - Día 1 de cada mes a las 9am
-   - `/api/cron/monitor` - Día 15 de cada mes a las 9am
+   - `/api/cron/semanal` — Lunes a las 10am (umbrella: detección + legislación + casos)
+   - `/api/cron/mensual` — Día 1 de cada mes a las 11am (umbrella: recap + monitoreo)
 
 ## Paso 7: Probar el Panel de Admin
 
@@ -227,7 +227,7 @@ Deberías recibir:
 
 1. Ve a Vercel Dashboard → tu proyecto
 2. Haz clic en "Logs" en el menú superior
-3. Filtra por función (ej: `/api/cron/detect`)
+3. Filtra por función (ej: `/api/cron/semanal` o `/api/cron/mensual`)
 
 ### Ver Datos en Firestore
 
