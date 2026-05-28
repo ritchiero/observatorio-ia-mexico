@@ -251,7 +251,7 @@ export default function Home() {
       <HeroSectionGlass stats={stats} legStats={legStats} casosStats={casosStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} loadingCasos={loadingCasos} />
 
       {/* Sección: Metodología — DAG Flow (light) */}
-      <section id="metodologia" className="bg-gray-50 border-y border-gray-200/50">
+      <section id="metodologia" className="scroll-mt-24 bg-gray-50 border-y border-gray-200/50">
         <MetodologiaDAG anuncios={stats.total} iniciativas={legStats.total} casos={casosStats.total} />
       </section>
 
