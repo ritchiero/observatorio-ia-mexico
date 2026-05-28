@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Eye } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 // Tema dark (Holographic Glass)
 const T = {
@@ -24,6 +25,9 @@ type UltimoEvento = { titulo: string; dependencia: string; fecha: string } | nul
 export default function HeroSectionGlass({ stats, legStats, casosStats, loading, loadingLeg, loadingCasos }: HeroGlassProps) {
   const [mounted, setMounted] = useState(false);
   const [ultimo, setUltimo] = useState<UltimoEvento>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   // Modal de suscripción (preservado del hero original)
   const [showModal, setShowModal] = useState(false);
@@ -33,15 +37,39 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
 
   useEffect(() => {
     setMounted(true);
-    // Último evento REAL: el anuncio más reciente
+    // Último evento REAL: el anuncio más reciente. Ordenamos por fecha en el cliente
+    // por si el API devolviera otro orden — siempre mostramos el más nuevo.
     fetch('/api/anuncios')
       .then((r) => r.json())
       .then((d) => {
-        const a = (d.anuncios || [])[0];
+        const arr: Array<{ titulo: string; dependencia?: string; fechaAnuncio?: string }> = d.anuncios || [];
+        const a = [...arr].sort((x, y) => {
+          const tx = x.fechaAnuncio ? new Date(x.fechaAnuncio).getTime() : 0;
+          const ty = y.fechaAnuncio ? new Date(y.fechaAnuncio).getTime() : 0;
+          return ty - tx;
+        })[0];
         if (a) setUltimo({ titulo: a.titulo, dependencia: a.dependencia || '', fecha: a.fechaAnuncio || '' });
       })
       .catch(() => {});
   }, []);
+
+  // Header sticky con conciencia de scroll: se condensa y se opaca al bajar.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 32);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Cierra el menú móvil al pasar a desktop.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => mq.matches && setMenuOpen(false);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const navItems: [string, string][] = [['Tracker', '/'], ['Legislación', '/legislacion'], ['Casos', '/casos-ia'], ['Recap', '/recap'], ['Actividad', '/actividad']];
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,30 +121,80 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
       }} />
       <ParticleField />
 
-      {/* Header glass (propio del hero — el global se oculta en home) */}
-      <header className={`relative z-30 flex items-center justify-between gap-4 mx-4 md:mx-8 mt-5 px-5 md:px-8 py-4 rounded-[100px] transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3'}`}
-        style={{ background: 'rgba(11,15,28,0.55)', backdropFilter: 'blur(20px) saturate(160%)', WebkitBackdropFilter: 'blur(20px) saturate(160%)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <IrisMark />
+      {/* Header glass FIJO — persiste en todo el scroll del home (el global se oculta en home).
+          Se condensa y opaca al bajar; trae menú hamburguesa en móvil. */}
+      <header className={`fixed top-0 inset-x-0 z-40 flex items-center justify-between gap-4 mx-3 md:mx-8 rounded-[100px] transition-all duration-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3'} ${scrolled ? 'mt-2 px-4 md:px-7 py-2.5' : 'mt-4 md:mt-5 px-5 md:px-8 py-3.5 md:py-4'}`}
+        style={{
+          background: scrolled ? 'rgba(7,10,20,0.82)' : 'rgba(11,15,28,0.55)',
+          backdropFilter: 'blur(22px) saturate(160%)', WebkitBackdropFilter: 'blur(22px) saturate(160%)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: scrolled ? '0 12px 40px -12px rgba(0,0,0,0.65)' : 'none',
+        }}>
+        <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 shrink-0 group">
+          <span className="transition-transform duration-300 group-hover:rotate-[8deg] group-hover:scale-110"><IrisMark /></span>
           <div className="flex flex-col leading-none">
             <span className="font-mono uppercase font-semibold" style={{ fontSize: 9.5, letterSpacing: '0.28em', color: T.cyan }}>Observatorio · v.2026</span>
             <span className="font-sans-tech uppercase" style={{ fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: '0.04em' }}>IA México</span>
           </div>
         </Link>
-        <nav className="hidden md:flex items-center gap-7">
-          {[['Tracker', '/'], ['Legislación', '/legislacion'], ['Casos', '/casos-ia'], ['Recap', '/recap'], ['Actividad', '/actividad']].map(([t, h]) => (
-            <Link key={t} href={h} className="font-sans-tech transition-opacity hover:opacity-100" style={{ fontSize: 13, color: T.body, opacity: 0.85, fontWeight: 500 }}>{t}</Link>
-          ))}
+
+        <nav className="hidden md:flex items-center gap-6 lg:gap-7">
+          {navItems.map(([t, h]) => {
+            const active = pathname === h;
+            return (
+              <Link key={t} href={h} className="relative font-sans-tech group py-1" style={{ fontSize: 13, fontWeight: 500, color: active ? T.text : T.body, opacity: active ? 1 : 0.8 }}>
+                <span className="transition-opacity group-hover:opacity-100" style={{ opacity: active ? 1 : 0.85 }}>{t}</span>
+                <span className="absolute left-0 -bottom-0.5 h-[1.5px] rounded-full transition-transform duration-300 origin-left"
+                  style={{ width: '100%', background: `linear-gradient(90deg, ${T.cyan}, ${T.blue})`, transform: active ? 'scaleX(1)' : 'scaleX(0)' }} />
+                <span className="absolute left-0 -bottom-0.5 h-[1.5px] w-full rounded-full origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"
+                  style={{ background: `linear-gradient(90deg, ${T.cyan}, ${T.blue})` }} />
+              </Link>
+            );
+          })}
         </nav>
-        <button onClick={() => setShowModal(true)} className="shrink-0 font-sans-tech uppercase flex items-center gap-2.5 cursor-pointer"
-          style={{ fontSize: 12, letterSpacing: '0.1em', fontWeight: 600, color: T.void, padding: '10px 18px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)`, boxShadow: `0 8px 32px ${T.cyan}40, inset 0 1px 0 rgba(255,255,255,0.4)` }}>
-          Suscribirse
-          <span style={{ width: 6, height: 6, borderRadius: 999, background: T.void }} />
-        </button>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button onClick={() => setShowModal(true)} className="hidden sm:flex font-sans-tech uppercase items-center gap-2.5 cursor-pointer transition-transform hover:scale-[1.04]"
+            style={{ fontSize: 12, letterSpacing: '0.1em', fontWeight: 600, color: T.void, padding: '10px 18px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)`, boxShadow: `0 8px 32px ${T.cyan}40, inset 0 1px 0 rgba(255,255,255,0.4)` }}>
+            Suscribirse
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: T.void }} />
+          </button>
+          {/* Hamburguesa móvil */}
+          <button onClick={() => setMenuOpen((v) => !v)} aria-label="Abrir menú" aria-expanded={menuOpen}
+            className="md:hidden flex items-center justify-center cursor-pointer"
+            style={{ width: 40, height: 40, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: T.text }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {menuOpen ? <path d="M6 6l12 12M6 18L18 6" /> : <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>}
+            </svg>
+          </button>
+        </div>
       </header>
 
+      {/* Menú móvil desplegable */}
+      {menuOpen && (
+        <div className="md:hidden fixed inset-x-3 z-40 rounded-3xl p-3 flex flex-col gap-1" style={{
+          top: scrolled ? 64 : 78, background: 'rgba(9,13,24,0.92)', backdropFilter: 'blur(24px) saturate(160%)', WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+          border: '1px solid rgba(255,255,255,0.10)', boxShadow: '0 24px 60px -16px rgba(0,0,0,0.7)',
+        }}>
+          {navItems.map(([t, h]) => {
+            const active = pathname === h;
+            return (
+              <Link key={t} href={h} onClick={() => setMenuOpen(false)} className="font-sans-tech px-4 py-3 rounded-2xl transition-colors"
+                style={{ fontSize: 15, fontWeight: 500, color: active ? T.cyan : T.body, background: active ? 'rgba(61,224,255,0.08)' : 'transparent' }}>
+                {t}
+              </Link>
+            );
+          })}
+          <button onClick={() => { setMenuOpen(false); setShowModal(true); }} className="mt-1 font-sans-tech uppercase flex items-center justify-center gap-2.5 cursor-pointer"
+            style={{ fontSize: 13, letterSpacing: '0.1em', fontWeight: 600, color: T.void, padding: '13px 18px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)` }}>
+            Suscribirse
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: T.void }} />
+          </button>
+        </div>
+      )}
+
       {/* Contenido */}
-      <div className="relative z-20 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-8 px-6 md:px-12 lg:px-16 pt-12 lg:pt-14 pb-16">
+      <div className="relative z-20 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-8 px-6 md:px-12 lg:px-16 pt-28 lg:pt-32 pb-16">
         {/* Columna izquierda */}
         <div>
           <div className="inline-flex items-center gap-3 font-mono uppercase" style={{
