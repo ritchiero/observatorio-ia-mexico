@@ -16,8 +16,13 @@ function convertTimestamp(value: unknown): string | null {
 export async function GET() {
   try {
     const db = getAdminDb();
-    const snapshot = await db.collection('anuncios').orderBy('fechaAnuncio', 'desc').get();
-    
+    // No usamos orderBy de Firestore: si algún documento guardó `fechaAnuncio` como
+    // string en vez de Timestamp, Firestore ordena por tipo (los strings van antes
+    // que los timestamps en orden desc) y descoloca el resultado — eso hacía que un
+    // anuncio de feb apareciera por encima de los de may. Normalizamos a ISO y
+    // ordenamos en JS: robusto ante cualquier inconsistencia de tipo.
+    const snapshot = await db.collection('anuncios').get();
+
     const anuncios = snapshot.docs.map(doc => {
       const data = doc.data();
       
@@ -40,6 +45,13 @@ export async function GET() {
           fecha: convertTimestamp(act.fecha),
         })) || [],
       };
+    });
+
+    // Orden por fecha de anuncio, más reciente primero (fechas ya normalizadas a ISO).
+    anuncios.sort((a, b) => {
+      const ta = a.fechaAnuncio ? new Date(a.fechaAnuncio).getTime() : 0;
+      const tb = b.fechaAnuncio ? new Date(b.fechaAnuncio).getTime() : 0;
+      return tb - ta;
     });
 
     return NextResponse.json({ anuncios });
