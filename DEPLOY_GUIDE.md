@@ -106,16 +106,21 @@ Los cron jobs están configurados en `vercel.json`:
 {
   "crons": [
     {
-      "path": "/api/cron/detect",
-      "schedule": "0 9 1 * *"
+      "path": "/api/cron/semanal",
+      "schedule": "0 10 * * 1"
     },
     {
-      "path": "/api/cron/monitor",
-      "schedule": "0 9 15 * *"
+      "path": "/api/cron/mensual",
+      "schedule": "0 11 1 * *"
     }
   ]
 }
 ```
+
+- `semanal` (Lunes 10am) corre detección + legislación + casos.
+- `mensual` (día 1, 11am) corre recap + monitoreo.
+
+Más detalle en `CRON_JOBS.md`.
 
 **Nota**: Los cron jobs solo funcionan en planes Pro de Vercel ($20/mes). En el plan gratuito, puedes ejecutar los agentes manualmente desde el panel admin.
 
@@ -155,9 +160,9 @@ Si usas el plan gratuito de Vercel, puedes:
    - **EasyCron** (plan gratuito)
    - **GitHub Actions** (gratuito)
 
-Configura estos servicios para hacer requests POST a:
-- `https://tu-proyecto.vercel.app/api/cron/detect` (día 1 de cada mes)
-- `https://tu-proyecto.vercel.app/api/cron/monitor` (día 15 de cada mes)
+Configura estos servicios para hacer requests GET a:
+- `https://tu-proyecto.vercel.app/api/cron/semanal` (cada lunes 10am — corre detección + legislación + casos)
+- `https://tu-proyecto.vercel.app/api/cron/mensual` (día 1 cada mes 11am — corre recap + monitoreo)
 
 ## 🎯 URLs Importantes
 

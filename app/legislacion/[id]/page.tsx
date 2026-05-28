@@ -294,7 +294,7 @@ export default function IniciativaDetallePage() {
                   </div>
                   <div className="flex-1">
                     <div className="font-sans text-sm font-semibold text-gray-900 mb-1 capitalize">
-                      {evento.tipo.replace('_', ' ')}
+                      {(evento.tipo || 'evento').replace('_', ' ')}
                     </div>
                     <p className="font-sans text-sm text-gray-700">{evento.descripcion}</p>
                     {evento.resultado && (
@@ -322,8 +322,8 @@ export default function IniciativaDetallePage() {
                 >
                   <ExternalLink size={16} className="flex-shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-sans text-sm">{fuente.titulo}</span>
-                    <span className="text-xs text-gray-500 ml-2">({fuente.tipo})</span>
+                    <span className="font-sans text-sm">{fuente.titulo || fuente.url}</span>
+                    {fuente.tipo && <span className="text-xs text-gray-500 ml-2">({fuente.tipo})</span>}
                   </div>
                 </a>
               ))}
