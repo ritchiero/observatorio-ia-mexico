@@ -2,9 +2,14 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  // La home usa su propio header glass (hero inmersivo); ocultamos el global ahí.
+  if (pathname === '/') return null;
 
   return (
     <header className="border-b border-gray-200 bg-white">

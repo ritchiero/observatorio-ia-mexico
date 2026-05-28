@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
-import HeroSection from '@/components/HeroSection';
+import HeroSectionGlass from '@/components/HeroSectionGlass';
 import Link from 'next/link';
 import { Scale, ArrowRight, ShieldCheck } from 'lucide-react';
 
@@ -247,7 +247,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <HeroSection stats={stats} legStats={legStats} casosStats={casosStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} loadingCasos={loadingCasos} />
+      <HeroSectionGlass stats={stats} legStats={legStats} casosStats={casosStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} loadingCasos={loadingCasos} />
 
       {/* Sección: Metodología */}
       <section id="metodologia" className="bg-gray-50 border-y border-gray-300/5 py-10 sm:py-14 px-4">
