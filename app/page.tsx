@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 import HeroSectionGlass from '@/components/HeroSectionGlass';
+import MetodologiaDAG from '@/components/MetodologiaDAG';
 import Link from 'next/link';
 import { Scale, ArrowRight, ShieldCheck } from 'lucide-react';
 
@@ -249,143 +250,9 @@ export default function Home() {
       {/* Hero Section */}
       <HeroSectionGlass stats={stats} legStats={legStats} casosStats={casosStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} loadingCasos={loadingCasos} />
 
-      {/* Sección: Metodología */}
-      <section id="metodologia" className="bg-gray-50 border-y border-gray-300/5 py-10 sm:py-14 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 mb-3">
-              Metodología del <span className="italic text-blue-500">Observatorio</span>
-            </h2>
-            <p className="text-gray-900/60 font-sans-tech text-sm sm:text-base max-w-2xl mx-auto">
-              Tres verticales de monitoreo con <span className="text-blue-500 font-medium">fuentes oficiales verificables</span> y actualización mensual.
-            </p>
-          </div>
-
-          {/* Las 3 verticales */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            {/* Vertical 1: Anuncios */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4">
-                <span className="text-2xl">📢</span>
-              </div>
-              <h3 className="font-sans-tech font-semibold text-gray-900 text-lg mb-2">Anuncios Oficiales</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Promesas gubernamentales sobre proyectos de IA: laboratorios, plataformas, inversiones.
-              </p>
-              <div className="space-y-2 text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                  Conferencias matutinas
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                  Diario Oficial de la Federación
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                  Comunicados de dependencias
-                </div>
-              </div>
-            </div>
-
-            {/* Vertical 2: Legislación */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-emerald-300 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center mb-4">
-                <span className="text-2xl">⚖️</span>
-              </div>
-              <h3 className="font-sans-tech font-semibold text-gray-900 text-lg mb-2">Legislación en IA</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Iniciativas de ley federales y estatales que regulan o mencionan inteligencia artificial.
-              </p>
-              <div className="space-y-2 text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                  Gaceta Parlamentaria
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                  Sistema de Información Legislativa
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                  Congresos estatales
-                </div>
-              </div>
-            </div>
-
-            {/* Vertical 3: Casos Judiciales */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:border-purple-300 hover:shadow-lg transition-all">
-              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-4">
-                <span className="text-2xl">🏛️</span>
-              </div>
-              <h3 className="font-sans-tech font-semibold text-gray-900 text-lg mb-2">Casos Judiciales</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Precedentes donde la IA es objeto del litigio o herramienta del proceso judicial.
-              </p>
-              <div className="space-y-2 text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-                  Semanario Judicial de la Federación
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-                  Portal de la SCJN
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-                  Tribunales Colegiados y TFJA
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Proceso de verificación */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
-            <h3 className="font-sans-tech font-semibold text-gray-900 text-center mb-6">Proceso de Verificación</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2 text-lg">1</div>
-                <p className="text-xs text-gray-600 font-sans-tech">Detección en fuentes oficiales</p>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2 text-lg">2</div>
-                <p className="text-xs text-gray-600 font-sans-tech">Extracción de datos clave</p>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2 text-lg">3</div>
-                <p className="text-xs text-gray-600 font-sans-tech">Verificación humana</p>
-              </div>
-              <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center mx-auto mb-2 text-lg">✓</div>
-                <p className="text-xs text-gray-600 font-sans-tech">Publicación con citas</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Nota técnica */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 border border-gray-200 text-xs text-gray-600">
-              <div className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </div>
-              Actualización mensual
-            </div>
-            <span className="text-gray-300 hidden sm:inline">•</span>
-            <span className="text-xs text-gray-500 font-sans-tech">
-              IA + Verificación humana
-            </span>
-            <span className="text-gray-300 hidden sm:inline">•</span>
-            <span className="text-xs text-gray-400 font-mono inline-flex items-center gap-1.5">
-              Powered by
-              <img
-                src="https://ik.imagekit.io/lawgic/Claude%20(1).png"
-                alt="Claude AI"
-                className="h-5 w-auto inline-block align-middle"
-              />
-            </span>
-          </div>
-        </div>
+      {/* Sección: Metodología — DAG Flow (light) */}
+      <section id="metodologia" className="scroll-mt-24 bg-gray-50 border-y border-gray-200/50">
+        <MetodologiaDAG anuncios={stats.total} iniciativas={legStats.total} casos={casosStats.total} />
       </section>
 
       {/* Sección: Legislación en IA */}
