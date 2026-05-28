@@ -29,11 +29,9 @@ export default function Header() {
                   <circle cx="50" cy="50" r="8" fill="url(#headerIris)" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-1.5">
-                  <span className="bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">Observatorio</span>
-                  <span className="text-gray-700">IA</span>
-                </h1>
+              <div className="flex flex-col leading-none">
+                <span className="font-sans-tech text-[10px] sm:text-xs tracking-[0.2em] text-gray-900/60 uppercase">Observatorio</span>
+                <span className="font-serif-display text-base sm:text-lg leading-none text-gray-900 font-bold">IA México</span>
               </div>
             </div>
           </Link>

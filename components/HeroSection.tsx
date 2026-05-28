@@ -115,27 +115,8 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
       <div className="relative z-20 flex flex-col min-h-screen px-6 md:px-12 lg:px-24 pt-8 pb-12 justify-between">
         
         {/* NAV MINIMALISTA */}
-        <nav className={`flex justify-between items-center transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative w-8 h-8 border border-gray-300/20 flex items-center justify-center rounded-sm overflow-hidden group-hover:border-blue-500/50 transition-colors">
-              <Eye size={16} className="text-gray-900/80 group-hover:text-blue-500 transition-colors" />
-              <div className="absolute inset-0 bg-gray-100 skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-sans-tech text-xs tracking-[0.2em] text-gray-900/60 uppercase">Observatorio</span>
-              <span className="font-serif-display text-lg leading-none text-gray-900 font-bold">IA México</span>
-            </div>
-          </div>
-
-          <div className="hidden md:flex items-center gap-8 font-sans-tech text-sm tracking-wide text-gray-900/70">
-            <a href="#tracker" className="hover:text-blue-400 transition-colors">Tracker</a>
-            <a href="/legislacion" className="hover:text-blue-400 transition-colors">Legislación</a>
-            <a href="/casos-ia" className="hover:text-purple-400 transition-colors">Casos</a>
-            <a href="#metodologia" className="hover:text-blue-400 transition-colors">Metodología</a>
-            <a href="/actividad" className="hover:text-blue-400 transition-colors">Actividad</a>
-          </div>
-
-          <button 
+        <nav className={`flex justify-end items-center transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <button
             onClick={() => setShowModal(true)}
             className="relative flex items-center gap-2 px-4 md:px-5 py-2 border border-blue-500/30 bg-blue-500/5 text-xs uppercase tracking-widest hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300 group rounded-full"
           >
