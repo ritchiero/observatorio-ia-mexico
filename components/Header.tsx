@@ -12,8 +12,22 @@ export default function Header() {
         <div className="flex justify-between items-center h-14 sm:h-16">
           <Link href="/" className="hover:opacity-80 transition-opacity group">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-gray-900 text-lg sm:text-xl">
-                🇲🇽
+              <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9">
+                <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" aria-label="Observatorio IA México" role="img">
+                  <defs>
+                    <linearGradient id="headerIris" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#06b6d4" />
+                      <stop offset="1" stopColor="#2563eb" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M6 50 Q50 22 94 50 Q50 78 6 50 Z" stroke="#cbd5e1" strokeWidth="3" />
+                  <circle cx="50" cy="50" r="23" stroke="url(#headerIris)" strokeWidth="4" strokeDasharray="9 7" />
+                  <circle cx="50" cy="50" r="14" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="5 6" />
+                  <circle cx="73" cy="50" r="3.5" fill="url(#headerIris)" />
+                  <circle cx="27" cy="50" r="3.5" fill="url(#headerIris)" />
+                  <circle cx="50" cy="27" r="3.5" fill="url(#headerIris)" />
+                  <circle cx="50" cy="50" r="8" fill="url(#headerIris)" />
+                </svg>
               </div>
               <div>
                 <h1 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-1.5">
