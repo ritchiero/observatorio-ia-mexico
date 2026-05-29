@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto, CATEGORIAS_TEMA, CategoriaTema } from '@/types';
-import { Scale, AlertCircle, ChevronDown, ChevronUp, ShieldCheck, Eye } from 'lucide-react';
+import { Scale, AlertCircle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 interface Props {
@@ -217,25 +217,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
           <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-50/50 rounded-full blur-[80px]"></div>
         </div>
         
-        {/* NAV */}
-        <nav className="relative z-10 flex justify-between items-center px-6 md:px-12 lg:px-24 py-6">
-          <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative w-8 h-8 border border-gray-300/20 flex items-center justify-center rounded-sm overflow-hidden group-hover:border-blue-500/50 transition-colors">
-              <Eye size={16} className="text-gray-900/80 group-hover:text-blue-500 transition-colors" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-sans-tech text-xs tracking-[0.2em] text-gray-900/60 uppercase">Observatorio</span>
-              <span className="font-serif-display text-lg leading-none text-gray-900 font-bold">IA México</span>
-            </div>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8 font-sans-tech text-sm tracking-wide text-gray-900/70">
-            <Link href="/#tracker" className="hover:text-blue-500 transition-colors">Tracker</Link>
-            <Link href="/legislacion" className="text-blue-500 font-medium">Legislación</Link>
-            <Link href="/#metodologia" className="hover:text-blue-500 transition-colors">Metodología</Link>
-            <Link href="/actividad" className="hover:text-blue-500 transition-colors">Actividad</Link>
-          </div>
-        </nav>
+        {/* Nav: la provee el Header global (layout). Se eliminó el nav inline para no duplicar. */}
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 lg:px-24 py-12 md:py-16">
           {/* Badge */}
