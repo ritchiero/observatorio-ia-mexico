@@ -51,7 +51,7 @@ export default function LegislacionEnriched({ legStats, loading, iniciativas }: 
   const desechadas = Math.max(0, legStats.total - legStats.activas - legStats.aprobadas);
   const dist: [string, number, string][] = [
     ['Activas', legStats.activas, L.blue],
-    ['Aprobadas', legStats.aprobadas, L.green],
+    ['Aprobadas / publicadas', legStats.aprobadas, L.green],
     ['Desechadas', desechadas, L.faint],
   ];
   const distTotal = dist.reduce((a, d) => a + d[1], 0) || 1;
