@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { Eye, ArrowLeft, FileText, ExternalLink, Calendar, Building, Scale, AlertCircle, Gavel, ChevronRight, Users, BookOpen } from 'lucide-react';
+import { ArrowLeft, FileText, ExternalLink, Calendar, Building, Scale, AlertCircle, Gavel, ChevronRight, Users, BookOpen } from 'lucide-react';
 import { CasoIA, TEMAS_IA, MATERIAS, getTipoCriterio, TemaIA } from '@/types/casos-ia';
 import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
 
@@ -92,26 +92,6 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
           <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-indigo-50/50 rounded-full blur-[80px]"></div>
         </div>
         
-        {/* NAV */}
-        <nav className="relative z-10 flex justify-between items-center px-4 md:px-12 lg:px-24 py-6">
-          <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative w-8 h-8 border border-gray-300/20 flex items-center justify-center rounded-sm overflow-hidden group-hover:border-purple-500/50 transition-colors">
-              <Eye size={16} className="text-gray-900/80 group-hover:text-purple-500 transition-colors" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-sans-tech text-xs tracking-[0.2em] text-gray-900/60 uppercase">Observatorio</span>
-              <span className="font-serif-display text-lg leading-none text-gray-900 font-bold">IA México</span>
-            </div>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8 font-sans-tech text-sm tracking-wide text-gray-900/70">
-            <Link href="/#tracker" className="hover:text-purple-500 transition-colors">Tracker</Link>
-            <Link href="/legislacion" className="hover:text-purple-500 transition-colors">Legislación</Link>
-            <Link href="/casos-ia" className="text-purple-500 font-medium">Casos</Link>
-            <Link href="/actividad" className="hover:text-purple-500 transition-colors">Actividad</Link>
-          </div>
-        </nav>
-
         <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-12 lg:px-24 py-8 md:py-12">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs font-sans-tech text-gray-400 mb-6">
