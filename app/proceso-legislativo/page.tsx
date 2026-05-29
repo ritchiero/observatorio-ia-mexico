@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, ExternalLink, Play, Tv, Radio, Clock, Users, AlertCircle, Scale, Shield, Building2, Database, Lightbulb, Globe, FileText, BookOpen, ChevronRight, MessageSquareWarning, History, Landmark, ScrollText, Eye, Gavel, CheckCircle } from 'lucide-react';
 
 export const metadata = {
-  title: 'Proceso Legislativo — Ley General de IA | Observatorio IA México',
-  description: 'Análisis completo de la Ley General de Inteligencia Artificial en México: contenido de la propuesta, línea de tiempo, preocupaciones, sesiones del Senado y recursos.',
+  title: 'Iniciativa de Ley General de IA — seguimiento (en proceso) | Observatorio IA México',
+  description: 'Seguimiento de la propuesta de Ley General de Inteligencia Artificial en México. IMPORTANTE: es una iniciativa en proceso legislativo, NO una ley vigente. Contenido de la propuesta, línea de tiempo y recursos.',
 };
 
 export default function ProcesoLegislativoPage() {
@@ -17,25 +17,38 @@ export default function ProcesoLegislativoPage() {
         </Link>
 
         <div className="mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200/50 rounded-full mb-4">
-            <Calendar size={14} className="text-emerald-600" />
-            <span className="text-xs font-sans-tech text-emerald-700 font-medium">Proceso Legislativo en Vivo</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200/50 rounded-full mb-4">
+            <Clock size={14} className="text-amber-600" />
+            <span className="text-xs font-sans-tech text-amber-700 font-medium">Iniciativa en proceso · seguimiento</span>
           </div>
           <h1 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 mb-3">
-            Ley General de <span className="italic text-emerald-600">Inteligencia Artificial</span>
+            Iniciativa de <span className="italic text-emerald-600">Ley General de IA</span>
           </h1>
           <p className="text-gray-600 font-sans-tech text-sm sm:text-base max-w-3xl">
-            Análisis detallado de la propuesta, contenido de la ley, línea de tiempo legislativa, preocupaciones, y recursos para seguir el proceso en el Senado de la República. Semana del 23 al 28 de febrero de 2026.
+            Seguimiento de la propuesta de marco regulatorio integral de IA en México: contenido de la iniciativa, línea de tiempo legislativa, preocupaciones y recursos.
           </p>
         </div>
 
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 mb-10">
+        {/* Disclaimer: iniciativa ≠ ley vigente */}
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 mb-8">
           <div className="flex items-start gap-3">
-            <AlertCircle size={20} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+            <MessageSquareWarning size={22} className="text-amber-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-sans-tech text-sm font-semibold text-emerald-800 mb-2">Resumen Ejecutivo</h3>
-              <p className="text-emerald-900 font-sans-tech text-sm leading-relaxed">
-                El Congreso de la Unión de México se encuentra en una fase decisiva para establecer el primer marco regulatorio integral en materia de Inteligencia Artificial. La sesión clave es la del <strong>miércoles 25 de febrero</strong>, donde se espera la votación de la Ley General de IA. Al día siguiente, el <strong>jueves 26 de febrero a las 10:00 a.m.</strong>, el Secretario Técnico de la Comisión de IA del Senado impartirá un webinar exclusivo para socios CANACINTRA explicando los alcances de la nueva ley.
+              <h3 className="font-sans-tech text-sm font-bold text-amber-900 mb-1">Esto es una iniciativa, NO una ley vigente</h3>
+              <p className="text-amber-900 font-sans-tech text-sm leading-relaxed">
+                Al <strong>29 de mayo de 2026</strong>, la Ley General de IA <strong>no ha sido aprobada ni publicada</strong>. Es una propuesta en proceso en el Senado. La única regulación de IA con efectos vinculantes publicada en México es la reforma a la LFT y LFDA (DOF, 14 de mayo de 2026), que es distinta a esta iniciativa.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-10">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={20} className="text-gray-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-sans-tech text-sm font-semibold text-gray-800 mb-2">Estado actual</h3>
+              <p className="text-gray-700 font-sans-tech text-sm leading-relaxed">
+                Existen dos vías paralelas: (1) una <strong>reforma constitucional al Art. 73</strong> (Sen. Saúl Monreal) para facultar al Congreso a legislar sobre IA, y (2) una <strong>propuesta de Ley General de IA</strong> de la Comisión de IA del Senado (Sen. Rolando Zapata). La votación que se anticipaba para el <strong>25 de febrero de 2026 no se realizó</strong>; ambas vías siguen <strong>en comisiones, sin fecha de dictamen ni aprobación en el pleno</strong>. Esta página documenta el contenido y la evolución de la propuesta, no una norma vigente.
               </p>
             </div>
           </div>
@@ -47,7 +60,7 @@ export default function ProcesoLegislativoPage() {
               <ScrollText size={18} className="text-emerald-600" />
             </div>
             <div>
-              <h2 className="font-serif-display text-xl sm:text-2xl font-light text-gray-900">¿Qué dice la Ley?</h2>
+              <h2 className="font-serif-display text-xl sm:text-2xl font-light text-gray-900">¿Qué propone la iniciativa?</h2>
               <p className="text-xs text-gray-500 font-sans-tech">Contenido y estructura de la propuesta</p>
             </div>
           </div>
