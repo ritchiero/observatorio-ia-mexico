@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { Eye, ArrowLeft, FileText, ExternalLink, Calendar, Building, Scale, AlertCircle, Gavel, ChevronRight, Users, BookOpen } from 'lucide-react';
-import { CasoIA, TEMAS_IA, MATERIAS, TIPOS_CRITERIO, TemaIA } from '@/types/casos-ia';
+import { CasoIA, TEMAS_IA, MATERIAS, getTipoCriterio, TemaIA } from '@/types/casos-ia';
 import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
 
 export default function CasoDetallePage({ params }: { params: Promise<{ id: string }> }) {
@@ -196,7 +196,7 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
                 {/* Tipo, época y datos */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold font-sans-tech bg-purple-100 text-purple-700 border border-purple-200">
-                    {TIPOS_CRITERIO[criterio.tipo].emoji} {TIPOS_CRITERIO[criterio.tipo].label}
+                    {getTipoCriterio(criterio.tipo).emoji} {getTipoCriterio(criterio.tipo).label}
                   </span>
                   {criterio.epoca && (
                     <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-sans-tech bg-white/50 text-purple-700">
