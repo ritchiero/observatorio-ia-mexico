@@ -39,6 +39,12 @@ interface IniciativaAPI {
   // Verificación con IA
   estadoVerificacion?: 'verificado' | 'revision' | 'pendiente';
   fechaVerificacion?: string;
+  // Análisis editorial del Observatorio (opcional)
+  analisis?: {
+    titulo?: string;
+    cuerpo: string;
+    fuente?: { autor?: string; titulo?: string; publicacion?: string; url: string };
+  };
 }
 
 export default function IniciativaDetallePage() {
@@ -253,6 +259,37 @@ export default function IniciativaDetallePage() {
             {iniciativa.descripcion}
           </p>
         </div>
+
+        {/* Análisis · Consecuencias (editorial del Observatorio) */}
+        {iniciativa.analisis && (
+          <div className="bg-gradient-to-br from-indigo-50 to-slate-50 border border-indigo-200 rounded-sm p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Scale className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+              <h2 className="font-serif text-2xl text-gray-900">
+                {iniciativa.analisis.titulo || 'Análisis · Consecuencias'}
+              </h2>
+            </div>
+            <p className="font-sans text-gray-700 leading-relaxed whitespace-pre-line">
+              {iniciativa.analisis.cuerpo}
+            </p>
+            {iniciativa.analisis.fuente?.url && (
+              <a
+                href={iniciativa.analisis.fuente.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-start gap-2 text-indigo-600 hover:text-indigo-700 transition-colors text-sm font-medium"
+              >
+                <ExternalLink size={15} className="flex-shrink-0 mt-0.5" />
+                <span>
+                  Análisis a profundidad
+                  {iniciativa.analisis.fuente.autor ? `: ${iniciativa.analisis.fuente.autor}` : ''}
+                  {iniciativa.analisis.fuente.titulo ? `, “${iniciativa.analisis.fuente.titulo}”` : ''}
+                  {iniciativa.analisis.fuente.publicacion ? ` — ${iniciativa.analisis.fuente.publicacion}` : ''}
+                </span>
+              </a>
+            )}
+          </div>
+        )}
 
         {/* Temáticas */}
         {iniciativa.tematicas && iniciativa.tematicas.length > 0 && (
