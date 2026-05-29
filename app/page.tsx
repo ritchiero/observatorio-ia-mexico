@@ -43,6 +43,7 @@ export default function Home() {
     nombre: string;
     temaIA: string;
     resumen: string;
+    estado?: string;
     criterio?: { tiene?: boolean; rubro?: string };
     criterios?: Array<{ tiene?: boolean }>;
   }>>([]);
@@ -309,6 +310,12 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               {casosDestacados.map((caso) => {
                 const tieneCriterio = caso.criterio?.tiene || (caso.criterios && caso.criterios.length > 0);
+                const resuelto = caso.estado === 'resuelto';
+                const casoBadge = tieneCriterio
+                  ? { t: '📜 Con Criterio', c: 'bg-purple-100 text-purple-700' }
+                  : resuelto
+                  ? { t: '✅ Resuelto', c: 'bg-green-100 text-green-700' }
+                  : { t: '📋 En proceso', c: 'bg-gray-100 text-gray-600' };
                 return (
                   <Link
                     key={caso.id}
@@ -316,10 +323,8 @@ export default function Home() {
                     className="bg-white border border-gray-200 rounded-xl p-5 hover:border-purple-300 hover:shadow-md transition-all group"
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <span className={`px-2 py-0.5 text-[10px] font-sans-tech font-medium rounded-full ${
-                        tieneCriterio ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {tieneCriterio ? '📜 Con Criterio' : '📋 En proceso'}
+                      <span className={`px-2 py-0.5 text-[10px] font-sans-tech font-medium rounded-full ${casoBadge.c}`}>
+                        {casoBadge.t}
                       </span>
                     </div>
                     <h3 className="font-sans-tech font-medium text-gray-900 text-sm mb-2 group-hover:text-purple-700 transition-colors line-clamp-1">
