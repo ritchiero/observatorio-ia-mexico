@@ -520,15 +520,16 @@ export default function Home() {
                   item.status === 'incumplido' ? 'from-red-600 to-rose-900' :
                   item.status === 'en_desarrollo' ? 'from-blue-600 to-indigo-900' :
                   item.status === 'operando' ? 'from-emerald-600 to-teal-900' :
-                  'from-slate-500 to-slate-800'
+                  'from-slate-600 to-slate-900'
                 }`}>
-                  {/* Watermark de la dependencia (se ve en el fallback) */}
-                  <img
-                    src={getLogo(item.responsable)}
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute right-3 bottom-3 w-20 h-20 object-contain opacity-20"
-                  />
+                  {/* Fallback de marca (se ve cuando no hay foto): glow + marca iris del Observatorio + logo dependencia */}
+                  <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 80% 22%, rgba(255,255,255,0.18), transparent 55%)' }} aria-hidden="true" />
+                  <svg viewBox="0 0 100 100" className="absolute -right-2 top-1/2 -translate-y-1/2 w-36 h-36 opacity-[0.14]" fill="none" aria-hidden="true">
+                    <path d="M6 50 Q50 22 94 50 Q50 78 6 50 Z" stroke="white" strokeWidth="3" />
+                    <circle cx="50" cy="50" r="23" stroke="white" strokeWidth="3" strokeDasharray="9 7" />
+                    <circle cx="50" cy="50" r="13" stroke="white" strokeWidth="2.5" strokeDasharray="5 6" />
+                    <circle cx="50" cy="50" r="7" fill="white" />
+                  </svg>
                   {/* Imagen real encima; si falla, se oculta y queda el fallback de marca */}
                   {item.imagen ? (
                     <img
