@@ -77,17 +77,33 @@ export default function IniciativaDetallePage() {
     fetchIniciativa();
   }, [params.id]);
 
-  const getStatusBadge = (status: IniciativaStatus) => {
-    const badges = {
+  const getStatusBadge = (status: IniciativaStatus | string) => {
+    const badges: Record<string, { text: string; color: string }> = {
       'en_comisiones': { text: 'En comisiones', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-      'desechada_termino': { text: 'Desechada por término de legislatura', color: 'bg-gray-100 text-gray-700 border-gray-200' },
-      'archivada': { text: 'Archivada', color: 'bg-gray-100 text-gray-600 border-gray-200' },
-      'aprobada': { text: 'Aprobada', color: 'bg-green-100 text-green-700 border-green-200' },
-      'rechazada': { text: 'Rechazada', color: 'bg-red-100 text-red-700 border-red-200' },
+      'en_comision': { text: 'En comisión', color: 'bg-blue-100 text-blue-700 border-blue-200' },
       'turnada': { text: 'Turnada a comisión', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-      'dictaminada': { text: 'Dictaminada', color: 'bg-orange-100 text-orange-700 border-orange-200' }
+      'dictaminada': { text: 'Dictaminada', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+      'presentada': { text: 'Presentada', color: 'bg-sky-100 text-sky-700 border-sky-200' },
+      'presentado': { text: 'Presentada', color: 'bg-sky-100 text-sky-700 border-sky-200' },
+      'recibida': { text: 'Recibida', color: 'bg-sky-100 text-sky-700 border-sky-200' },
+      'en_elaboracion': { text: 'En elaboración', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+      'en_preparacion': { text: 'En preparación', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+      'en_proceso': { text: 'En proceso', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+      'en_discusion': { text: 'En discusión', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+      'aprobada': { text: 'Aprobada', color: 'bg-green-100 text-green-700 border-green-200' },
+      'aprobada_camara': { text: 'Aprobada en cámara', color: 'bg-green-100 text-green-700 border-green-200' },
+      'publicada': { text: 'Publicada · vigente', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+      'vigente': { text: 'Vigente', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+      'rechazada': { text: 'Rechazada', color: 'bg-red-100 text-red-700 border-red-200' },
+      'desechada_termino': { text: 'Desechada por término de legislatura', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+      'desechada': { text: 'Desechada', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+      'archivada': { text: 'Archivada', color: 'bg-gray-100 text-gray-600 border-gray-200' },
+      'retirada': { text: 'Retirada', color: 'bg-gray-100 text-gray-600 border-gray-200' },
     };
-    return badges[status] || badges['en_comisiones'];
+    const norm = (status || '').toString().toLowerCase().trim();
+    // Fallback neutral: muestra el estatus crudo en gris en vez de etiquetar
+    // de más como "En comisiones" (lo que hacía pasar leyes publicadas por en trámite).
+    return badges[norm] || { text: norm ? norm.replace(/_/g, ' ') : 'En trámite', color: 'bg-gray-100 text-gray-600 border-gray-200' };
   };
 
   const formatFecha = (fechaISO: string) => {
