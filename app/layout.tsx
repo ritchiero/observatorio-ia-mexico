@@ -12,15 +12,18 @@ const GTM_ID = 'GTM-KCCM2HNW';
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://observatorio-ia-mexico.vercel.app'),
-  title: 'Observatorio IA México',
+  metadataBase: new URL('https://www.observatorio-ia-mexico.com'),
+  title: {
+    default: 'Observatorio IA México — IA en el Estado mexicano',
+    template: '%s · Observatorio IA México',
+  },
   description: 'Seguimiento integral de la IA en el estado mexicano. Anuncios oficiales, legislación activa y precedentes judiciales en un solo lugar.',
   keywords: ['inteligencia artificial', 'México', 'gobierno', 'legislación IA', 'casos judiciales', 'promesas', 'IA', 'tecnología', 'SCJN'],
   authors: [{ name: 'Observatorio IA México' }],
   openGraph: {
     title: 'Observatorio IA México',
     description: 'Seguimiento integral de la IA en el estado mexicano. Anuncios oficiales, legislación activa y precedentes judiciales.',
-    url: 'https://observatorio-ia-mexico.vercel.app',
+    url: 'https://www.observatorio-ia-mexico.com',
     siteName: 'Observatorio IA México',
     locale: 'es_MX',
     type: 'website',
