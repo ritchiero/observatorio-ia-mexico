@@ -29,14 +29,18 @@ export async function GET() {
     const db = getAdminDb();
     const snapshot = await db.collection('casos_ia').orderBy('fechaCreacion', 'desc').get();
     
-    const casos = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      const converted = convertTimestamps(data);
-      return {
-        id: doc.id,
-        ...converted,
-      } as CasoIA;
-    });
+    const casos = snapshot.docs
+      // Solo precedentes JUDICIALES: excluir lo marcado como no-judicial (ocultos:
+      // iniciativas legislativas reubicadas a la sección Legislación).
+      .filter((doc) => !doc.data().oculto)
+      .map((doc) => {
+        const data = doc.data();
+        const converted = convertTimestamps(data);
+        return {
+          id: doc.id,
+          ...converted,
+        } as CasoIA;
+      });
     
     return NextResponse.json({ casos });
   } catch (error) {
