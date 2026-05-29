@@ -57,6 +57,13 @@ const STEPS = [
   { n: '✓', verb: 'PUBLISH', title: 'Publicación con citas', accent: C.green },
 ];
 
+// Niveles de confianza por dato (espejo de lib/nivelConfianza.ts, en lenguaje público).
+const TIERS: { key: string; color: string; label: string; desc: string }[] = [
+  { key: 'oficial', color: C.green, label: 'Fuente oficial', desc: 'Verificado contra una fuente gubernamental o judicial: gob.mx, DOF, SCJN/SJF, congresos u organismos públicos.' },
+  { key: 'documentada', color: C.cyan, label: 'Fuente documentada', desc: 'Respaldado por fuente pública verificable (p. ej. diario de circulación nacional), pendiente de corroboración oficial.' },
+  { key: 'sin_verificar', color: '#C77E12', label: 'Sin fuente citada', desc: 'Marcador interno. No publicamos datos sin al menos una fuente citada y accesible.' },
+];
+
 export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) {
   const VERTICALS: Vertical[] = [
     {
@@ -209,6 +216,34 @@ export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) 
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* ===== Fuentes & nivel de confianza ===== */}
+        <div className="mt-14" style={{ borderTop: `1px solid ${C.line}`, paddingTop: 40 }}>
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="inline-flex items-center gap-2.5 font-mono uppercase" style={{ fontSize: 11, letterSpacing: '0.26em', color: C.green, fontWeight: 600 }}>
+              <span style={{ width: 6, height: 6, borderRadius: 999, background: C.green, boxShadow: `0 0 8px ${C.green}80` }} />
+              Trazabilidad
+            </div>
+            <h3 className="font-serif-display" style={{ margin: '14px 0 0', fontWeight: 500, fontSize: 'clamp(24px,4vw,36px)', lineHeight: 1.05, letterSpacing: '-0.03em', color: C.ink }}>
+              Fuentes y <em style={{ fontStyle: 'italic', fontWeight: 400, color: C.green }}>nivel de confianza</em>
+            </h3>
+            <p className="font-serif-display" style={{ margin: '14px auto 0', maxWidth: 640, fontSize: 'clamp(15px,2vw,17px)', lineHeight: 1.55, color: C.body }}>
+              Cada registro se publica con su fuente citada. Priorizamos fuentes oficiales; los diarios de circulación nacional sirven solo como respaldo, <b style={{ color: C.ink, fontWeight: 500 }}>nunca un sitio no oficial como fuente única</b>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10 max-w-5xl mx-auto">
+            {TIERS.map((t) => (
+              <div key={t.key} style={{ border: `1px solid ${C.line2}`, background: C.panel, borderRadius: 14, padding: 18, boxShadow: '0 1px 0 rgba(255,255,255,0.7)' }}>
+                <div className="flex items-center gap-2.5" style={{ marginBottom: 8 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 999, background: t.color, boxShadow: `0 0 8px ${t.color}66`, flex: 'none' }} />
+                  <span className="font-sans-tech" style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{t.label}</span>
+                </div>
+                <p className="font-sans-tech" style={{ fontSize: 12.5, lineHeight: 1.5, color: C.mute, margin: 0 }}>{t.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
 

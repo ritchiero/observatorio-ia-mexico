@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { Eye, ArrowLeft, FileText, ExternalLink, Calendar, Building, Scale, AlertCircle, Gavel, ChevronRight, Users, BookOpen } from 'lucide-react';
 import { CasoIA, TEMAS_IA, MATERIAS, TIPOS_CRITERIO, TemaIA } from '@/types/casos-ia';
+import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
 
 export default function CasoDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -138,6 +139,7 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
                 📜 {criteriosArray.length} Criterio{criteriosArray.length > 1 ? 's' : ''}
               </span>
             )}
+            <NivelConfianzaBadge item={caso} size="md" />
           </div>
 
           {/* Título */}
@@ -649,9 +651,12 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
             {/* Fuentes */}
             {caso.fuentes && caso.fuentes.length > 0 && (
               <div className="bg-gray-50 border border-gray-200/50 rounded-xl p-5">
-                <h3 className="font-sans-tech text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-                  Fuentes
-                </h3>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <h3 className="font-sans-tech text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    Fuentes
+                  </h3>
+                  <NivelConfianzaBadge item={caso} size="sm" />
+                </div>
                 <div className="space-y-3">
                   {caso.fuentes.map((fuente, idx) => (
                     <a
@@ -687,8 +692,8 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
               Volver a todos los casos
             </Link>
             <div className="text-xs font-sans-tech text-gray-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-              Información verificada con fuentes oficiales
+              <span>Nivel de confianza:</span>
+              <NivelConfianzaBadge item={caso} size="sm" />
             </div>
           </div>
         </div>

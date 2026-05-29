@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { IniciativaStatus } from '@/types';
+import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
 import { ArrowLeft, Scale, Calendar, User, Building, FileText, ExternalLink, AlertCircle, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -162,6 +163,7 @@ export default function IniciativaDetallePage() {
             <span className={`inline-flex items-center px-4 py-2 rounded-sm text-sm font-sans border ${badge.color}`}>
               {badge.text}
             </span>
+            <NivelConfianzaBadge item={iniciativa} size="md" />
             {iniciativa.estadoVerificacion === 'verificado' && (
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-sans border bg-emerald-50 text-emerald-700 border-emerald-200">
                 <ShieldCheck size={16} />
