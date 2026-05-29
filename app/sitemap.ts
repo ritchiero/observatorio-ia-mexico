@@ -1,0 +1,46 @@
+import type { MetadataRoute } from 'next';
+
+const BASE = 'https://www.observatorio-ia-mexico.com';
+
+// Regenera el sitemap cada hora (ISR) — así corre en runtime donde sí hay
+// credenciales y datos, y captura nuevas fichas sin redeploy.
+export const revalidate = 3600;
+
+async function fetchIds(path: string, key: string): Promise<string[]> {
+  try {
+    const r = await fetch(`${BASE}${path}`, { next: { revalidate } });
+    if (!r.ok) return [];
+    const d = await r.json();
+    const arr: Array<{ id?: string }> = d[key] || d.data || [];
+    return arr.map((x) => x.id).filter((id): id is string => Boolean(id));
+  } catch {
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [anuncios, iniciativas, casos] = await Promise.all([
+    fetchIds('/api/anuncios', 'anuncios'),
+    fetchIds('/api/iniciativas', 'data'),
+    fetchIds('/api/casos-ia', 'casos'),
+  ]);
+
+  const now = new Date();
+
+  const estaticas: MetadataRoute.Sitemap = [
+    { url: `${BASE}/`, lastModified: now, changeFrequency: 'daily', priority: 1 },
+    { url: `${BASE}/legislacion`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/casos-ia`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/recap`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/actividad`, lastModified: now, changeFrequency: 'daily', priority: 0.6 },
+    { url: `${BASE}/proceso-legislativo`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+  ];
+
+  const fichas: MetadataRoute.Sitemap = [
+    ...anuncios.map((id) => ({ url: `${BASE}/anuncio/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
+    ...iniciativas.map((id) => ({ url: `${BASE}/legislacion/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
+    ...casos.map((id) => ({ url: `${BASE}/casos-ia/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
+  ];
+
+  return [...estaticas, ...fichas];
+}
