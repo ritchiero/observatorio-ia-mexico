@@ -12,7 +12,10 @@ export async function GET() {
     
     console.log('[API] Snapshot size:', snapshot.size);
     
-    const iniciativas = snapshot.docs.map(doc => {
+    const iniciativas = snapshot.docs
+      // Excluir duplicados marcados (consolidación)
+      .filter(doc => !doc.data().oculto)
+      .map(doc => {
       const data = doc.data();
       return {
         id: doc.id,
