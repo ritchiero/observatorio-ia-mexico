@@ -449,6 +449,36 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Brief + scorecard de rendición de cuentas */}
+          {!loadingAnuncios && !errorAnuncios && stats.total > 0 && (
+            <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50/70 p-5 sm:p-6">
+              <p className="font-serif-display text-lg sm:text-xl text-gray-800 leading-snug mb-4">
+                El Estado mexicano hizo <strong className="text-gray-900">{stats.total} promesas</strong> públicas de IA:{' '}
+                <span className="text-emerald-600 font-medium">{stats.operando} ya operan</span>,{' '}
+                <span className="text-blue-600 font-medium">{stats.enDesarrollo} en desarrollo</span>,{' '}
+                <span className="text-gray-500 font-medium">{stats.prometido} prometidas</span>
+                {stats.incumplido > 0 && <> y <span className="text-red-600 font-semibold">{stats.incumplido} incumplidas</span></>}.
+              </p>
+              {/* Barra de distribución */}
+              <div className="flex h-2.5 rounded-full overflow-hidden border border-gray-200 bg-white">
+                <div className="bg-emerald-500 h-full" style={{ width: `${(stats.operando / stats.total) * 100}%` }} title={`Operando · ${stats.operando}`} />
+                <div className="bg-blue-500 h-full" style={{ width: `${(stats.enDesarrollo / stats.total) * 100}%` }} title={`En desarrollo · ${stats.enDesarrollo}`} />
+                <div className="bg-slate-400 h-full" style={{ width: `${(stats.prometido / stats.total) * 100}%` }} title={`Prometido · ${stats.prometido}`} />
+                <div className="bg-red-500 h-full" style={{ width: `${(stats.incumplido / stats.total) * 100}%` }} title={`Incumplido · ${stats.incumplido}`} />
+              </div>
+              {/* Leyenda + métrica */}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 font-mono text-[11px] text-gray-600">
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-emerald-500" />Operando <b className="text-gray-900">{stats.operando}</b></span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-blue-500" />En desarrollo <b className="text-gray-900">{stats.enDesarrollo}</b></span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-slate-400" />Prometido <b className="text-gray-900">{stats.prometido}</b></span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-red-500" />Incumplido <b className="text-gray-900">{stats.incumplido}</b></span>
+                <span className="ml-auto text-gray-500">
+                  <b className="text-emerald-600 text-sm">{Math.round((stats.operando / stats.total) * 100)}%</b> en operación
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Grid de Cards Premium con Imagen */}
           {loadingAnuncios ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -485,52 +515,57 @@ export default function Home() {
                 onClick={() => router.push(`/anuncio/${item.id}`)}
                 className="group relative bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10 cursor-pointer transition-all duration-500"
               >
-                {/* Imagen del evento */}
-                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+                {/* Imagen del evento — imagen real o fallback de marca (nunca gris) */}
+                <div className={`relative h-44 overflow-hidden bg-gradient-to-br ${
+                  item.status === 'incumplido' ? 'from-red-600 to-rose-900' :
+                  item.status === 'en_desarrollo' ? 'from-blue-600 to-indigo-900' :
+                  item.status === 'operando' ? 'from-emerald-600 to-teal-900' :
+                  'from-slate-500 to-slate-800'
+                }`}>
+                  {/* Watermark de la dependencia (se ve en el fallback) */}
+                  <img
+                    src={getLogo(item.responsable)}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute right-3 bottom-3 w-20 h-20 object-contain opacity-20"
+                  />
+                  {/* Imagen real encima; si falla, se oculta y queda el fallback de marca */}
                   {item.imagen ? (
-                    <img 
-                      src={item.imagen} 
+                    <img
+                      src={item.imagen}
                       alt={item.titulo}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   ) : null}
-                  
-                  {/* Overlay gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                  
-                  {/* Badge de estado sobre la imagen */}
-                  <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-[10px] font-sans-tech font-bold uppercase tracking-wider backdrop-blur-sm ${
-                    item.status === 'incumplido' ? 'bg-red-500/90 text-white' :
-                    item.status === 'en_desarrollo' ? 'bg-blue-500/90 text-white' :
-                    item.status === 'operando' ? 'bg-emerald-500/90 text-white' :
-                    'bg-white/90 text-gray-700'
+
+                  {/* Overlay para contraste del texto */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
+
+                  {/* Badge de estado */}
+                  <div className={`absolute top-3.5 right-3.5 px-3 py-1.5 rounded-full text-[10px] font-sans-tech font-bold uppercase tracking-wider backdrop-blur-sm ${
+                    item.status === 'incumplido' ? 'bg-red-500 text-white' :
+                    item.status === 'en_desarrollo' ? 'bg-blue-500 text-white' :
+                    item.status === 'operando' ? 'bg-emerald-500 text-white' :
+                    'bg-white/90 text-gray-800'
                   }`}>
-                    {getStatusLabel(item.status)}
+                    {item.status === 'incumplido' && '⚠️ '}{getStatusLabel(item.status)}
                   </div>
-                  
-                  {/* Fecha sobre la imagen */}
-                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full">
+
+                  {/* Fecha */}
+                  <div className="absolute top-3.5 left-3.5 px-3 py-1.5 bg-black/45 backdrop-blur-sm rounded-full">
                     <span className="font-mono text-[10px] text-white uppercase tracking-wider">
                       {formatearMes(item.fechaAnuncio)} {getYearUTC(item.fechaAnuncio)}
                     </span>
                   </div>
-                  
-                  {/* Título sobre la imagen */}
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="font-sans-tech font-bold text-white text-xl leading-tight drop-shadow-lg">
+
+                  {/* Título */}
+                  <div className="absolute bottom-3.5 left-4 right-4">
+                    <h3 className="font-sans-tech font-bold text-white text-lg leading-tight drop-shadow-lg line-clamp-2">
                       {item.titulo}
                     </h3>
                   </div>
-                  
-                  {/* Indicador de incumplimiento */}
-                  {item.status === 'incumplido' && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-red-600 rounded-full animate-pulse">
-                      <span className="text-[10px] text-white font-bold">⚠️ INCUMPLIDO</span>
-                    </div>
-                  )}
                 </div>
                 
                 {/* Contenido debajo de la imagen */}
