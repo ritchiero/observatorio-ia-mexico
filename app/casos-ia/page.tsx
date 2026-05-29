@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Scale, Gavel, ChevronDown, ChevronUp, FileText, AlertCircle, Building, Calendar, ArrowRight } from 'lucide-react';
-import { CasoIA, TEMAS_IA, MATERIAS, TIPOS_CRITERIO, TemaIA } from '@/types/casos-ia';
+import { CasoIA, TEMAS_IA, MATERIAS, getTipoCriterio, TemaIA } from '@/types/casos-ia';
 
 export default function CasosIAPage() {
   const [casos, setCasos] = useState<CasoIA[]>([]);
@@ -238,7 +238,7 @@ export default function CasosIAPage() {
                       <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100 p-5 md:p-6">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold font-sans-tech bg-purple-100 text-purple-700 border border-purple-200">
-                            {TIPOS_CRITERIO[caso.criterio.tipo].emoji} {TIPOS_CRITERIO[caso.criterio.tipo].label}
+                            {getTipoCriterio(caso.criterio.tipo).emoji} {getTipoCriterio(caso.criterio.tipo).label}
                           </span>
                           {caso.criterio.registro && (
                             <span className="text-xs font-mono text-purple-600">

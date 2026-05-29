@@ -185,3 +185,10 @@ export const TIPOS_CRITERIO: Record<string, { label: string; emoji: string }> = 
   sentencia_pleno_desestimada: { label: 'Sentencia Pleno (Desestimada)', emoji: '🏛️' },
   sentencia_pleno_validez: { label: 'Sentencia Pleno (Validez)', emoji: '✅' },
 };
+
+// Acceso seguro a TIPOS_CRITERIO: si el `tipo` no está en el catálogo (datos
+// legados como 'Precedente SCJN'), devuelve un fallback con la etiqueta cruda
+// en vez de crashear al leer `.emoji`/`.label` de undefined.
+export function getTipoCriterio(tipo: string): { label: string; emoji: string } {
+  return TIPOS_CRITERIO[tipo] || { label: tipo || 'Criterio', emoji: '📌' };
+}
