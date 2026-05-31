@@ -426,6 +426,7 @@ export const CATEGORIAS_TEMA: Record<CategoriaTema, { label: string; emoji: stri
 
 export interface IniciativaLegislativa {
   id: string;
+  folio?: string; // Folio de expediente (LEG-AAAA-NNN)
   numero: number; // Número de iniciativa en el listado (1-69+)
   titulo: string;
   proponente: string;
