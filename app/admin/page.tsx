@@ -1,12 +1,23 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 function AdminContent() {
   const [detectLoading, setDetectLoading] = useState(false);
   const [monitorLoading, setMonitorLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/admin/login');
+    } else if (status === 'authenticated' && (session?.user as { role?: string } | undefined)?.role !== 'admin') {
+      router.replace('/admin/login');
+    }
+  }, [status, session, router]);
 
   const ejecutarDeteccion = async () => {
     setDetectLoading(true);
@@ -43,6 +54,14 @@ function AdminContent() {
       setMonitorLoading(false);
     }
   };
+
+  if (status !== 'authenticated' || (session?.user as { role?: string } | undefined)?.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500 font-sans-tech">
+        Verificando acceso…
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
