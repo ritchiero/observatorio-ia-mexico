@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Scale, Gavel, ChevronDown, ChevronUp, FileText, AlertCircle, Building, Calendar, ArrowRight } from 'lucide-react';
 import { CasoIA, TEMAS_IA, MATERIAS, getTipoCriterio, TemaIA } from '@/types/casos-ia';
+import FolioBadge from '@/components/FolioBadge';
 
 export default function CasosIAPage() {
   const [casos, setCasos] = useState<CasoIA[]>([]);
@@ -291,6 +292,7 @@ export default function CasosIAPage() {
                     >
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
                         <div className="flex flex-wrap items-center gap-2">
+                          <FolioBadge folio={caso.folio} size="sm" />
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans-tech border ${estadoBadge.color}`}>
                             {estadoBadge.text}
                           </span>
