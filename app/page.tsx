@@ -4,12 +4,14 @@ import { useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 import HeroSectionGlass from '@/components/HeroSectionGlass';
 import MetodologiaDAG from '@/components/MetodologiaDAG';
+import FolioBadge from '@/components/FolioBadge';
 import LegislacionEnriched from '@/components/LegislacionEnriched';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 interface AnuncioData {
   id: string;
+  folio?: string;
   titulo: string;
   descripcion: string;
   fechaAnuncio: string;
@@ -576,6 +578,7 @@ export default function Home() {
                 
                 {/* Contenido debajo de la imagen */}
                 <div className="p-5">
+                  <FolioBadge folio={item.folio} size="sm" className="mb-3" />
                   {/* Responsable */}
                   <div className="flex items-center gap-3 mb-3">
                     <img 

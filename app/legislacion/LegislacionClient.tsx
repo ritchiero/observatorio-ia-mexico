@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto, CATEGORIAS_TEMA, CategoriaTema } from '@/types';
 import { Scale, AlertCircle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import FolioBadge from '@/components/FolioBadge';
 
 interface Props {
   iniciativas: IniciativaLegislativa[];
@@ -426,9 +427,12 @@ export default function LegislacionClient({ iniciativas }: Props) {
                     onClick={() => setExpandedId(isExpanded ? null : iniciativa.id)}
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium font-sans-tech border ${badge.color}`}>
-                        {badge.text}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <FolioBadge folio={iniciativa.folio} size="sm" />
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium font-sans-tech border ${badge.color}`}>
+                          {badge.text}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1">
                         {iniciativa.estadoVerificacion === 'verificado' && (
                           <ShieldCheck size={14} className="text-emerald-500" />
@@ -545,6 +549,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </td>
                         <td className="px-4 py-4">
+                          <FolioBadge folio={iniciativa.folio} size="sm" className="mb-1" />
                           <div className="flex items-start gap-2">
                             <div className="text-gray-900 font-sans-tech font-medium flex-1 text-sm">
                               {iniciativa.titulo}
