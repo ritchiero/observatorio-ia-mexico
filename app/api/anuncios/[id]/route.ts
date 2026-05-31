@@ -30,7 +30,15 @@ export async function GET(
     }
 
     const data = doc.data()!;
-    
+
+    // Soft-delete: un anuncio oculto no es accesible por URL directa
+    if (data.oculto) {
+      return NextResponse.json(
+        { error: 'Anuncio no encontrado' },
+        { status: 404 }
+      );
+    }
+
     // Convertir fechas de fuentes
     const fuentes = data.fuentes?.map((f: Record<string, unknown>) => ({
       ...f,

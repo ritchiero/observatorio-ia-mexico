@@ -23,7 +23,10 @@ export async function GET() {
     // ordenamos en JS: robusto ante cualquier inconsistencia de tipo.
     const snapshot = await db.collection('anuncios').get();
 
-    const anuncios = snapshot.docs.map(doc => {
+    const anuncios = snapshot.docs
+      // Soft-delete: excluir anuncios ocultos (reclasificados/duplicados)
+      .filter(doc => !doc.data().oculto)
+      .map(doc => {
       const data = doc.data();
       
       // Convertir fechas de fuentes
