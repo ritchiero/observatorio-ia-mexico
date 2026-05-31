@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Anuncio, EventoTimeline, Fuente } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
+import FolioBadge from '@/components/FolioBadge';
 import { formatDate } from '@/lib/utils';
 import { ArrowLeft, Calendar, User, Building2, ExternalLink, Newspaper, Clock, TrendingUp, TrendingDown, Minus, ChevronDown, Megaphone, Circle }  from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
@@ -127,6 +128,7 @@ export default function AnuncioDetailPage() {
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <StatusBadge status={anuncio.status} />
             <NivelConfianzaBadge item={anuncio} size="md" />
+            <FolioBadge folio={anuncio.folio} />
           </div>
 
           {/* Título */}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, FileText, ExternalLink, Calendar, Building, Scale, AlertCircle, Gavel, ChevronRight, Users, BookOpen } from 'lucide-react';
 import { CasoIA, TEMAS_IA, MATERIAS, getTipoCriterio, TemaIA } from '@/types/casos-ia';
 import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
+import FolioBadge from '@/components/FolioBadge';
 
 export default function CasoDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -120,6 +121,7 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
               </span>
             )}
             <NivelConfianzaBadge item={caso} size="md" />
+            <FolioBadge folio={caso.folio} />
           </div>
 
           {/* Título */}
