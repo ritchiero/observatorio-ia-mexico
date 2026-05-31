@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { ejecutarAgenteMonitoreo } from '@/lib/agents';
+import { requireAdmin } from '@/lib/auth';
 
-// POST /api/agents/monitor - Ejecutar agente de monitoreo manualmente
+// POST /api/agents/monitor - Ejecutar agente de monitoreo manualmente (solo admin)
 export async function POST() {
+  const authError = await requireAdmin();
+  if (authError) return authError;
   try {
     const resultado = await ejecutarAgenteMonitoreo('manual');
     return NextResponse.json(resultado);
