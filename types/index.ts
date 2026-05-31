@@ -28,6 +28,7 @@ export interface Actualizacion {
 
 export interface Anuncio {
   id: string;
+  folio?: string; // Folio de expediente (ANU-AAAA-NNN)
   titulo: string;
   descripcion: string;
   fechaAnuncio: Timestamp;

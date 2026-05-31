@@ -113,7 +113,8 @@ export type MateriaCaso =
 
 export interface CasoIA {
   id: string;
-  
+  folio?: string; // Folio de expediente (CAS-AAAA-NNN)
+
   // Identificación
   nombre: string;
   expedienteActual: string;

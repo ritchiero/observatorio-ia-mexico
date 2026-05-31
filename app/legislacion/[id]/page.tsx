@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { IniciativaStatus } from '@/types';
 import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
+import FolioBadge from '@/components/FolioBadge';
 import { ArrowLeft, Scale, Calendar, User, Building, FileText, ExternalLink, AlertCircle, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -11,6 +12,7 @@ import { useParams } from 'next/navigation';
 // Tipo para la respuesta del API (fecha como string ISO)
 interface IniciativaAPI {
   id: string;
+  folio?: string; // Folio de expediente (LEG-AAAA-NNN)
   numero: number;
   titulo: string;
   proponente: string;
@@ -186,6 +188,7 @@ export default function IniciativaDetallePage() {
               {badge.text}
             </span>
             <NivelConfianzaBadge item={iniciativa} size="md" />
+            <FolioBadge folio={iniciativa.folio} />
             {iniciativa.estadoVerificacion === 'verificado' && (
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-sans border bg-emerald-50 text-emerald-700 border-emerald-200">
                 <ShieldCheck size={16} />
