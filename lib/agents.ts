@@ -4,17 +4,30 @@ import { getDeteccionPrompt, getMonitoreoPrompt, getRecapMensualPrompt } from '.
 import { DeteccionResponse, MonitoreoResponse, TriggerTipo, DeteccionResponseConFuentes, MonitoreoResponseConFuentes, TipoFuente, FuenteTipo } from '@/types';
 import { Timestamp } from 'firebase-admin/firestore';
 import { crearEventoInicial, crearEventoTimeline } from './timeline';
+import { tierFuente, esDuplicado, folioFactory } from './expediente';
 
-export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
+export async function ejecutarAgenteDeteccion(
+  trigger: TriggerTipo = 'manual',
+  opts: { dryRun?: boolean } = {},
+) {
+  const dryRun = opts.dryRun === true;
   const startTime = Date.now();
   const db = getAdminDb();
   const errores: string[] = [];
+  const decisiones: Array<Record<string, unknown>> = [];
   let anunciosEncontrados = 0;
 
   try {
-    // Obtener títulos de anuncios existentes
+    // Obtener anuncios existentes (título + fuentes + folio) para dedup y folio
     const anunciosSnapshot = await db.collection('anuncios').get();
-    const titulosExistentes = anunciosSnapshot.docs.map(doc => doc.data().titulo);
+    const existentes = anunciosSnapshot.docs.map(doc => {
+      const d = doc.data();
+      const urls = [d.fuenteOriginal, ...(((d.fuentes || []) as Array<{ url?: string }>).map(f => f?.url))]
+        .filter((u): u is string => typeof u === 'string');
+      return { titulo: d.titulo as string, urls, folio: d.folio as string | undefined };
+    });
+    const titulosExistentes = existentes.map(e => e.titulo);
+    const siguienteFolio = folioFactory('ANU', existentes.map(e => e.folio));
 
     // Ejecutar búsqueda con Claude
     const prompt = getDeteccionPrompt(titulosExistentes);
@@ -34,16 +47,43 @@ export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
       deteccion = { nuevos_anuncios: [] };
     }
 
-    // Guardar nuevos anuncios
+    // Guardar nuevos anuncios (con guardrails: dedup → verificación → folio)
     for (const anuncio of deteccion.nuevos_anuncios) {
       try {
+        const urls = [anuncio.fuente_url, ...((anuncio.fuentes_adicionales || []).map(f => f.url))]
+          .filter((u): u is string => typeof u === 'string');
+
+        // GUARDRAIL 1 — dedup por folio/título/fuente: si ya existe, NO duplicar.
+        const dup = esDuplicado(anuncio.titulo, urls, existentes);
+        if (dup.dup) {
+          errores.push(`Omitido (duplicado): "${anuncio.titulo}" — ${dup.razon}`);
+          decisiones.push({ titulo: anuncio.titulo, accion: 'omitido_duplicado', razon: dup.razon });
+          continue;
+        }
+
+        // GUARDRAIL 2 — verificación: sin fuente creíble entra como pendiente (oculto).
+        const tier = tierFuente(urls);
+        const pendiente = tier === 'sin_verificar';
+
+        // FOLIO de expediente para el alta nueva.
+        const anio = (anuncio.fecha_anuncio || '').slice(0, 4);
+        const folio = siguienteFolio(anio);
+
+        decisiones.push({ titulo: anuncio.titulo, accion: pendiente ? 'alta_pendiente' : 'alta', folio, tier });
+
+        if (dryRun) { anunciosEncontrados++; continue; }
+
+        // Registrar en memoria para dedup dentro de la misma corrida.
+        existentes.push({ titulo: anuncio.titulo, urls, folio });
+
         const anuncioRef = db.collection('anuncios').doc();
         await anuncioRef.set({
           id: anuncioRef.id,
+          folio,
           titulo: anuncio.titulo,
           descripcion: anuncio.descripcion,
           fechaAnuncio: Timestamp.fromDate(new Date(anuncio.fecha_anuncio)),
-          fechaPrometida: anuncio.fecha_prometida 
+          fechaPrometida: anuncio.fecha_prometida
             ? Timestamp.fromDate(new Date(anuncio.fecha_prometida))
             : null,
           responsable: anuncio.responsable,
@@ -53,41 +93,47 @@ export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
           status: 'prometido',
           actualizaciones: [],
           creadoManualmente: false,
+          // Rastro del heartbeat + reja de verificación
+          origen: 'heartbeat',
+          nivelFuente: tier,
+          oculto: pendiente,
+          estadoRevision: pendiente ? 'pendiente' : 'publicado',
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         });
 
-        // Crear evento inicial en el timeline
-        try {
-          const fuentesAdicionales = (anuncio.fuentes_adicionales || []).map(f => ({
-            tipo: f.tipo as FuenteTipo,
-            url: f.url,
-            titulo: f.titulo,
-            fecha: Timestamp.fromDate(new Date(anuncio.fecha_anuncio)) as any,
-            fechaPublicacion: new Date(anuncio.fecha_anuncio),
-          }));
+        // Solo publicamos en timeline/actividad lo verificado (no los pendientes).
+        if (!pendiente) {
+          try {
+            const fuentesAdicionales = (anuncio.fuentes_adicionales || []).map(f => ({
+              tipo: f.tipo as FuenteTipo,
+              url: f.url,
+              titulo: f.titulo,
+              fecha: Timestamp.fromDate(new Date(anuncio.fecha_anuncio)) as any,
+              fechaPublicacion: new Date(anuncio.fecha_anuncio),
+            }));
 
-          await crearEventoInicial({
+            await crearEventoInicial({
+              anuncioId: anuncioRef.id,
+              titulo: anuncio.titulo,
+              fechaAnuncio: new Date(anuncio.fecha_anuncio),
+              responsable: anuncio.responsable,
+              citaPromesa: anuncio.cita_promesa,
+              fuenteOriginal: anuncio.fuente_url,
+              fuentesAdicionales,
+            });
+          } catch (timelineError) {
+            errores.push(`Error al crear evento de timeline: ${timelineError}`);
+          }
+
+          await db.collection('actividad').add({
+            fecha: Timestamp.now(),
+            tipo: 'nuevo_anuncio',
             anuncioId: anuncioRef.id,
-            titulo: anuncio.titulo,
-            fechaAnuncio: new Date(anuncio.fecha_anuncio),
-            responsable: anuncio.responsable,
-            citaPromesa: anuncio.cita_promesa,
-            fuenteOriginal: anuncio.fuente_url,
-            fuentesAdicionales,
+            anuncioTitulo: anuncio.titulo,
+            descripcion: `Nuevo anuncio detectado (${folio}): ${anuncio.titulo}`,
           });
-        } catch (timelineError) {
-          errores.push(`Error al crear evento de timeline: ${timelineError}`);
         }
-
-        // Registrar actividad
-        await db.collection('actividad').add({
-          fecha: Timestamp.now(),
-          tipo: 'nuevo_anuncio',
-          anuncioId: anuncioRef.id,
-          anuncioTitulo: anuncio.titulo,
-          descripcion: `Nuevo anuncio detectado: ${anuncio.titulo}`,
-        });
 
         anunciosEncontrados++;
       } catch (error) {
@@ -95,29 +141,33 @@ export async function ejecutarAgenteDeteccion(trigger: TriggerTipo = 'manual') {
       }
     }
 
-    // Guardar log del agente
+    // Guardar log del agente (omitido en dry-run para no escribir nada)
     const duracionMs = Date.now() - startTime;
-    await db.collection('agenteLogs').add({
-      tipo: 'deteccion',
-      fecha: Timestamp.now(),
-      duracionMs,
-      anunciosEncontrados,
-      actualizacionesDetectadas: 0,
-      errores,
-      rawResponse,
-      trigger,
-    });
+    if (!dryRun) {
+      await db.collection('agenteLogs').add({
+        tipo: 'deteccion',
+        fecha: Timestamp.now(),
+        duracionMs,
+        anunciosEncontrados,
+        actualizacionesDetectadas: 0,
+        errores,
+        rawResponse,
+        trigger,
+      });
 
-    // Registrar actividad de ejecución
-    await db.collection('actividad').add({
-      fecha: Timestamp.now(),
-      tipo: 'agente_ejecutado',
-      descripcion: `Agente de detección ejecutado. ${anunciosEncontrados} nuevo(s) anuncio(s) encontrado(s).`,
-    });
+      // Registrar actividad de ejecución
+      await db.collection('actividad').add({
+        fecha: Timestamp.now(),
+        tipo: 'agente_ejecutado',
+        descripcion: `Agente de detección ejecutado. ${anunciosEncontrados} nuevo(s) anuncio(s) encontrado(s).`,
+      });
+    }
 
     return {
       success: true,
+      dryRun,
       anunciosEncontrados,
+      decisiones,
       errores,
       duracionMs,
     };
