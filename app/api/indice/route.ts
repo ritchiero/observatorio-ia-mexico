@@ -25,13 +25,30 @@ function poder(d: Doc): 'Ejecutivo' | 'Legislativo' | 'Judicial' | 'Otro' {
   return 'Otro';
 }
 
+// Devuelve el nombre OFICIAL y completo del estado (no el pedazo que machea).
+const ESTADOS: [RegExp, string][] = [
+  [/ciudad de m[ée]xico|cdmx|congreso de la ciudad/, 'Ciudad de México'],
+  [/estado de m[ée]xico|edomex|mexiquense/, 'Estado de México'],
+  [/baja california sur/, 'Baja California Sur'],
+  [/baja california/, 'Baja California'],
+  [/nuevo le[óo]n/, 'Nuevo León'],
+  [/san luis potos[íi]|san luis/, 'San Luis Potosí'],
+  [/quintana roo/, 'Quintana Roo'],
+  [/michoac\w*/, 'Michoacán'],
+  [/yucat[áa]n/, 'Yucatán'],
+  [/quer[ée]taro/, 'Querétaro'],
+  [/jalisco/, 'Jalisco'], [/puebla/, 'Puebla'], [/sinaloa/, 'Sinaloa'], [/guanajuato/, 'Guanajuato'],
+  [/veracruz/, 'Veracruz'], [/chihuahua/, 'Chihuahua'], [/sonora/, 'Sonora'], [/tabasco/, 'Tabasco'],
+  [/oaxaca/, 'Oaxaca'], [/chiapas/, 'Chiapas'], [/hidalgo/, 'Hidalgo'], [/morelos/, 'Morelos'],
+  [/durango/, 'Durango'], [/coahuila/, 'Coahuila'], [/guerrero/, 'Guerrero'], [/tamaulipas/, 'Tamaulipas'],
+  [/nayarit/, 'Nayarit'], [/colima/, 'Colima'], [/aguascalientes/, 'Aguascalientes'], [/campeche/, 'Campeche'],
+  [/tlaxcala/, 'Tlaxcala'], [/zacatecas/, 'Zacatecas'],
+];
 function estado(d: Doc): string {
   const blob = `${d.camara ?? ''} ${d.entidadFederativa ?? ''} ${d.legislatura ?? ''}`.toLowerCase();
-  if (d.camara === 'Diputados' || d.camara === 'Senado' || /federal/.test(blob)) return 'Federal';
-  if (/cdmx|ciudad de m/.test(blob)) return 'Ciudad de México';
-  const m = blob.match(/(estado de m[ée]xico|edomex|michoac\w*|jalisco|nuevo le\w*|puebla|quintana roo|sinaloa|guanajuato|veracruz|san luis|yucat[áa]n|chihuahua|sonora|tabasco|quer[ée]taro|oaxaca|chiapas|hidalgo|morelos|durango|coahuila|guerrero|tamaulipas|nayarit|colima|aguascalientes|campeche|tlaxcala|zacatecas|baja california)/);
-  if (m) return m[1];
-  if (/local|estad|congreso d/.test(blob)) return 'Estatal (s/d)';
+  if (d.camara === 'Diputados' || d.camara === 'Senado' || /\bfederal\b/.test(blob)) return 'Federal';
+  for (const [re, nombre] of ESTADOS) if (re.test(blob)) return nombre;
+  if (/local|estatal|congreso d/.test(blob)) return 'Estatal (sin especificar)';
   return 'Federal';
 }
 
