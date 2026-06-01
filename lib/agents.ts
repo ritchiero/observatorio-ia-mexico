@@ -197,7 +197,11 @@ export async function ejecutarAgenteDeteccion(
   }
 }
 
-export async function ejecutarAgenteMonitoreo(trigger: TriggerTipo = 'manual') {
+export async function ejecutarAgenteMonitoreo(
+  trigger: TriggerTipo = 'manual',
+  opts: { limit?: number } = {},
+) {
+  const LIMIT = opts.limit ?? 12; // rotación anti-timeout: solo N por corrida
   const startTime = Date.now();
   const db = getAdminDb();
   const errores: string[] = [];
@@ -221,8 +225,20 @@ export async function ejecutarAgenteMonitoreo(trigger: TriggerTipo = 'manual') {
       [key: string]: unknown;
     }>;
 
-    // Monitorear cada anuncio
-    for (const anuncio of anuncios) {
+    // Rotación: solo activos (prometido/en_desarrollo), no ocultos, empezando por
+    // los más rancios (updatedAt más viejo). Evita el timeout de hacer web_search
+    // sobre los 55 anuncios en una sola invocación de la función.
+    const candidatos = anuncios
+      .filter(a => !(a as { oculto?: boolean }).oculto && ['prometido', 'en_desarrollo'].includes(String(a.status)))
+      .sort((x, y) => {
+        const tx = (x as { updatedAt?: { toDate?: () => Date } }).updatedAt?.toDate?.().getTime?.() ?? 0;
+        const ty = (y as { updatedAt?: { toDate?: () => Date } }).updatedAt?.toDate?.().getTime?.() ?? 0;
+        return tx - ty;
+      })
+      .slice(0, LIMIT);
+
+    // Monitorear cada anuncio del lote rotado
+    for (const anuncio of candidatos) {
       try {
         const prompt = getMonitoreoPrompt({
           titulo: anuncio.titulo,
