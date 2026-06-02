@@ -60,6 +60,17 @@ function enfoque(tipo: string): 'integral' | 'ajuste' | 'otro' {
 }
 
 const PESO: Record<string, number> = { operando: 1, en_desarrollo: 0.5, prometido: 0.25, incumplido: 0, abandonado: 0 };
+const PESO_RETRASO = 0.35; // en_desarrollo con fecha prometida vencida pesa menos que uno en tiempo
+
+function fpStr(a: Doc): string {
+  return yearOf(a.fechaPrometida) !== '?' ? String((a.fechaPrometida as { toDate?: () => Date })?.toDate?.().toISOString?.().slice(0, 10) ?? a.fechaPrometida).slice(0, 10) : '';
+}
+function pesoDe(a: Doc, hoy: string): number {
+  const st = String(a.status);
+  const fp = fpStr(a);
+  if (st === 'en_desarrollo' && fp && fp < hoy) return PESO_RETRASO; // retraso penaliza
+  return PESO[st] ?? 0;
+}
 
 function inc(o: Record<string, number>, k: string) { o[k] = (o[k] || 0) + 1; }
 function topN(o: Record<string, number>, n: number) {
@@ -85,11 +96,12 @@ export async function GET() {
     const ejec = anuncios.filter(a => poder(a) === 'Ejecutivo');
     const trkStatus: Record<string, number> = {};
     ejec.forEach(a => inc(trkStatus, String(a.status ?? '?')));
-    const indice = ejec.length ? Math.round(ejec.reduce((s, a) => s + (PESO[String(a.status)] ?? 0), 0) / ejec.length * 100) : 0;
+    const indice = ejec.length ? Math.round(ejec.reduce((s, a) => s + pesoDe(a, hoy), 0) / ejec.length * 100) : 0;
     const vencidas = ejec.filter(a => {
-      const fp = yearOf(a.fechaPrometida) !== '?' ? String((a.fechaPrometida as { toDate?: () => Date })?.toDate?.().toISOString?.().slice(0, 10) ?? a.fechaPrometida).slice(0, 10) : '';
+      const fp = fpStr(a);
       return fp && fp < hoy && ['prometido', 'en_desarrollo', 'incumplido'].includes(String(a.status));
     }).length;
+    const retrasadas = ejec.filter(a => { const fp = fpStr(a); return fp && fp < hoy && String(a.status) === 'en_desarrollo'; }).length;
     const depScore: Record<string, { n: number; sum: number }> = {};
     ejec.forEach(a => {
       const d = String(a.dependencia || a.responsable || '?');
@@ -137,7 +149,7 @@ export async function GET() {
       tracker: {
         totalAnuncios: anuncios.length,
         porPoder,
-        ejecutivo: { n: ejec.length, indiceCumplimiento: indice, porStatus: trkStatus, vencidas, porDependencia },
+        ejecutivo: { n: ejec.length, indiceCumplimiento: indice, porStatus: trkStatus, vencidas, retrasadas, porDependencia },
       },
       legislacion: {
         total: inis.length,
