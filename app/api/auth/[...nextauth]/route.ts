@@ -7,7 +7,7 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        username: { label: "Usuario", type: "text" },
+        username: { label: "Usuario o correo", type: "text" },
         password: { label: "Contraseña", type: "password" }
       },
       async authorize(credentials) {
@@ -17,6 +17,7 @@ export const authOptions: NextAuthOptions = {
 
         // Verificar credenciales del administrador
         const adminUsername = process.env.ADMIN_USERNAME;
+        const adminEmail = process.env.ADMIN_EMAIL;
         const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
         if (!adminUsername || !adminPasswordHash) {
@@ -24,7 +25,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        if (credentials.username !== adminUsername) {
+        // Aceptar inicio de sesión con usuario O correo (correo sin distinguir mayúsculas)
+        const identificador = credentials.username.trim();
+        const coincideUsuario = identificador === adminUsername;
+        const coincideCorreo = !!adminEmail && identificador.toLowerCase() === adminEmail.toLowerCase();
+        if (!coincideUsuario && !coincideCorreo) {
           return null;
         }
 
@@ -39,7 +44,7 @@ export const authOptions: NextAuthOptions = {
         return {
           id: '1',
           name: 'Administrador',
-          email: adminUsername,
+          email: adminEmail || adminUsername,
           role: 'admin'
         };
       }

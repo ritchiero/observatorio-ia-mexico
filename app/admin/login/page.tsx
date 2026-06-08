@@ -115,16 +115,19 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="username" className="block font-sans-tech text-xs uppercase tracking-widest text-gray-900/50 mb-2">
-                    Usuario
+                    Usuario o correo
                   </label>
                   <input
                     id="username"
                     type="text"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
                     className="w-full px-4 py-3 bg-white border border-gray-300/20 rounded-lg font-sans-tech text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
-                    placeholder="admin"
+                    placeholder="usuario o correo@dominio.com"
                   />
                 </div>
 
