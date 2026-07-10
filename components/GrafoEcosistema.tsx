@@ -63,10 +63,12 @@ export type NodoLite = {
 export default function GrafoEcosistema({
   onStats,
   onNodes,
+  onViewIds,
   spotlight = null,
   travel = null,
   poderes = { anuncio: true, iniciativa: true, caso: true },
   estado = 'todos',
+  periodo = null,
   chrome = true,
   anio = null,
   anioActual = 2026,
@@ -74,12 +76,16 @@ export default function GrafoEcosistema({
   onStats?: (s: NonNullable<GData['stats']>) => void;
   /** entrega el catálogo lite de nodos (para buscadores externos) */
   onNodes?: (ns: NodoLite[]) => void;
+  /** ids presentes en el mapa tras filtros (pasar una función estable, p.ej. un setState) */
+  onViewIds?: (ids: Set<string>) => void;
   /** ids a iluminar/enfocar (resultado de una búsqueda externa) */
   spotlight?: string[] | null;
   /** orden de viaje a un nodo (t cambia para re-disparar) */
   travel?: { id: string; t: number } | null;
   poderes?: PoderFilter;
   estado?: EstadoFilter;
+  /** filtro de periodo: sólo registros aparecidos dentro del rango de años */
+  periodo?: { desde: number; hasta: number } | null;
   /** false = modo ambiente (hero): sin buscador/zoom/panel; clic lleva a /grafo */
   chrome?: boolean;
   /** modo Historia: año de corte acumulativo (null = actualidad, sin corte) */
@@ -160,6 +166,11 @@ export default function GrafoEcosistema({
     const itemOk = (n: GNode) => {
       if (!ITEM_TYPES.has(n.type)) return false;
       if (!poderes[n.type as keyof PoderFilter]) return false;
+      if (periodo) {
+        const y = n.anio ?? null;
+        // sin fecha conocida no puede afirmar pertenencia al rango: fuera, con honestidad
+        if (y === null || y < periodo.desde || y > periodo.hasta) return false;
+      }
       if (estado === 'nuevo') return !!n.nuevo;
       if (estado !== 'todos') return n.estado === estado;
       return true;
@@ -181,7 +192,7 @@ export default function GrafoEcosistema({
     );
     const nodes = data.nodes.filter((n) => (ITEM_TYPES.has(n.type) ? visibles.has(n.id) : used.has(n.id)));
     return { nodes, links: [...rel, ...mesh] };
-  }, [data, poderes, estado]);
+  }, [data, poderes, estado, periodo]);
 
   // Los centros se calculan con el atlas COMPLETO, no con el filtro visible:
   // apagar un poder no debe hacer que las regiones restantes salten de lugar.
@@ -328,6 +339,17 @@ export default function GrafoEcosistema({
 
   // índice por id (panel de vecinos + órdenes de viaje externas)
   const byId = useMemo(() => new Map((view?.nodes ?? []).map((n) => [String(n.id), n])), [view]);
+
+  // avisar qué ids sobreviven los filtros (el buscador externo no ofrece clics muertos)
+  useEffect(() => {
+    if (onViewIds && view) onViewIds(new Set(view.nodes.map((n) => String(n.id))));
+  }, [view, onViewIds]);
+
+  // si un filtro (poder/estado/periodo) esconde al nodo seleccionado, soltarlo:
+  // el panel no puede describir un nodo que ya no está en el mapa
+  useEffect(() => {
+    if (selected && !byId.has(String(selected.id))) setSelected(null);
+  }, [byId, selected]);
 
   // viajar a un nodo: centrar + acercar + seleccionar (abre el panel)
   const goTo = useCallback((n: GNode) => {
