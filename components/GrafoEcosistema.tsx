@@ -28,6 +28,7 @@ type GNodeData = {
   id: string; label: string; type: string; val: number;
   href?: string; estado?: string; nuevo?: boolean;
   community?: string; communityLabel?: string;
+  desc?: string; fecha?: string;
 };
 type GLinkData = {
   kind?: 'rel' | 'mesh';
@@ -56,10 +57,13 @@ export default function GrafoEcosistema({
   onStats,
   poderes = { anuncio: true, iniciativa: true, caso: true },
   estado = 'todos',
+  chrome = true,
 }: {
   onStats?: (s: NonNullable<GData['stats']>) => void;
   poderes?: PoderFilter;
   estado?: EstadoFilter;
+  /** false = modo ambiente (hero): sin buscador/zoom/panel; clic lleva a /grafo */
+  chrome?: boolean;
 }) {
   const fgRef = useRef<ForceGraphMethods<GNodeData, GLinkData> | null>(null);
   const [fgReady, setFgReady] = useState(false);
@@ -256,7 +260,9 @@ export default function GrafoEcosistema({
     const q = slug(query.trim());
     if (!view || q.length < 2) return [];
     const hit = (n: GNode) =>
-      slug(String(n.label ?? '')).includes(q) || slug(String(n.communityLabel ?? '')).includes(q);
+      slug(String(n.label ?? '')).includes(q) ||
+      slug(String(n.communityLabel ?? '')).includes(q) ||
+      slug(String(n.desc ?? '')).includes(q);
     const hubs = view.nodes.filter((n) => !ITEM_TYPES.has(n.type) && hit(n));
     const items = view.nodes.filter((n) => ITEM_TYPES.has(n.type) && hit(n));
     return [...hubs, ...items].slice(0, 8);
@@ -438,7 +444,7 @@ export default function GrafoEcosistema({
           linkDirectionalParticleSpeed={0.007}
           linkDirectionalParticleColor={() => '#5ed0ef'}
           onNodeHover={(n: GNode | null) => setHover(n ?? null)}
-          onNodeClick={(n: GNode) => setSelected(n ?? null)}
+          onNodeClick={(n: GNode) => { if (!chrome) { window.location.href = '/grafo'; return; } setSelected(n ?? null); }}
           onBackgroundClick={() => setSelected(null)}
           onEngineStop={() => {
             if (!fitted.current && fgRef.current) {
@@ -458,6 +464,7 @@ export default function GrafoEcosistema({
       )}
 
       {/* Controles de zoom */}
+      {chrome && (
       <div className="absolute bottom-4 left-4 flex flex-col gap-1.5">
         <ZBtn label="+" testid="zoom-in" onClick={() => zoomBy(1.5)} />
         <ZBtn label="−" testid="zoom-out" onClick={() => zoomBy(1 / 1.5)} />
@@ -466,8 +473,10 @@ export default function GrafoEcosistema({
           Ctrl + rueda = zoom · rueda = seguir bajando
         </span>
       </div>
+      )}
 
       {/* Buscador de conceptos ( / ) */}
+      {chrome && (
       <div className="absolute top-3 right-3 w-64 sm:w-72">
         <input
           ref={searchRef}
@@ -493,9 +502,10 @@ export default function GrafoEcosistema({
           </div>
         )}
       </div>
+      )}
 
       {/* Panel lateral: el apunte del nodo (clic = leer sin salir del mapa) */}
-      {selected && (
+      {chrome && selected && (
         <div className="absolute right-3 top-16 bottom-4 w-80 max-w-[86vw] overflow-y-auto rounded-xl border border-slate-700/70 bg-slate-900/90 p-4 backdrop-blur">
           <div className="flex items-start justify-between gap-2">
             <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: COLOR[selected.type] }}>
@@ -515,6 +525,36 @@ export default function GrafoEcosistema({
           {selected.communityLabel && (
             <div className="mt-1 text-[11px] text-cyan-200/70">🏝 región · {selected.communityLabel}</div>
           )}
+
+          {/* Memoria: qué pasa con el tema, no solo bullets */}
+          <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">Memoria</div>
+          {selected.desc ? (
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-300">{selected.desc}</p>
+          ) : (
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-500 italic">
+              Sin resumen registrado para este nodo; sus conexiones (abajo) cuentan la historia.
+            </p>
+          )}
+          <div className="mt-2 space-y-1 text-[11px]">
+            {(() => {
+              const act = lecturaActividad(selected.estado, selected.nuevo);
+              const f = fmtFecha(selected.fecha);
+              const nCon = neigh.get(String(selected.id))?.size ?? 0;
+              return (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: act.c }} />
+                    <span style={{ color: act.c }}>{act.t}</span>
+                  </div>
+                  {f && <div className="text-slate-400">Último movimiento: <span className="text-slate-200">{f}</span></div>}
+                  <div className="text-slate-400">
+                    Peso en el mapa: <span className="text-slate-200">{nCon} conexión{nCon === 1 ? '' : 'es'}</span>
+                    {nCon >= 8 ? ' · nodo central' : nCon >= 4 ? ' · relevante' : ''}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
 
           {/* Conexiones (vecinos clicables: saltan en el mapa) */}
           <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">Conexiones</div>
@@ -559,7 +599,7 @@ export default function GrafoEcosistema({
       )}
 
       {/* tooltip del nodo bajo el cursor (transitorio; el panel es lo persistente) */}
-      {hover && !selected && (
+      {chrome && hover && !selected && (
         <div className="pointer-events-none absolute left-16 bottom-4 max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur">
           <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR[hover.type] }}>
             {hover.type}
@@ -575,6 +615,21 @@ export default function GrafoEcosistema({
       )}
     </div>
   );
+}
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function fmtFecha(iso?: string) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return `${d.getUTCDate()} ${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+function lecturaActividad(estado?: string, nuevo?: boolean) {
+  const base =
+    estado === 'vigente' ? { t: 'Activo / vigente', c: '#34E59C' } :
+    estado === 'inactivo' ? { t: 'Inactivo — desechado o abandonado', c: '#94a3b8' } :
+    { t: 'En trámite', c: '#7ea2ff' };
+  return nuevo ? { ...base, t: base.t + ' · movimiento reciente' } : base;
 }
 
 function ZBtn({ label, onClick, testid }: { label: string; onClick: () => void; testid: string }) {

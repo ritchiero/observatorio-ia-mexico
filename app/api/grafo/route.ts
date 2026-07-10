@@ -23,6 +23,8 @@ type Node = {
   nuevo?: boolean;      // detectado en los últimos 90 días
   community?: string;   // casa primaria para separar el mapa en archipiélagos
   communityLabel?: string;
+  desc?: string;        // memoria del nodo: qué es / qué pasa con el tema
+  fecha?: string;       // último movimiento conocido (ISO)
 };
 
 const DIAS_NUEVO = 90;
@@ -101,7 +103,7 @@ export async function GET() {
     for (const a of anuncios) {
       const id = `a:${a.id}`;
       const st = norm(a.status);
-      addItem({ id, label: norm(a.titulo), type: 'anuncio', val: 2, href: `/anuncio/${a.id}`, status: st, estado: bucket(st), nuevo: esNuevo(a.fechaAnuncio ?? a.createdAt) });
+      addItem({ id, label: norm(a.titulo), type: 'anuncio', val: 2, href: `/anuncio/${a.id}`, status: st, estado: bucket(st), nuevo: esNuevo(a.fechaAnuncio ?? a.createdAt), desc: norm(a.resumenAgente || a.descripcion).slice(0, 460), fecha: norm(a.fechaAnuncio ?? a.createdAt) || undefined });
       const dep = norm(a.dependencia);
       if (dep) addConn(`d:${keyify(dep)}`, { id: `d:${keyify(dep)}`, label: dep, type: 'actor', val: 3 }, id, true);
       const resp = norm(a.responsable);
@@ -111,7 +113,7 @@ export async function GET() {
     for (const i of iniciativas) {
       const id = `i:${i.id}`;
       const st = norm(i.status ?? i.estatus);
-      addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: st, estado: bucket(st), nuevo: esNuevo(i.fecha) });
+      addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: st, estado: bucket(st), nuevo: esNuevo(i.fecha), desc: norm(i.descripcion).slice(0, 460), fecha: norm(i.fecha) || undefined });
       const temas = Array.isArray(i.tematicas)
         ? i.tematicas.filter((tema): tema is string => typeof tema === 'string')
         : [];
@@ -130,7 +132,7 @@ export async function GET() {
     for (const c of casos) {
       const id = `j:${c.id}`;
       const st = norm(c.estado);
-      addItem({ id, label: norm(c.nombre ?? c.titulo), type: 'caso', val: 3, href: `/casos-ia/${c.id}`, status: st, estado: bucket(st), nuevo: esNuevo(c.fechaActualizacion ?? c.fechaCreacion) });
+      addItem({ id, label: norm(c.nombre ?? c.titulo), type: 'caso', val: 3, href: `/casos-ia/${c.id}`, status: st, estado: bucket(st), nuevo: esNuevo(c.fechaActualizacion ?? c.fechaCreacion), desc: norm(c.resumen ?? c.hechos).slice(0, 460), fecha: norm(c.fechaActualizacion ?? c.fechaCreacion) || undefined });
       const tema = norm(c.temaIA);
       if (tema) addConn(`t:${keyify(tema)}`, { id: `t:${keyify(tema)}`, label: tema.replace(/_/g, ' '), type: 'tema', val: 3 }, id, true);
       const mat = norm(c.materia);
@@ -146,6 +148,38 @@ export async function GET() {
         links.push(...ls.map((l) => ({ ...l, kind: 'rel' as const })));
         hubItems.set(node.id, new Set(ls.map((l) => l.source)));
       }
+    }
+
+    // memoria computada de cada hub: cuántos conecta, de qué poderes, en qué
+    // estado están y cuál fue el último movimiento — TODO derivado de los datos
+    const PODER_LABEL: Record<string, string> = { anuncio: 'Ejecutivo', iniciativa: 'Legislativo', caso: 'Judicial' };
+    for (const [hubId, itemIds] of hubItems) {
+      const hub = nodes.get(hubId);
+      if (!hub) continue;
+      const its = [...itemIds].map((iid) => nodes.get(iid)).filter(Boolean) as Node[];
+      if (!its.length) continue;
+      const porPoder = new Map<string, number>();
+      const porEstado = { vigente: 0, tramite: 0, inactivo: 0 } as Record<string, number>;
+      let last: Node | null = null;
+      for (const it of its) {
+        porPoder.set(it.type, (porPoder.get(it.type) ?? 0) + 1);
+        if (it.estado) porEstado[it.estado] = (porEstado[it.estado] ?? 0) + 1;
+        if (it.fecha && (!last || String(it.fecha) > String(last.fecha ?? ''))) last = it;
+      }
+      const poderTxt = [...porPoder.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([t, n]) => `${n} del ${PODER_LABEL[t] ?? t}`)
+        .join(', ');
+      const estadoTxt = [
+        porEstado.vigente ? `${porEstado.vigente} vigentes` : '',
+        porEstado.tramite ? `${porEstado.tramite} en trámite` : '',
+        porEstado.inactivo ? `${porEstado.inactivo} inactivos` : '',
+      ].filter(Boolean).join(', ');
+      const lastTxt = last?.fecha
+        ? ` Último movimiento: ${String(last.fecha).slice(0, 10)} — «${String(last.label).slice(0, 90)}».`
+        : '';
+      hub.desc = `Conecta ${its.length} registros (${poderTxt}). Estado: ${estadoTxt || 'sin clasificar'}.${lastTxt}`;
+      hub.fecha = last?.fecha;
     }
 
     // MALLA hub↔hub por co-ocurrencia: cose las islas en un solo organismo.
