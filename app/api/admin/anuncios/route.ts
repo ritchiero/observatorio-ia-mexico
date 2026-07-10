@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { requireAdmin } from '@/lib/auth';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
@@ -7,6 +8,9 @@ export const dynamic = 'force-dynamic';
 
 // PUT - Actualizar un anuncio
 export async function PUT(request: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
@@ -65,6 +69,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar un anuncio
 export async function DELETE(request: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

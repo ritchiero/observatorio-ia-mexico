@@ -205,14 +205,3 @@ export async function ejecutarAgenteLegislativo(): Promise<DeteccionResult> {
   
   return result;
 }
-
-/**
- * API endpoint para ejecutar el agente manualmente
- */
-export async function ejecutarAgenteLegislativoAPI(adminKey: string): Promise<DeteccionResult> {
-  if (adminKey !== process.env.ADMIN_KEY) {
-    throw new Error('Unauthorized');
-  }
-  
-  return await ejecutarAgenteLegislativo();
-}

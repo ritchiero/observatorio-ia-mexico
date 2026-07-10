@@ -7,6 +7,9 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutos
 
 export async function GET() {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const db = getAdminDb();
     

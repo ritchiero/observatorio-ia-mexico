@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { requireAdmin } from '@/lib/auth';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
@@ -7,6 +8,9 @@ export const dynamic = 'force-dynamic';
 
 // POST - Importar o actualizar un anuncio (upsert)
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const anuncio = await request.json();
 

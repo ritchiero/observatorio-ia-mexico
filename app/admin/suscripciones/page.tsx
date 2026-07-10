@@ -6,9 +6,9 @@ import { ArrowLeft, Users, Mail, Phone, Calendar, Download, Search } from 'lucid
 
 interface Suscripcion {
   id: string;
-  nombre: string;
+  nombre?: string | null;
   email: string;
-  telefono: string;
+  telefono?: string | null;
   fechaRegistro: string;
   activo: boolean;
 }
@@ -21,7 +21,7 @@ export default function AdminSuscripcionesPage() {
   useEffect(() => {
     async function fetchSuscripciones() {
       try {
-        const response = await fetch('/api/suscripciones');
+        const response = await fetch('/api/admin/suscripciones');
         const data = await response.json();
         if (data.suscripciones) {
           setSuscripciones(data.suscripciones);
@@ -36,9 +36,9 @@ export default function AdminSuscripcionesPage() {
   }, []);
 
   const suscripcionesFiltradas = suscripciones.filter(s => 
-    s.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    (s.nombre ?? '').toLowerCase().includes(busqueda.toLowerCase()) ||
     s.email.toLowerCase().includes(busqueda.toLowerCase()) ||
-    s.telefono.includes(busqueda)
+    (s.telefono ?? '').includes(busqueda)
   );
 
   const formatFecha = (fecha: string) => {
@@ -52,24 +52,34 @@ export default function AdminSuscripcionesPage() {
     });
   };
 
-  const formatTelefono = (tel: string) => {
-    if (!tel || tel.length < 10) return tel;
-    return `+52 ${tel.slice(0, 2)} ${tel.slice(2, 6)} ${tel.slice(6, 10)}`;
+  const formatTelefono = (tel?: string | null) => {
+    if (!tel) return 'No proporcionado';
+    const nacional = tel.startsWith('52') && tel.length === 12 ? tel.slice(2) : tel;
+    if (nacional.length < 10) return tel;
+    return `+52 ${nacional.slice(0, 2)} ${nacional.slice(2, 6)} ${nacional.slice(6, 10)}`;
+  };
+
+  const whatsappHref = (tel: string) =>
+    `https://wa.me/${tel.startsWith('52') ? tel : `52${tel}`}`;
+
+  const csvCell = (value: string) => {
+    const formulaSafe = /^[=+\-@]/.test(value) ? `'${value}` : value;
+    return `"${formulaSafe.replaceAll('"', '""')}"`;
   };
 
   const exportarCSV = () => {
     const headers = ['Nombre', 'Email', 'Teléfono', 'Fecha de Registro', 'Activo'];
     const rows = suscripciones.map(s => [
-      s.nombre,
+      s.nombre ?? '',
       s.email,
-      s.telefono,
+      s.telefono ?? '',
       formatFecha(s.fechaRegistro),
       s.activo ? 'Sí' : 'No',
     ]);
     
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+      ...rows.map(row => row.map((cell) => csvCell(String(cell))).join(',')),
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -213,7 +223,7 @@ export default function AdminSuscripcionesPage() {
                   {suscripcionesFiltradas.map((sub) => (
                     <tr key={sub.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{sub.nombre}</div>
+                        <div className="font-medium text-gray-900">{sub.nombre || 'Sin nombre'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <a 
@@ -224,15 +234,19 @@ export default function AdminSuscripcionesPage() {
                         </a>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <a 
-                          href={`https://wa.me/52${sub.telefono}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-600 hover:underline text-sm flex items-center gap-1"
-                        >
-                          <Phone size={14} />
-                          {formatTelefono(sub.telefono)}
-                        </a>
+                        {sub.telefono ? (
+                          <a
+                            href={whatsappHref(sub.telefono)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:underline text-sm flex items-center gap-1"
+                          >
+                            <Phone size={14} />
+                            {formatTelefono(sub.telefono)}
+                          </a>
+                        ) : (
+                          <span className="text-sm text-gray-400">No proporcionado</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatFecha(sub.fechaRegistro)}
@@ -257,7 +271,7 @@ export default function AdminSuscripcionesPage() {
               {suscripcionesFiltradas.map((sub) => (
                 <div key={sub.id} className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <div className="font-medium text-gray-900">{sub.nombre}</div>
+                    <div className="font-medium text-gray-900">{sub.nombre || 'Sin nombre'}</div>
                     <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
                       sub.activo 
                         ? 'bg-green-100 text-green-700' 
@@ -274,15 +288,17 @@ export default function AdminSuscripcionesPage() {
                       <Mail size={14} />
                       {sub.email}
                     </a>
-                    <a 
-                      href={`https://wa.me/52${sub.telefono}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-600 flex items-center gap-2"
-                    >
-                      <Phone size={14} />
-                      {formatTelefono(sub.telefono)}
-                    </a>
+                    {sub.telefono ? (
+                      <a
+                        href={whatsappHref(sub.telefono)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 flex items-center gap-2"
+                      >
+                        <Phone size={14} />
+                        {formatTelefono(sub.telefono)}
+                      </a>
+                    ) : null}
                     <div className="text-gray-500 flex items-center gap-2">
                       <Calendar size={14} />
                       {formatFecha(sub.fechaRegistro)}

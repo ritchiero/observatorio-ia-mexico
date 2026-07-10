@@ -98,7 +98,7 @@ git push -u origin main
 
 ### 3.2 Generar Secrets
 
-Genera dos strings aleatorios de 32 caracteres para `CRON_SECRET` y `ADMIN_KEY`:
+Genera secretos independientes para cron, integraciones y la sesión administrativa:
 
 ```bash
 # En Linux/Mac
@@ -131,12 +131,12 @@ ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
 #### Firebase Admin (Server)
 
 ```
-FIREBASE_PROJECT_ID=tu-project-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@tu-project-id.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEF...\n-----END PRIVATE KEY-----\n"
+FIREBASE_ADMIN_PROJECT_ID=tu-project-id
+FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-xxxxx@tu-project-id.iam.gserviceaccount.com
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEF...\n-----END PRIVATE KEY-----\n"
 ```
 
-**Importante**: El `FIREBASE_PRIVATE_KEY` debe incluir las comillas y los `\n` tal como aparecen en el JSON descargado.
+**Importante**: `FIREBASE_ADMIN_PRIVATE_KEY` debe incluir las comillas y los `\n` tal como aparecen en el JSON descargado.
 
 #### Firebase Web (Client)
 
@@ -153,7 +153,10 @@ NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:xxxxxxxxxxxxx
 
 ```
 CRON_SECRET=tu-string-aleatorio-de-32-caracteres
-ADMIN_KEY=otro-string-aleatorio-de-32-caracteres
+ADMIN_KEY=token-bearer-para-integraciones
+NEXTAUTH_SECRET=secreto-aleatorio-de-sesion
+ADMIN_USERNAME=tu-usuario-admin
+ADMIN_PASSWORD_HASH=hash-bcrypt-de-tu-password
 ```
 
 ### 4.3 Deploy
@@ -162,22 +165,10 @@ ADMIN_KEY=otro-string-aleatorio-de-32-caracteres
 2. Espera a que termine el build (2-3 minutos)
 3. Una vez completado, haz clic en "Visit" para ver tu sitio
 
-## Paso 5: Cargar Datos Iniciales
+## Paso 5: Importar Datos Iniciales
 
-Una vez desplegado, carga los datos iniciales:
-
-```bash
-curl -X POST https://tu-dominio.vercel.app/api/seed
-```
-
-Deberías recibir:
-
-```json
-{
-  "success": true,
-  "message": "10 anuncios iniciales cargados exitosamente"
-}
-```
+Usa el panel administrativo autenticado o un script local auditable. No hay una
+ruta pública de seed en producción.
 
 ## Paso 6: Verificar Cron Jobs
 
@@ -189,7 +180,7 @@ Deberías recibir:
 
 ## Paso 7: Probar el Panel de Admin
 
-1. Ve a `https://tu-dominio.vercel.app/admin?key=TU_ADMIN_KEY`
+1. Ve a `https://tu-dominio.vercel.app/admin/login`
 2. Deberías ver el panel de administración
 3. Prueba ejecutar los agentes manualmente
 
@@ -204,7 +195,7 @@ Deberías recibir:
 ### Error: "Firebase Admin not initialized"
 
 - Verifica que todas las variables de entorno de Firebase estén configuradas correctamente
-- Asegúrate de que `FIREBASE_PRIVATE_KEY` incluya los `\n` y las comillas
+- Asegúrate de que `FIREBASE_ADMIN_PRIVATE_KEY` incluya los `\n` y las comillas
 
 ### Error: "Anthropic API key invalid"
 

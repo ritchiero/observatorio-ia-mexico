@@ -1,31 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ejecutarAgenteLegislativoAPI } from '@/lib/agenteLegislativo';
+import { ejecutarAgenteLegislativo } from '@/lib/agenteLegislativo';
+import { requireServiceToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  const authError = requireServiceToken(request, process.env.ADMIN_KEY);
+  if (authError) return authError;
+
   try {
-    const adminKey = request.headers.get('x-admin-key');
-    
-    if (!adminKey) {
-      return NextResponse.json(
-        { error: 'Admin key requerida' },
-        { status: 401 }
-      );
-    }
-    
-    const result = await ejecutarAgenteLegislativoAPI(adminKey);
+    const result = await ejecutarAgenteLegislativo();
     
     return NextResponse.json({
       success: true,
       result
     });
-  } catch (error: any) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
+  } catch (error: unknown) {
+    console.error('Error ejecutando agente legislativo:', error);
     return NextResponse.json(
       { error: 'Error ejecutando agente legislativo' },
       { status: 500 }

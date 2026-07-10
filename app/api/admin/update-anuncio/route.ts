@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
-import { Fuente, FuenteTipo } from '@/types';
+import { FuenteTipo } from '@/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface UpdateAnuncioRequest {
-  adminKey: string;
   anuncioId: string;
   fuentes?: Array<{
     url: string;
@@ -23,18 +22,12 @@ interface UpdateAnuncioRequest {
 }
 
 export async function POST(request: NextRequest) {
-  // Verificar autenticación de administrador
   const authError = await requireAdmin();
   if (authError) return authError;
 
   try {
     const body: UpdateAnuncioRequest = await request.json();
-    const { adminKey, anuncioId, fuentes, resumenAgente } = body;
-    
-    // Verificar admin key
-    if (adminKey !== process.env.ADMIN_KEY) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { anuncioId, fuentes, resumenAgente } = body;
 
     if (!anuncioId) {
       return NextResponse.json({ error: 'anuncioId is required' }, { status: 400 });
@@ -50,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Preparar datos para actualizar
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updatedAt: Timestamp.now()
     };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Eye } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -22,38 +22,68 @@ interface HeroGlassProps {
   loadingCasos?: boolean;
 }
 
-type UltimoEvento = { titulo: string; dependencia: string; fecha: string } | null;
-
 export default function HeroSectionGlass({ stats, legStats, casosStats, loading, loadingLeg, loadingCasos }: HeroGlassProps) {
   const [mounted, setMounted] = useState(false);
-  const [ultimo, setUltimo] = useState<UltimoEvento>(null);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
   // Modal de suscripción (preservado del hero original)
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ nombre: '', email: '', telefono: '' });
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [formData, setFormData] = useState({
+    email: '',
+    consentimientoEmail: false,
+    website: '',
+  });
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [formMessage, setFormMessage] = useState('');
 
   useEffect(() => {
     setMounted(true);
-    // Último evento REAL: el anuncio más reciente. Ordenamos por fecha en el cliente
-    // por si el API devolviera otro orden — siempre mostramos el más nuevo.
-    fetch('/api/anuncios')
-      .then((r) => r.json())
-      .then((d) => {
-        const arr: Array<{ titulo: string; dependencia?: string; fechaAnuncio?: string }> = d.anuncios || [];
-        const a = [...arr].sort((x, y) => {
-          const tx = x.fechaAnuncio ? new Date(x.fechaAnuncio).getTime() : 0;
-          const ty = y.fechaAnuncio ? new Date(y.fechaAnuncio).getTime() : 0;
-          return ty - tx;
-        })[0];
-        if (a) setUltimo({ titulo: a.titulo, dependencia: a.dependencia || '', fecha: a.fechaAnuncio || '' });
-      })
-      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!showModal) return;
+
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const dialog = dialogRef.current;
+    const focusableSelector =
+      'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+    const focusFirst = window.requestAnimationFrame(() => {
+      dialog?.querySelector<HTMLElement>(focusableSelector)?.focus();
+    });
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setShowModal(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !dialog) return;
+
+      const focusable = [...dialog.querySelectorAll<HTMLElement>(focusableSelector)];
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFirst);
+      document.removeEventListener('keydown', onKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [showModal]);
 
   // Header sticky con conciencia de scroll: se condensa y se opaca al bajar.
   useEffect(() => {
@@ -79,14 +109,15 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
     setFormMessage('');
     try {
       const response = await fetch('/api/suscripciones', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, origen: pathname || '/' }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Error al suscribirse');
       setFormStatus('success');
       setFormMessage(data.message);
-      setFormData({ nombre: '', email: '', telefono: '' });
-      setTimeout(() => { setShowModal(false); setFormStatus('idle'); setFormMessage(''); }, 3000);
+      setFormData({ email: '', consentimientoEmail: false, website: '' });
     } catch (error) {
       setFormStatus('error');
       setFormMessage(error instanceof Error ? error.message : 'Error al suscribirse');
@@ -97,14 +128,6 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
   const nProductos = loading ? '—' : stats.operando;
   const nIniciativas = loadingLeg !== false && !legStats?.total ? '—' : legStats?.total ?? '—';
   const nCasos = loadingCasos !== false && !casosStats?.total ? '—' : casosStats?.total ?? '—';
-  const totalRastreado = (stats.total || 0) + (legStats?.total || 0) + (casosStats?.total || 0);
-
-  const fechaCorta = (iso: string) => {
-    if (!iso) return '';
-    try { return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }); }
-    catch { return ''; }
-  };
-
   return (
     <div className="relative w-full min-h-screen overflow-hidden" style={{ background: T.void, color: T.text }}>
       {/* Fondo: gradientes holográficos */}
@@ -271,8 +294,14 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => formStatus !== 'loading' && setShowModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8">
-            <button onClick={() => formStatus !== 'loading' && setShowModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" disabled={formStatus === 'loading'}>
+          <div
+            ref={dialogRef}
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="subscription-title"
+          >
+            <button aria-label="Cerrar suscripción" onClick={() => formStatus !== 'loading' && setShowModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" disabled={formStatus === 'loading'}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             {formStatus === 'success' ? (
@@ -280,35 +309,49 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <h3 className="font-serif-display text-2xl text-gray-900 mb-2">¡Gracias!</h3>
+                <h3 id="subscription-title" className="font-serif-display text-2xl text-gray-900 mb-2">¡Gracias!</h3>
                 <p className="text-gray-600 font-sans-tech">{formMessage}</p>
               </div>
             ) : (
               <>
                 <div className="text-center mb-6">
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4"><Eye size={24} className="text-blue-500" /></div>
-                  <h3 className="font-serif-display text-2xl text-gray-900 mb-2">Únete al Observatorio</h3>
+                  <h3 id="subscription-title" className="font-serif-display text-2xl text-gray-900 mb-2">Únete al Observatorio</h3>
                   <p className="text-gray-600 font-sans-tech text-sm">Recibe actualizaciones sobre IA en México: nuevos anuncios, legislación y casos judiciales.</p>
                 </div>
                 <form onSubmit={handleSubscribe} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">Nombre completo *</label>
-                    <input type="text" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} placeholder="Tu nombre completo" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required disabled={formStatus === 'loading'} />
+                    <label htmlFor="subscription-email" className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">Correo electrónico *</label>
+                    <input id="subscription-email" type="email" autoComplete="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="tu@email.com" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required disabled={formStatus === 'loading'} />
                   </div>
-                  <div>
-                    <label className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">Correo electrónico *</label>
-                    <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="tu@email.com" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required disabled={formStatus === 'loading'} />
+                  <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={formData.consentimientoEmail}
+                      onChange={(e) => setFormData({ ...formData, consentimientoEmail: e.target.checked })}
+                      required
+                      disabled={formStatus === 'loading'}
+                    />
+                    <span>Acepto recibir por correo actualizaciones del Observatorio y poder darme de baja en cualquier momento.</span>
+                  </label>
+                  <div className="absolute -left-[10000px]" aria-hidden="true">
+                    <label htmlFor="subscription-website">Sitio web</label>
+                    <input
+                      id="subscription-website"
+                      name="website"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    />
                   </div>
-                  <div>
-                    <label className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">WhatsApp *</label>
-                    <input type="tel" value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} placeholder="55 1234 5678" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required disabled={formStatus === 'loading'} />
-                    <p className="text-[10px] text-gray-400 mt-1">Para enviarte alertas importantes</p>
-                  </div>
-                  {formStatus === 'error' && <div className="p-3 bg-red-50 border border-red-200 rounded-lg"><p className="text-sm text-red-600 font-sans-tech">{formMessage}</p></div>}
+                  {formStatus === 'error' && <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg"><p className="text-sm text-red-600 font-sans-tech">{formMessage}</p></div>}
                   <button type="submit" disabled={formStatus === 'loading'} className="w-full py-3 bg-blue-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
                     {formStatus === 'loading' ? 'Registrando…' : 'Suscribirme'}
                   </button>
-                  <p className="text-[10px] text-gray-400 text-center">Al suscribirte aceptas recibir comunicaciones del Observatorio IA México.</p>
+                  <p className="text-[11px] text-gray-500 text-center">Sólo pedimos tu correo. No solicitamos WhatsApp ni nombre para esta suscripción.</p>
                 </form>
               </>
             )}
@@ -330,16 +373,6 @@ function IrisMark() {
   );
 }
 
-function GlassCard({ children, style = {}, className = '' }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
-  return (
-    <div className={className} style={{
-      background: 'rgba(20,28,48,0.45)', backdropFilter: 'blur(24px) saturate(160%)', WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-      border: '1px solid rgba(255,255,255,0.10)', borderRadius: 20,
-      boxShadow: '0 16px 48px -16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)', ...style,
-    }}>{children}</div>
-  );
-}
-
 function MetricPill({ n, l, c, href }: { n: number | string; l: string; c: string; href: string }) {
   return (
     <Link href={href} className="flex items-center gap-2.5 transition-transform hover:scale-[1.03]" style={{
@@ -350,39 +383,5 @@ function MetricPill({ n, l, c, href }: { n: number | string; l: string; c: strin
       <span className="font-serif-display" style={{ fontSize: 22, fontWeight: 500, color: T.text, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{n}</span>
       <span className="font-mono uppercase" style={{ fontSize: 10.5, color: T.body, letterSpacing: '0.16em', fontWeight: 500 }}>{l}</span>
     </Link>
-  );
-}
-
-function BigSpark() {
-  const vals = [12, 18, 14, 22, 20, 28, 34, 30, 42, 38, 52, 60, 55, 70, 82, 78, 96, 110, 105, 130, 145, 152];
-  const w = 332, h = 80, max = Math.max(...vals), min = Math.min(...vals);
-  const pts = vals.map((v, i) => [(i / (vals.length - 1)) * w, h - ((v - min) / (max - min)) * (h - 8) - 4]);
-  const line = pts.map((p) => p.join(',')).join(' ');
-  const area = `0,${h} ${line} ${w},${h}`;
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: '100%' }}>
-      <defs><linearGradient id="sparkfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={T.cyan} stopOpacity="0.4" /><stop offset="100%" stopColor={T.cyan} stopOpacity="0" /></linearGradient></defs>
-      <polygon points={area} fill="url(#sparkfill)" />
-      <polyline points={line} fill="none" stroke={T.cyan} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ filter: `drop-shadow(0 0 8px ${T.cyan})` }} />
-      <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4" fill={T.cyan} style={{ filter: `drop-shadow(0 0 8px ${T.cyan})` }} />
-    </svg>
-  );
-}
-
-function ParticleField() {
-  const particles = Array.from({ length: 36 }).map((_, i) => ({
-    left: (i * 7919) % 100, delay: (i * 0.3) % 8, duration: 8 + ((i * 13) % 6),
-    size: 1 + (i % 3) * 0.6, color: [T.cyan, T.blue, T.violet][i % 3],
-  }));
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((p, i) => (
-        <div key={i} style={{
-          position: 'absolute', left: `${p.left}%`, top: 0, width: p.size, height: p.size, borderRadius: 999,
-          background: p.color, boxShadow: `0 0 ${p.size * 6}px ${p.color}`,
-          animation: `glass-stream ${p.duration}s linear infinite`, animationDelay: `${p.delay}s`, opacity: 0.6,
-        }} />
-      ))}
-    </div>
   );
 }

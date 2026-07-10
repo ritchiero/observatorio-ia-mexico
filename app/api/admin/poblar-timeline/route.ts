@@ -5,23 +5,11 @@ import { crearEventoInicial } from '@/lib/timeline';
 
 export const maxDuration = 300; // 5 minutos
 
-export async function POST(request: Request) {
-  // Verificar autenticación de administrador
+export async function POST() {
   const authError = await requireAdmin();
   if (authError) return authError;
 
   try {
-    // Verificar autenticación
-    const { searchParams } = new URL(request.url);
-    const key = searchParams.get('key');
-    
-    if (key !== process.env.ADMIN_KEY) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
     const db = getAdminDb();
     let procesados = 0;
     let creados = 0;

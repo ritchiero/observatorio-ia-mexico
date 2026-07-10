@@ -63,7 +63,7 @@ observatorio-ia-mexico/
 ### 1. Instalar dependencias
 
 ```bash
-pnpm install
+npm install
 ```
 
 ### 2. Configurar variables de entorno
@@ -80,9 +80,9 @@ cp .env.example .env.local
 - `ANTHROPIC_API_KEY`: Tu API key de Anthropic
 
 **Firebase Admin (Server):**
-- `FIREBASE_PROJECT_ID`: ID del proyecto
-- `FIREBASE_CLIENT_EMAIL`: Email del service account
-- `FIREBASE_PRIVATE_KEY`: Private key (con saltos de línea)
+- `FIREBASE_ADMIN_PROJECT_ID`: ID del proyecto
+- `FIREBASE_ADMIN_CLIENT_EMAIL`: Email del service account
+- `FIREBASE_ADMIN_PRIVATE_KEY`: Private key (con saltos de línea)
 
 **Firebase Web (Client):**
 - `NEXT_PUBLIC_FIREBASE_API_KEY`
@@ -94,7 +94,12 @@ cp .env.example .env.local
 
 **Seguridad:**
 - `CRON_SECRET`: String aleatorio de 32 caracteres
-- `ADMIN_KEY`: String aleatorio de 32 caracteres
+- `ADMIN_KEY`: Token Bearer para integraciones de servicio; no autentica el panel
+- `NEXTAUTH_SECRET`: Secreto aleatorio para firmar la sesión
+- `ADMIN_USERNAME`: Usuario del panel
+- `ADMIN_EMAIL`: Correo opcional para iniciar sesión
+- `ADMIN_PASSWORD_HASH`: Hash bcrypt de la contraseña
+- `PDF_BACKUP_ALLOWED_HOSTS`: Allowlist opcional de repositorios PDF
 
 ### 3. Configurar Firebase
 
@@ -115,20 +120,16 @@ service cloud.firestore {
 }
 ```
 
-### 4. Cargar datos iniciales
+### 4. Datos iniciales
 
-```bash
-# Iniciar servidor de desarrollo
-pnpm dev
-
-# En otra terminal, cargar datos iniciales
-curl -X POST http://localhost:3000/api/seed
-```
+Las APIs de lectura pueden usar los datos públicos en desarrollo cuando no hay
+credenciales de Firebase Admin. Cualquier importación se realiza desde el panel
+administrativo autenticado; el proyecto no expone una ruta pública de seed.
 
 ### 5. Ejecutar en desarrollo
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 Abrir [http://localhost:3000](http://localhost:3000)
@@ -142,7 +143,7 @@ Los agentes se ejecutan automáticamente en Vercel:
 
 ## 🔧 Panel de Administración
 
-Acceder a `/admin?key=TU_ADMIN_KEY` para:
+Acceder a `/admin/login` con la sesión administrativa para:
 
 - Ejecutar agentes manualmente
 - Agregar anuncios manualmente
@@ -179,15 +180,15 @@ vercel --prod
 1. **Dashboard (/)**: Estadísticas, último anuncio, lista completa con filtros
 2. **Detalle (/anuncio/[id])**: Información completa y timeline de actualizaciones
 3. **Actividad (/actividad)**: Feed de actividad reciente
-4. **Admin (/admin?key=xxx)**: Panel de administración
+4. **Admin (/admin/login)**: Panel de administración con sesión NextAuth
 
 ## 📦 Scripts
 
 ```bash
-pnpm dev          # Desarrollo
-pnpm build        # Build para producción
-pnpm start        # Servidor de producción
-pnpm lint         # Linter
+npm run dev       # Desarrollo
+npm run build     # Build para producción
+npm start         # Servidor de producción
+npm run lint      # Linter
 ```
 
 ## 🤝 Contribuir

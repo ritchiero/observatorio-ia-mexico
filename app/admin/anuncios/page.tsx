@@ -507,7 +507,6 @@ export default function AdminAnunciosPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          adminKey: 'skip',
           anuncioId: selectedAnuncio.id,
           fuentes: [{
             ...newFuente,
@@ -605,7 +604,6 @@ export default function AdminAnunciosPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          adminKey: 'skip',
           anuncioId: selectedAnuncio.id,
           fuentes: fuentesToAdd.map(f => ({
             url: f.url,

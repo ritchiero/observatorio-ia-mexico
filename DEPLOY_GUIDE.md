@@ -81,19 +81,22 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
 NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
 
-FIREBASE_PROJECT_ID=tu-proyecto-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk@tu-proyecto.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTU_CLAVE_PRIVADA\n-----END PRIVATE KEY-----\n"
+FIREBASE_ADMIN_PROJECT_ID=tu-proyecto-id
+FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk@tu-proyecto.iam.gserviceaccount.com
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTU_CLAVE_PRIVADA\n-----END PRIVATE KEY-----\n"
 
 ANTHROPIC_API_KEY=sk-ant-api03-tu-clave-de-claude
 
-ADMIN_KEY=una_clave_secreta_para_admin
+ADMIN_KEY=token-bearer-para-integraciones
+NEXTAUTH_SECRET=secreto-aleatorio-de-sesion
+ADMIN_USERNAME=tu-usuario-admin
+ADMIN_PASSWORD_HASH=hash-bcrypt-de-tu-password
 ```
 
 **Importante**: 
-- Para `FIREBASE_PRIVATE_KEY`, copia todo el contenido del campo "private_key" del JSON de Firebase
+- Para `FIREBASE_ADMIN_PRIVATE_KEY`, copia todo el contenido del campo "private_key" del JSON de Firebase
 - Asegúrate de incluir las comillas y los `\n` para los saltos de línea
-- `ADMIN_KEY` es una clave que tú defines para proteger el panel admin
+- `ADMIN_KEY` se usa sólo como Bearer token de integraciones; el panel usa NextAuth
 
 5. Click en "Deploy"
 6. Espera a que termine el despliegue (2-3 minutos)
@@ -124,17 +127,15 @@ Más detalle en `CRON_JOBS.md`.
 
 **Nota**: Los cron jobs solo funcionan en planes Pro de Vercel ($20/mes). En el plan gratuito, puedes ejecutar los agentes manualmente desde el panel admin.
 
-### 6. Cargar Datos Iniciales
+### 6. Importar datos
 
-Una vez desplegado:
-
-1. Ve a tu sitio: `https://tu-proyecto.vercel.app`
-2. Navega a `/api/seed` para cargar los 10 anuncios iniciales
-3. O usa curl: `curl -X POST https://tu-proyecto.vercel.app/api/seed`
+Las cargas iniciales y migraciones se ejecutan exclusivamente desde el panel
+administrativo autenticado o mediante scripts locales auditables. Nunca se
+expone un endpoint de seed en producción.
 
 ### 7. Acceder al Panel Admin
 
-1. Ve a `https://tu-proyecto.vercel.app/admin?key=TU_ADMIN_KEY`
+1. Ve a `https://tu-proyecto.vercel.app/admin/login`
 2. Desde ahí puedes ejecutar los agentes manualmente
 3. También puedes agregar anuncios de forma manual
 
@@ -169,14 +170,13 @@ Configura estos servicios para hacer requests GET a:
 - **Sitio principal**: `https://tu-proyecto.vercel.app`
 - **Dashboard**: `https://tu-proyecto.vercel.app/dashboard`
 - **Actividad**: `https://tu-proyecto.vercel.app/actividad`
-- **Admin**: `https://tu-proyecto.vercel.app/admin?key=TU_ADMIN_KEY`
-- **Seed**: `https://tu-proyecto.vercel.app/api/seed`
+- **Admin**: `https://tu-proyecto.vercel.app/admin/login`
 
 ## ❓ Solución de Problemas
 
 ### Error: "Firebase not initialized"
 - Verifica que todas las variables de entorno estén configuradas correctamente
-- Revisa que `FIREBASE_PRIVATE_KEY` tenga el formato correcto con `\n`
+- Revisa que `FIREBASE_ADMIN_PRIVATE_KEY` tenga el formato correcto con `\n`
 
 ### Error: "Claude API error"
 - Verifica que tu API key de Claude sea válida

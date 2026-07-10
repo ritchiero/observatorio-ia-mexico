@@ -1,19 +1,15 @@
 import { NextResponse } from 'next/server';
 import { ejecutarAgenteCasos } from '@/lib/agents-ia-pi';
+import { requireServiceToken } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+  const authError = requireServiceToken(request, process.env.ADMIN_KEY);
+  if (authError) return authError;
+
   try {
-    // Verificar autenticación (opcional: agregar ADMIN_KEY)
-    const { searchParams } = new URL(request.url);
-    const key = searchParams.get('key');
-    
-    if (key !== process.env.ADMIN_KEY) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-    
     const resultados = await ejecutarAgenteCasos();
     
     return NextResponse.json({
