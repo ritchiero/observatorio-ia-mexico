@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { asignarComunidades } from '@/lib/grafo-comunidades';
+import { anioAparicionItem, anioHub, anioMesh } from '@/lib/grafo-tiempo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,6 +26,7 @@ type Node = {
   communityLabel?: string;
   desc?: string;        // memoria del nodo: qué es / qué pasa con el tema
   fecha?: string;       // último movimiento conocido (ISO)
+  anio?: number | null; // año de APARICIÓN en el atlas (modo Historia)
 };
 
 const DIAS_NUEVO = 90;
@@ -38,7 +40,7 @@ function esNuevo(fecha: unknown): boolean {
   const t = fecha ? new Date(String(fecha)).getTime() : NaN;
   return Number.isFinite(t) && Date.now() - t < DIAS_NUEVO * 24 * 3600 * 1000;
 }
-type Link = { source: string; target: string; kind?: 'rel' | 'mesh'; w?: number; prim?: boolean; cross?: boolean };
+type Link = { source: string; target: string; kind?: 'rel' | 'mesh'; w?: number; prim?: boolean; cross?: boolean; anio?: number | null };
 
 const CAMARA_LABEL: Record<string, string> = {
   diputados: 'Cámara de Diputados',
@@ -108,7 +110,7 @@ export async function GET() {
     for (const a of anuncios) {
       const id = `a:${a.id}`;
       const st = norm(a.status);
-      addItem({ id, label: norm(a.titulo), type: 'anuncio', val: 2, href: `/anuncio/${a.id}`, status: st, estado: bucket(st), nuevo: esNuevo(a.fechaAnuncio ?? a.createdAt), desc: norm(a.resumenAgente || a.descripcion).slice(0, 460), fecha: norm(a.fechaAnuncio ?? a.createdAt) || undefined });
+      addItem({ id, label: norm(a.titulo), type: 'anuncio', val: 2, href: `/anuncio/${a.id}`, status: st, estado: bucket(st), nuevo: esNuevo(a.fechaAnuncio ?? a.createdAt), desc: norm(a.resumenAgente || a.descripcion).slice(0, 460), fecha: norm(a.fechaAnuncio ?? a.createdAt) || undefined, anio: anioAparicionItem('anuncio', a) });
       const dep = norm(a.dependencia);
       if (dep) addConn(`d:${keyify(dep)}`, { id: `d:${keyify(dep)}`, label: dep, type: 'actor', val: 3 }, id, true);
       const resp = norm(a.responsable);
@@ -119,7 +121,7 @@ export async function GET() {
     for (const i of iniciativas) {
       const id = `i:${i.id}`;
       const st = norm(i.status ?? i.estatus);
-      addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: st, estado: bucket(st), nuevo: esNuevo(i.fecha), desc: norm(i.descripcion).slice(0, 460), fecha: norm(i.fecha) || undefined });
+      addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: st, estado: bucket(st), nuevo: esNuevo(i.fecha), desc: norm(i.descripcion).slice(0, 460), fecha: norm(i.fecha) || undefined, anio: anioAparicionItem('iniciativa', i) });
       const temas = Array.isArray(i.tematicas)
         ? i.tematicas.filter((tema): tema is string => typeof tema === 'string')
         : [];
@@ -143,7 +145,7 @@ export async function GET() {
     for (const c of casos) {
       const id = `j:${c.id}`;
       const st = norm(c.estado);
-      addItem({ id, label: norm(c.nombre ?? c.titulo), type: 'caso', val: 3, href: `/casos-ia/${c.id}`, status: st, estado: bucket(st), nuevo: esNuevo(c.fechaActualizacion ?? c.fechaCreacion), desc: norm(c.resumen ?? c.hechos).slice(0, 460), fecha: norm(c.fechaActualizacion ?? c.fechaCreacion) || undefined });
+      addItem({ id, label: norm(c.nombre ?? c.titulo), type: 'caso', val: 3, href: `/casos-ia/${c.id}`, status: st, estado: bucket(st), nuevo: esNuevo(c.fechaActualizacion ?? c.fechaCreacion), desc: norm(c.resumen ?? c.hechos).slice(0, 460), fecha: norm(c.fechaActualizacion ?? c.fechaCreacion) || undefined, anio: anioAparicionItem('caso', c) });
       const tema = norm(c.temaIA);
       if (tema) addConn(`t:${keyify(tema)}`, { id: `t:${keyify(tema)}`, label: tema.replace(/_/g, ' '), type: 'tema', val: 3 }, id, true);
       const mat = norm(c.materia);
@@ -171,6 +173,7 @@ export async function GET() {
         estado: 'tramite',
         nuevo: esNuevo('2026-05-29'),
         fecha: '2026-05-29',
+        anio: 2025,
         desc:
           'Experimento del laboratorio del Observatorio: se solicitó a INDAUTOR el registro de dos obras visuales generadas con IA (GPT-4o, 1 prompt; Midjourney, 5 prompts) declarando el uso de IA, para forzar un pronunciamiento sobre la autoría humana asistida. INDAUTOR desechó ambos registros (jun-2025) y el TFJA (Sala de Propiedad Intelectual, exp. 1637/25-EPI-01-10) ratificó las negativas en mayo de 2026: “es la IA quien materializa la idea”. Próximo paso: amparo.',
       });
@@ -189,7 +192,7 @@ export async function GET() {
       if (ls.length >= MIN_DEG || esParteDeCaso) {
         node.val = Math.min(3 + ls.length * 1.15, 42); // tamaño según cuántos conecta (jerarquía fuerte)
         nodes.set(node.id, node);
-        links.push(...ls.map((l) => ({ ...l, kind: 'rel' as const })));
+        links.push(...ls.map((l) => ({ ...l, kind: 'rel' as const, anio: nodes.get(l.source)?.anio ?? null })));
         hubItems.set(node.id, new Set(ls.map((l) => l.source)));
       }
     }
@@ -224,6 +227,7 @@ export async function GET() {
         : '';
       hub.desc = `Conecta ${its.length} registros (${poderTxt}). Estado: ${estadoTxt || 'sin clasificar'}.${lastTxt}`;
       hub.fecha = last?.fecha;
+      hub.anio = anioHub(its.map((it) => it.anio ?? null));
     }
 
     // MALLA hub↔hub por co-ocurrencia: cose las islas en un solo organismo.
@@ -235,8 +239,9 @@ export async function GET() {
         const A = hubItems.get(hubIds[i])!;
         const B = hubItems.get(hubIds[j])!;
         let shared = 0;
-        for (const x of A) if (B.has(x)) shared++;
-        if (shared >= 2) mesh.push({ source: hubIds[i], target: hubIds[j], kind: 'mesh', w: shared });
+        const aniosCompartidos: Array<number | null> = [];
+        for (const x of A) if (B.has(x)) { shared++; aniosCompartidos.push(nodes.get(x)?.anio ?? null); }
+        if (shared >= 2) mesh.push({ source: hubIds[i], target: hubIds[j], kind: 'mesh', w: shared, anio: anioMesh(aniosCompartidos) });
       }
     }
     // esqueleto disperso (no todos-con-todos): cada hub conserva sólo sus 3
@@ -290,6 +295,24 @@ export async function GET() {
         iniciativas: iniciativas.length,
         casos: casos.length + 1, // + caso propio del laboratorio (Rompehielos INDAUTOR)
         comunidades: new Set(nodeList.map((n) => n.community).filter(Boolean)).size,
+        // modo Historia: cuántos registros APARECEN cada año, por poder + sin fecha.
+        // Se cuenta sobre el dataset COMPLETO (mismo universo que anuncios/iniciativas/casos
+        // de arriba): así sum(porAnio) + sinFecha cuadra con los totales de "Hoy".
+        anual: (() => {
+          const porAnio: Record<string, { anuncios: number; iniciativas: number; casos: number }> = {};
+          const sinFecha = { anuncios: 0, iniciativas: 0, casos: 0 };
+          const cuenta = (t: 'anuncios' | 'iniciativas' | 'casos', y: number | null) => {
+            if (y == null) { sinFecha[t] += 1; return; }
+            const k = String(y);
+            porAnio[k] = porAnio[k] ?? { anuncios: 0, iniciativas: 0, casos: 0 };
+            porAnio[k][t] += 1;
+          };
+          for (const a of anuncios) cuenta('anuncios', anioAparicionItem('anuncio', a));
+          for (const i of iniciativas) cuenta('iniciativas', anioAparicionItem('iniciativa', i));
+          for (const c of casos) cuenta('casos', anioAparicionItem('caso', c));
+          cuenta('casos', 2025); // caso propio del laboratorio (Rompehielos INDAUTOR)
+          return { porAnio, sinFecha };
+        })(),
       },
       generado: new Date().toISOString(),
     });

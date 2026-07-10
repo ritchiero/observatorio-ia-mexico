@@ -5,6 +5,7 @@ import type { ComponentType } from 'react';
 import dynamic from 'next/dynamic';
 import type { ForceGraphMethods, ForceGraphProps, LinkObject, NodeObject } from 'react-force-graph-2d';
 import { centrosDeComunidades } from '@/lib/grafo-comunidades';
+import { visibleEnAnio } from '@/lib/grafo-tiempo';
 // @ts-expect-error — d3-force-3d (dep de force-graph) no publica tipos
 import { forceX, forceY, forceCollide } from 'd3-force-3d';
 
@@ -29,11 +30,11 @@ type GNodeData = {
   id: string; label: string; type: string; val: number;
   href?: string; estado?: string; nuevo?: boolean;
   community?: string; communityLabel?: string;
-  desc?: string; fecha?: string;
+  desc?: string; fecha?: string; anio?: number | null;
 };
 type GLinkData = {
   kind?: 'rel' | 'mesh';
-  w?: number; prim?: boolean; cross?: boolean;
+  w?: number; prim?: boolean; cross?: boolean; anio?: number | null;
 };
 type GNode = NodeObject<GNodeData>;
 type GLink = LinkObject<GNodeData, GLinkData>;
@@ -56,7 +57,7 @@ const hash01 = (value: string) => {
 
 export type NodoLite = {
   id: string; label: string; type: string;
-  estado?: string; nuevo?: boolean; desc?: string; communityLabel?: string;
+  estado?: string; nuevo?: boolean; desc?: string; communityLabel?: string; anio?: number | null;
 };
 
 export default function GrafoEcosistema({
@@ -67,6 +68,8 @@ export default function GrafoEcosistema({
   poderes = { anuncio: true, iniciativa: true, caso: true },
   estado = 'todos',
   chrome = true,
+  anio = null,
+  anioActual = 2026,
 }: {
   onStats?: (s: NonNullable<GData['stats']>) => void;
   /** entrega el catálogo lite de nodos (para buscadores externos) */
@@ -79,6 +82,9 @@ export default function GrafoEcosistema({
   estado?: EstadoFilter;
   /** false = modo ambiente (hero): sin buscador/zoom/panel; clic lleva a /grafo */
   chrome?: boolean;
+  /** modo Historia: año de corte acumulativo (null = actualidad, sin corte) */
+  anio?: number | null;
+  anioActual?: number;
 }) {
   const fgRef = useRef<ForceGraphMethods<GNodeData, GLinkData> | null>(null);
   const [fgReady, setFgReady] = useState(false);
@@ -111,7 +117,7 @@ export default function GrafoEcosistema({
           onNodes(
             d.nodes.map((n) => ({
               id: String(n.id), label: n.label, type: n.type,
-              estado: n.estado, nuevo: n.nuevo, desc: n.desc, communityLabel: n.communityLabel,
+              estado: n.estado, nuevo: n.nuevo, desc: n.desc, communityLabel: n.communityLabel, anio: n.anio,
             })),
           );
         }
@@ -270,8 +276,35 @@ export default function GrafoEcosistema({
     return { neigh };
   }, [view]);
 
-  // foco activo = hover o selección (el panel mantiene la isla iluminada sin mouse encima)
-  const active = hover ?? selected;
+  // ---- MODO HISTORIA: corte acumulativo por visibilidad (sin recalentar el layout) ----
+  const nodoVisibleEnCorte = useCallback(
+    (n: GNodeData) => visibleEnAnio(n.anio ?? null, anio, anioActual),
+    [anio, anioActual],
+  );
+  const linkVisibleEnCorte = useCallback(
+    (l: GLink) => {
+      if (anio === null || anio >= anioActual) return true;
+      const sOk = visibleEnAnio((typeof l.source === 'object' ? l.source?.anio : null) ?? null, anio, anioActual);
+      const tOk = visibleEnAnio((typeof l.target === 'object' ? l.target?.anio : null) ?? null, anio, anioActual);
+      return sOk && tOk && visibleEnAnio(l.anio ?? null, anio, anioActual);
+    },
+    [anio, anioActual],
+  );
+
+  const enPasado = anio !== null && anio < anioActual;
+
+  // Historia: si el corte oculta el nodo seleccionado, soltarlo — el panel no
+  // puede describir un nodo que "aún no existe" y un foco invisible apagaría el mapa
+  useEffect(() => {
+    if (selected && !visibleEnAnio(selected.anio ?? null, anio, anioActual)) setSelected(null);
+  }, [anio, anioActual, selected]);
+
+  // foco activo = hover o selección (el panel mantiene la isla iluminada sin mouse encima);
+  // un foco fuera del corte no cuenta (hover puede quedar rancio al mover el slider)
+  const active = useMemo(() => {
+    const vis = (n: GNode | null) => (n && visibleEnAnio(n.anio ?? null, anio, anioActual) ? n : null);
+    return vis(hover) ?? vis(selected);
+  }, [hover, selected, anio, anioActual]);
   const spotlightSet = useMemo(() => new Set(spotlight ?? []), [spotlight]);
   const isLit = useCallback(
     (id: string) => {
@@ -306,11 +339,11 @@ export default function GrafoEcosistema({
     }
   }, []);
 
-  // viaje ordenado desde fuera (buscador del hero)
+  // viaje ordenado desde fuera (buscador del hero); nunca hacia un nodo fuera del corte
   useEffect(() => {
     if (!travel) return;
     const n = byId.get(travel.id);
-    if (n) goTo(n);
+    if (n && visibleEnAnio(n.anio ?? null, anio, anioActual)) goTo(n);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [travel?.t]);
 
@@ -335,7 +368,9 @@ export default function GrafoEcosistema({
       if (!view) return;
       const visible = new Map<string, number>();
       for (const node of view.nodes) {
-        if (node.community) visible.set(node.community, (visible.get(node.community) ?? 0) + 1);
+        if (!node.community) continue;
+        if (!visibleEnAnio(node.anio ?? null, anio, anioActual)) continue; // Historia: la isla nace con sus nodos
+        visible.set(node.community, (visible.get(node.community) ?? 0) + 1);
       }
       for (const [id, count] of visible) {
         const center = communityCenters.get(id);
@@ -361,7 +396,7 @@ export default function GrafoEcosistema({
         ctx.restore();
       }
     },
-    [view, communityCenters],
+    [view, communityCenters, anio, anioActual],
   );
 
   const drawNode = useCallback(
@@ -369,7 +404,8 @@ export default function GrafoEcosistema({
       const isHubN = !ITEM_TYPES.has(node.type);
       const r = Math.sqrt(node.val ?? 2) * (isHubN ? 2.3 : 1.45);
       const lit = isLit(node.id);
-      const inactive = node.estado === 'inactivo';
+      // en el pasado no se atenúa por estado ACTUAL: sería un spoiler del destino del nodo
+      const inactive = !enPasado && node.estado === 'inactivo';
       const color = COLOR[node.type] ?? '#94a3b8';
       const x = node.x ?? 0;
       const y = node.y ?? 0;
@@ -401,8 +437,8 @@ export default function GrafoEcosistema({
         ctx.globalAlpha = 1;
       }
 
-      // anillo pulsante para lo NUEVO (últimos 90 días)
-      if (node.nuevo && lit) {
+      // anillo pulsante para lo NUEVO (últimos 90 días) — sólo en la actualidad
+      if (node.nuevo && lit && !enPasado) {
         const pulse = 1 + 0.22 * Math.sin(Date.now() / 300);
         ctx.beginPath();
         ctx.arc(x, y, (r + 2.2) * pulse, 0, 2 * Math.PI);
@@ -432,7 +468,7 @@ export default function GrafoEcosistema({
       }
       ctx.restore();
     },
-    [hover, isLit, selected]
+    [hover, isLit, selected, enPasado]
   );
 
   const zoomBy = (f: number) => {
@@ -450,6 +486,8 @@ export default function GrafoEcosistema({
           graphData={view}
           backgroundColor="#0B1220"
           onRenderFramePre={drawCommunities}
+          nodeVisibility={nodoVisibleEnCorte}
+          linkVisibility={linkVisibleEnCorte}
           nodeCanvasObject={drawNode}
           nodePointerAreaPaint={(node: GNode, color: string, ctx: CanvasRenderingContext2D) => {
             const r = Math.sqrt(node.val ?? 2) * (ITEM_TYPES.has(node.type) ? 1.45 : 2.3) + 3;
@@ -508,8 +546,8 @@ export default function GrafoEcosistema({
           <div className="flex items-start justify-between gap-2">
             <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: COLOR[selected.type] }}>
               {selected.type}
-              {selected.nuevo ? ' · nuevo' : ''}
-              {selected.estado && ITEM_TYPES.has(selected.type) ? ` · ${selected.estado}` : ''}
+              {!enPasado && selected.nuevo ? ' · nuevo' : ''}
+              {!enPasado && selected.estado && ITEM_TYPES.has(selected.type) ? ` · ${selected.estado}` : ''}
             </div>
             <button
               onClick={() => setSelected(null)}
@@ -533,7 +571,14 @@ export default function GrafoEcosistema({
             <div className="mt-1 text-[11px] text-cyan-200/70">🏝 región · {selected.communityLabel}</div>
           )}
 
+          {anio !== null && anio < anioActual && (
+            <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-200/90">
+              🕰 Estás viendo el mapa como era en {anio}. La memoria y el estado describen la actualidad, por eso se ocultan aquí.
+            </div>
+          )}
+
           {/* Memoria: qué pasa con el tema, no solo bullets */}
+          {(anio === null || anio >= anioActual) && (<>
           <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">Memoria</div>
           {selected.desc ? (
             <p className="mt-1.5 text-xs leading-relaxed text-slate-300">{selected.desc}</p>
@@ -562,24 +607,27 @@ export default function GrafoEcosistema({
               );
             })()}
           </div>
+          </>)}
 
           {/* Conexiones (vecinos clicables: saltan en el mapa) */}
           <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">Conexiones</div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {[...(neigh.get(String(selected.id)) ?? [])].slice(0, 8).map((nid) => {
-              const v = byId.get(nid);
-              if (!v) return null;
-              return (
+            {[...(neigh.get(String(selected.id)) ?? [])]
+              .map((nid) => byId.get(nid))
+              // Historia: sin spoilers — filtrar ANTES de recortar, para que los
+              // vecinos futuros no consuman el cupo de los visibles
+              .filter((v): v is GNode => !!v && visibleEnAnio(v.anio ?? null, anio, anioActual))
+              .slice(0, 8)
+              .map((v) => (
                 <button
-                  key={nid}
+                  key={String(v.id)}
                   onClick={() => goTo(v)}
                   className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-800/60 px-2 py-0.5 text-[10px] text-slate-200 hover:border-cyan-500/50"
                 >
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: COLOR[v.type] ?? '#94a3b8' }} />
                   <span className="truncate">{String(v.label).slice(0, 34)}</span>
                 </button>
-              );
-            })}
+              ))}
           </div>
 
           <div className="mt-4 flex flex-col gap-1.5">
@@ -610,8 +658,8 @@ export default function GrafoEcosistema({
         <div className="pointer-events-none absolute left-16 bottom-4 max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur">
           <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR[hover.type] }}>
             {hover.type}
-            {hover.nuevo ? ' · nuevo' : ''}
-            {hover.estado && ITEM_TYPES.has(hover.type) ? ` · ${hover.estado}` : ''}
+            {!enPasado && hover.nuevo ? ' · nuevo' : ''}
+            {!enPasado && hover.estado && ITEM_TYPES.has(hover.type) ? ` · ${hover.estado}` : ''}
           </div>
           <div className="text-sm text-slate-100 leading-snug">{hover.label}</div>
           {hover.communityLabel && hover.communityLabel !== hover.label && (
