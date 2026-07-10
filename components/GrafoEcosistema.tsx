@@ -98,6 +98,23 @@ export default function GrafoEcosistema({
     return () => ro.disconnect();
   }, []);
 
+  // Scroll amable (patrón mapa): la rueda NO se captura —la página puede seguir
+  // bajando hacia el footer—; el zoom pide Ctrl/⌘+rueda (el pinch del trackpad
+  // llega como wheel con ctrlKey=true, así que también funciona).
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;         // scroll normal: dejarlo pasar
+      e.preventDefault();
+      const fg = fgRef.current;
+      if (!fg) return;
+      fg.zoom(fg.zoom() * Math.exp(-e.deltaY * 0.0022), 0);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
   // ---- FILTROS: items visibles por poder + estado; conectores sólo si conservan aristas ----
   const view = useMemo(() => {
     if (!data) return null;
@@ -432,6 +449,7 @@ export default function GrafoEcosistema({
           cooldownTicks={220}
           d3AlphaDecay={0.018}
           d3VelocityDecay={0.32}
+          enableZoomInteraction={false}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-mono">
@@ -444,6 +462,9 @@ export default function GrafoEcosistema({
         <ZBtn label="+" testid="zoom-in" onClick={() => zoomBy(1.5)} />
         <ZBtn label="−" testid="zoom-out" onClick={() => zoomBy(1 / 1.5)} />
         <ZBtn label="⤢" testid="zoom-fit" onClick={() => fgRef.current?.zoomToFit(500, 50)} />
+        <span className="mt-1 hidden sm:block max-w-[9rem] font-mono text-[9px] leading-snug text-slate-500">
+          Ctrl + rueda = zoom · rueda = seguir bajando
+        </span>
       </div>
 
       {/* Buscador de conceptos ( / ) */}

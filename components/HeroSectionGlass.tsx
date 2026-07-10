@@ -234,6 +234,12 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
               background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)' }}>
               Ver metodología
             </a>
+            <Link href="/grafo" className="font-sans-tech inline-flex items-center gap-2" style={{
+              fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.cyan, padding: '15px 26px', borderRadius: 100,
+              background: 'rgba(61,224,255,0.06)', backdropFilter: 'blur(20px)', border: `1px solid ${T.cyan}44` }}>
+              Explorar el mapa
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </Link>
           </div>
 
           <div className="mt-12 flex flex-wrap gap-3">

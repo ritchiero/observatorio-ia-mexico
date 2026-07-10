@@ -1,7 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import GrafoEcosistema, { EstadoFilter, PoderFilter } from '@/components/GrafoEcosistema';
+
+// tokens de la skin glass del hero de la home (misma marca, mismo evento)
+const T = {
+  void: '#05070C', text: '#E7ECF7', body: '#B5BFD4',
+  cyan: '#3DE0FF', blue: '#4D7BFF', violet: '#A47CFF',
+};
+
+function IrisMark() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <defs><linearGradient id="grafoIris" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse"><stop stopColor="#3DE0FF" /><stop offset="1" stopColor="#4D7BFF" /></linearGradient></defs>
+      <path d="M6 50 Q50 24 94 50 Q50 76 6 50 Z" stroke="#48556F" strokeWidth="4" />
+      <circle cx="50" cy="50" r="21" stroke="url(#grafoIris)" strokeWidth="6" strokeDasharray="11 8" />
+      <circle cx="50" cy="50" r="9" fill="url(#grafoIris)" />
+    </svg>
+  );
+}
 
 const PODER_META: { key: keyof PoderFilter; label: string; color: string }[] = [
   { key: 'anuncio', label: 'Ejecutivo', color: '#22d3ee' },
@@ -31,16 +49,32 @@ export default function GrafoPage() {
         <GrafoEcosistema onStats={setStats} poderes={poderes} estado={estado} />
       </div>
 
-      {/* Overlay editorial (hero) */}
-      <div className="pointer-events-none absolute top-0 left-0 right-0 p-5 sm:p-8 bg-gradient-to-b from-[#0B1220]/95 via-[#0B1220]/50 to-transparent">
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400 mb-1.5">
-          Prototipo · el mapa vivo
-        </p>
-        <h1 className="text-xl sm:text-3xl font-semibold text-white max-w-3xl leading-tight">
-          Así se conecta la IA del Estado mexicano
+      {/* Overlay hero: primero QUIÉN (Observatorio) y QUÉ PELEA; el mapa es la prueba */}
+      <div className="pointer-events-none absolute top-0 left-0 right-0 p-5 sm:p-8 bg-gradient-to-b from-[#0B1220]/95 via-[#0B1220]/55 to-transparent">
+        {/* marca hero-level (misma lockup de la home) */}
+        <Link href="/" className="pointer-events-auto inline-flex items-center gap-3 group">
+          <span className="transition-transform duration-300 group-hover:rotate-[8deg]"><IrisMark /></span>
+          <span className="flex flex-col leading-none">
+            <span className="font-mono uppercase font-semibold" style={{ fontSize: 9.5, letterSpacing: '0.28em', color: T.cyan }}>Observatorio · v.2026</span>
+            <span className="font-sans-tech uppercase" style={{ fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: '0.04em' }}>IA México</span>
+          </span>
+        </Link>
+
+        {/* voz de campaña + qué estás viendo */}
+        <h1 className="font-serif-display mt-3" style={{ fontSize: 'clamp(26px, 4.2vw, 46px)', lineHeight: 0.98, letterSpacing: '-0.03em', fontWeight: 500, color: T.text, maxWidth: 720 }}>
+          La gran ilusión{' '}
+          <span style={{ fontStyle: 'italic', fontWeight: 400,
+            background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 50%, ${T.violet} 100%)`,
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            artificial del estado
+          </span>
+          , en un mapa.
         </h1>
+        <p className="font-mono uppercase mt-2" style={{ fontSize: 10, letterSpacing: '0.18em', color: T.body }}>
+          Monitoreo ciudadano de la IA en el Estado mexicano · datos reales
+        </p>
         <p className="text-slate-300/90 text-xs sm:text-sm mt-1.5 max-w-2xl">
-          Cada punto es un registro real. Pasa el cursor para iluminar su vecindario; haz clic para abrir la ficha.
+          Cada punto es un registro real del Estado. Pasa el cursor para iluminar su vecindario; haz clic para leer el apunte.
         </p>
 
         {/* Filtros */}
@@ -90,6 +124,22 @@ export default function GrafoPage() {
               🏝 {stats.comunidades} islas
             </span>
           ) : null}
+
+          <span className="mx-1 h-4 w-px bg-slate-700/70 hidden sm:block" />
+
+          <Link
+            href="/informe-2026"
+            className="font-sans-tech uppercase inline-flex items-center gap-2 transition-transform hover:scale-[1.04]"
+            style={{
+              fontSize: 11, letterSpacing: '0.1em', fontWeight: 600, color: T.void,
+              padding: '7px 14px', borderRadius: 100,
+              background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)`,
+              boxShadow: `0 6px 24px ${T.cyan}40, inset 0 1px 0 rgba(255,255,255,0.4)`,
+            }}
+          >
+            Informe 2026
+            <span style={{ width: 5, height: 5, borderRadius: 999, background: T.void }} />
+          </Link>
         </div>
       </div>
 
