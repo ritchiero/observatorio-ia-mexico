@@ -23,7 +23,7 @@ function IrisMark() {
 
 const PODER_COLOR: Record<string, string> = {
   anuncio: '#22d3ee', iniciativa: '#7ea2ff', caso: '#c084fc',
-  actor: '#94a3b8', camara: '#7ea2ff', tema: '#34d399',
+  actor: '#94a3b8', camara: '#7ea2ff', tema: '#34d399', persona: '#fbbf24',
 };
 const PODER_META: { key: keyof PoderFilter; label: string; color: string }[] = [
   { key: 'anuncio', label: 'Ejecutivo', color: '#22d3ee' },
@@ -291,6 +291,7 @@ export default function GrafoPage() {
         <Leg color="#7ea2ff" t="Iniciativa / cámara (Legislativo)" />
         <Leg color="#c084fc" t="Precedente (Judicial)" />
         <Leg color="#34d399" t="Tema — puente entre poderes" />
+        <Leg color="#fbbf24" t="Persona clave — político, juez, quejoso" />
         <Leg color="#94a3b8" t="Dependencia / actor" />
         <div className="mt-1 text-[10px] text-slate-500">anillo = nuevo · tenue = inactivo</div>
       </div>

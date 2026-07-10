@@ -15,7 +15,7 @@ const MIN_DEG = 2;
 type Node = {
   id: string;
   label: string;
-  type: 'anuncio' | 'iniciativa' | 'caso' | 'actor' | 'tema' | 'camara';
+  type: 'anuncio' | 'iniciativa' | 'caso' | 'actor' | 'tema' | 'camara' | 'persona';
   val: number;          // tamaño relativo
   href?: string;        // a dónde navegar al hacer clic
   status?: string;
@@ -58,6 +58,11 @@ function keyify(s: string): string {
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+// heurística: nombres de instituciones no son 'personas clave'
+function esInstitucion(v: string): boolean {
+  return /(secretar|agencia|instituto|comisi[oó]n|consejo|poder|gobierno|congreso|c[aá]mara|senado|fiscal[ií]a|ministerio|universidad|tribunal|juzgado|sala|direcci[oó]n|coordinaci[oó]n|grupo|partido|s\.a\.|empresa)/i.test(v);
 }
 
 type RawRecord = Record<string, unknown>;
@@ -107,7 +112,8 @@ export async function GET() {
       const dep = norm(a.dependencia);
       if (dep) addConn(`d:${keyify(dep)}`, { id: `d:${keyify(dep)}`, label: dep, type: 'actor', val: 3 }, id, true);
       const resp = norm(a.responsable);
-      if (resp) addConn(`r:${keyify(resp)}`, { id: `r:${keyify(resp)}`, label: resp, type: 'actor', val: 3 }, id);
+      if (resp && !esInstitucion(resp)) addConn(`r:${keyify(resp)}`, { id: `r:${keyify(resp)}`, label: resp, type: 'persona', val: 3 }, id);
+      else if (resp) addConn(`r:${keyify(resp)}`, { id: `r:${keyify(resp)}`, label: resp, type: 'actor', val: 3 }, id);
     }
 
     for (const i of iniciativas) {
@@ -127,6 +133,11 @@ export async function GET() {
         const tt = norm(t);
         if (tt) addConn(`t:${keyify(tt)}`, { id: `t:${keyify(tt)}`, label: tt.replace(/_/g, ' '), type: 'tema', val: 3 }, id, k === 0);
       });
+      // personas clave: quién propone (los recurrentes emergen con MIN_DEG)
+      const prop = norm(i.proponente);
+      if (prop && prop.length <= 60 && !esInstitucion(prop)) {
+        addConn(`p:${keyify(prop)}`, { id: `p:${keyify(prop)}`, label: prop, type: 'persona', val: 3 }, id);
+      }
     }
 
     for (const c of casos) {
@@ -137,12 +148,45 @@ export async function GET() {
       if (tema) addConn(`t:${keyify(tema)}`, { id: `t:${keyify(tema)}`, label: tema.replace(/_/g, ' '), type: 'tema', val: 3 }, id, true);
       const mat = norm(c.materia);
       if (mat) addConn(`t:${keyify(mat)}`, { id: `t:${keyify(mat)}`, label: mat.replace(/_/g, ' '), type: 'tema', val: 3 }, id);
+      // partes clave del litigio (quejosos, demandados, terceros)
+      const partes = isRecord(c.partes) ? c.partes : {};
+      for (const v of Object.values(partes)) {
+        const parte = norm(v).slice(0, 70);
+        if (parte) addConn(`p:${keyify(parte)}`, { id: `p:${keyify(parte)}`, label: parte, type: 'persona', val: 3 }, id);
+      }
+    }
+
+    // === LABORATORIO DEL OBSERVATORIO: caso propio Rompehielos INDAUTOR ===
+    // Experimento transparente del Legal-IA-Lab: registrar ante INDAUTOR dos obras
+    // generadas con IA para forzar un pronunciamiento. Fuente: aldoricardo.com.
+    {
+      const labId = 'lab:rompehielos-indautor';
+      addItem({
+        id: labId,
+        label: 'Rompehielos INDAUTOR — obras generadas con IA (Legal-IA-Lab)',
+        type: 'caso',
+        val: 3,
+        href: 'https://aldoricardo.com/Legal-IA-Lab/Rompehielos-Indautor-Obras-generadas-con-IA',
+        status: 'en_proceso',
+        estado: 'tramite',
+        nuevo: esNuevo('2026-05-29'),
+        fecha: '2026-05-29',
+        desc:
+          'Experimento del laboratorio del Observatorio: se solicitó a INDAUTOR el registro de dos obras visuales generadas con IA (GPT-4o, 1 prompt; Midjourney, 5 prompts) declarando el uso de IA, para forzar un pronunciamiento sobre la autoría humana asistida. INDAUTOR desechó ambos registros (jun-2025) y el TFJA (Sala de Propiedad Intelectual, exp. 1637/25-EPI-01-10) ratificó las negativas en mayo de 2026: “es la IA quien materializa la idea”. Próximo paso: amparo.',
+      });
+      addConn('t:derechos-autor', { id: 't:derechos-autor', label: 'derechos autor', type: 'tema', val: 3 }, labId, true);
+      addConn('t:propiedad-intelectual', { id: 't:propiedad-intelectual', label: 'propiedad intelectual', type: 'tema', val: 3 }, labId);
+      addConn('p:aldo-ricardo-rodriguez-cortes', { id: 'p:aldo-ricardo-rodriguez-cortes', label: 'Aldo Ricardo Rodríguez Cortés', type: 'persona', val: 3 }, labId);
     }
 
     // materializar conectores con grado suficiente
+    // (excepción: las PERSONAS de un litigio —quejosos, demandados— importan aunque
+    // aparezcan una sola vez: son la cara humana del precedente)
     const hubItems = new Map<string, Set<string>>(); // hub -> items que conecta
     for (const { node, links: ls } of pend.values()) {
-      if (ls.length >= MIN_DEG) {
+      const esParteDeCaso =
+        node.type === 'persona' && ls.some((l) => l.source.startsWith('j:') || l.source.startsWith('lab:'));
+      if (ls.length >= MIN_DEG || esParteDeCaso) {
         node.val = Math.min(3 + ls.length * 1.15, 42); // tamaño según cuántos conecta (jerarquía fuerte)
         nodes.set(node.id, node);
         links.push(...ls.map((l) => ({ ...l, kind: 'rel' as const })));
@@ -244,7 +288,7 @@ export async function GET() {
       stats: {
         anuncios: anuncios.length,
         iniciativas: iniciativas.length,
-        casos: casos.length,
+        casos: casos.length + 1, // + caso propio del laboratorio (Rompehielos INDAUTOR)
         comunidades: new Set(nodeList.map((n) => n.community).filter(Boolean)).size,
       },
       generado: new Date().toISOString(),
