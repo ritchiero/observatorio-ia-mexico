@@ -18,7 +18,21 @@ type Node = {
   val: number;          // tamaño relativo
   href?: string;        // a dónde navegar al hacer clic
   status?: string;
+  estado?: 'vigente' | 'tramite' | 'inactivo';  // bucket de segmentación
+  nuevo?: boolean;      // detectado en los últimos 90 días
 };
+
+const DIAS_NUEVO = 90;
+function bucket(status: string): 'vigente' | 'tramite' | 'inactivo' {
+  const s = status.toLowerCase();
+  if (/(operando|publicada|vigente|aprobada|resuelto|sentencia)/.test(s)) return 'vigente';
+  if (/(desechad|archivad|abandonad|incumplid|rechazad|desistid)/.test(s)) return 'inactivo';
+  return 'tramite';
+}
+function esNuevo(fecha: unknown): boolean {
+  const t = fecha ? new Date(String(fecha)).getTime() : NaN;
+  return Number.isFinite(t) && Date.now() - t < DIAS_NUEVO * 24 * 3600 * 1000;
+}
 type Link = { source: string; target: string };
 
 const CAMARA_LABEL: Record<string, string> = {
@@ -75,7 +89,8 @@ export async function GET(request: Request) {
 
     for (const a of anuncios) {
       const id = `a:${a.id}`;
-      addItem({ id, label: norm(a.titulo), type: 'anuncio', val: 2, href: `/anuncio/${a.id}`, status: norm(a.status) });
+      const st = norm(a.status);
+      addItem({ id, label: norm(a.titulo), type: 'anuncio', val: 2, href: `/anuncio/${a.id}`, status: st, estado: bucket(st), nuevo: esNuevo(a.fechaAnuncio ?? a.createdAt) });
       const dep = norm(a.dependencia);
       if (dep) addConn(`d:${keyify(dep)}`, { id: `d:${keyify(dep)}`, label: dep, type: 'actor', val: 3 }, id);
       const resp = norm(a.responsable);
@@ -84,7 +99,8 @@ export async function GET(request: Request) {
 
     for (const i of iniciativas) {
       const id = `i:${i.id}`;
-      addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: norm(i.status ?? i.estatus) });
+      const st = norm(i.status ?? i.estatus);
+      addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: st, estado: bucket(st), nuevo: esNuevo(i.fecha) });
       const cam = norm(i.camara);
       if (cam) {
         const label = CAMARA_LABEL[cam.toLowerCase()] ?? cam.replace(/_/g, ' ');
@@ -99,7 +115,8 @@ export async function GET(request: Request) {
 
     for (const c of casos) {
       const id = `j:${c.id}`;
-      addItem({ id, label: norm(c.nombre ?? c.titulo), type: 'caso', val: 3, href: `/casos-ia/${c.id}`, status: norm(c.estado) });
+      const st = norm(c.estado);
+      addItem({ id, label: norm(c.nombre ?? c.titulo), type: 'caso', val: 3, href: `/casos-ia/${c.id}`, status: st, estado: bucket(st), nuevo: esNuevo(c.fechaActualizacion ?? c.fechaCreacion) });
       const tema = norm(c.temaIA);
       if (tema) addConn(`t:${keyify(tema)}`, { id: `t:${keyify(tema)}`, label: tema.replace(/_/g, ' '), type: 'tema', val: 3 }, id);
       const mat = norm(c.materia);

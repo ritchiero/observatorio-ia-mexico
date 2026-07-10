@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+// @ts-ignore — d3-force-3d (dep de force-graph) no publica tipos
+import { forceX, forceY } from 'd3-force-3d';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
@@ -14,13 +16,35 @@ const COLOR: Record<string, string> = {
   camara: '#7ea2ff',
   tema: '#34d399',       // temas: puentes entre poderes
 };
+const ITEM_TYPES = new Set(['anuncio', 'iniciativa', 'caso']);
 
-type GNode = { id: string; label: string; type: string; val: number; href?: string; x?: number; y?: number };
+export type PoderFilter = { anuncio: boolean; iniciativa: boolean; caso: boolean };
+export type EstadoFilter = 'todos' | 'nuevo' | 'vigente' | 'tramite' | 'inactivo';
+
+type GNode = {
+  id: string; label: string; type: string; val: number;
+  href?: string; estado?: string; nuevo?: boolean; x?: number; y?: number;
+};
 type GLink = { source: any; target: any };
 type GData = { nodes: GNode[]; links: GLink[]; stats?: { anuncios: number; iniciativas: number; casos: number } };
 
-export default function GrafoEcosistema({ onStats }: { onStats?: (s: NonNullable<GData['stats']>) => void }) {
+const lid = (v: any) => (typeof v === 'object' ? v.id : v);
+
+export default function GrafoEcosistema({
+  onStats,
+  poderes = { anuncio: true, iniciativa: true, caso: true },
+  estado = 'todos',
+}: {
+  onStats?: (s: NonNullable<GData['stats']>) => void;
+  poderes?: PoderFilter;
+  estado?: EstadoFilter;
+}) {
   const fgRef = useRef<any>(null);
+  const [fgReady, setFgReady] = useState(false);
+  const bindFg = useCallback((inst: any) => {
+    fgRef.current = inst;
+    setFgReady(!!inst);
+  }, []);
   const boxRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<GData | null>(null);
   const [dims, setDims] = useState({ w: 800, h: 600 });
@@ -48,63 +72,108 @@ export default function GrafoEcosistema({ onStats }: { onStats?: (s: NonNullable
     return () => ro.disconnect();
   }, []);
 
-  // re-encuadre al cambiar el tamaño del contenedor (el fit inicial puede ocurrir antes de medirlo)
+  // ---- FILTROS: items visibles por poder + estado; conectores sólo si conservan aristas ----
+  const view = useMemo(() => {
+    if (!data) return null;
+    const byId = new Map(data.nodes.map((n) => [n.id, n]));
+    const itemOk = (n: GNode) => {
+      if (!ITEM_TYPES.has(n.type)) return false;
+      if (!poderes[n.type as keyof PoderFilter]) return false;
+      if (estado === 'nuevo') return !!n.nuevo;
+      if (estado !== 'todos') return n.estado === estado;
+      return true;
+    };
+    const visibles = new Set(data.nodes.filter(itemOk).map((n) => n.id));
+    const links = data.links.filter((l) => {
+      const s = byId.get(lid(l.source)); const t = byId.get(lid(l.target));
+      if (!s || !t) return false;
+      const item = ITEM_TYPES.has(s.type) ? s : t;
+      return visibles.has(item.id);
+    });
+    const used = new Set<string>();
+    links.forEach((l) => { used.add(lid(l.source)); used.add(lid(l.target)); });
+    const nodes = data.nodes.filter((n) => (ITEM_TYPES.has(n.type) ? visibles.has(n.id) : used.has(n.id)));
+    return { nodes, links };
+  }, [data, poderes, estado]);
+
+  // fuerzas más compactas (menos "lejano"): gravedad al centro para que los
+  // cúmulos satélite no estiren el encuadre + re-encuadre al cambiar filtro
+  useEffect(() => {
+    const fg = fgRef.current;
+    if (!fg || !view || !fgReady) return;
+    fg.d3Force('charge')?.strength(-42);
+    fg.d3Force('link')?.distance(34);
+    fg.d3Force('gx', forceX(0).strength(0.07));
+    fg.d3Force('gy', forceY(0).strength(0.09));
+    fg.d3ReheatSimulation();
+    const t = setTimeout(() => fg.zoomToFit(500, 40), 1200);
+    return () => clearTimeout(t);
+  }, [view, fgReady]);
+
   useEffect(() => {
     if (!fitted.current || !fgRef.current) return;
-    const t = setTimeout(() => fgRef.current?.zoomToFit(400, 60), 250);
+    const t = setTimeout(() => fgRef.current?.zoomToFit(400, 50), 250);
     return () => clearTimeout(t);
   }, [dims]);
 
-  // vecindad para el resaltado tipo Obsidian
-  const { neigh, linkKey } = useMemo(() => {
+  const { neigh } = useMemo(() => {
     const neigh = new Map<string, Set<string>>();
-    const linkKey = (l: GLink) => {
-      const s = typeof l.source === 'object' ? l.source.id : l.source;
-      const t = typeof l.target === 'object' ? l.target.id : l.target;
-      return `${s}|${t}`;
-    };
-    if (data) {
-      for (const l of data.links) {
-        const s = typeof l.source === 'object' ? l.source.id : l.source;
-        const t = typeof l.target === 'object' ? l.target.id : l.target;
+    if (view) {
+      for (const l of view.links) {
+        const s = lid(l.source); const t = lid(l.target);
         if (!neigh.has(s)) neigh.set(s, new Set());
         if (!neigh.has(t)) neigh.set(t, new Set());
         neigh.get(s)!.add(t);
         neigh.get(t)!.add(s);
       }
     }
-    return { neigh, linkKey };
-  }, [data]);
+    return { neigh };
+  }, [view]);
 
   const isLit = useCallback(
     (id: string) => !hover || hover.id === id || (neigh.get(hover.id)?.has(id) ?? false),
     [hover, neigh]
+  );
+  const touchesHover = useCallback(
+    (l: any) => hover && (lid(l.source) === hover.id || lid(l.target) === hover.id),
+    [hover]
   );
 
   const drawNode = useCallback(
     (node: any, ctx: CanvasRenderingContext2D, scale: number) => {
       const r = Math.sqrt(node.val ?? 2) * 2.1;
       const lit = isLit(node.id);
+      const inactive = node.estado === 'inactivo';
       const color = COLOR[node.type] ?? '#94a3b8';
 
       ctx.save();
-      ctx.globalAlpha = lit ? 1 : 0.12;
-      // halo
+      ctx.globalAlpha = lit ? (inactive ? 0.45 : 1) : 0.1;
       ctx.shadowColor = color;
-      ctx.shadowBlur = lit ? (hover?.id === node.id ? 22 : 9) : 0;
+      ctx.shadowBlur = lit ? (hover?.id === node.id ? 24 : inactive ? 4 : 10) : 0;
       ctx.beginPath();
       ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // etiqueta: hubs siempre; items al acercarse o al iluminarse por hover
-      const isHub = node.type === 'actor' || node.type === 'tema' || node.type === 'camara';
-      const showLabel = (isHub && scale > 0.9) || scale > 2.4 || (hover && lit);
+      // anillo pulsante para lo NUEVO (últimos 90 días)
+      if (node.nuevo && lit) {
+        const pulse = 1 + 0.22 * Math.sin(Date.now() / 300);
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, (r + 2.2) * pulse, 0, 2 * Math.PI);
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+        ctx.globalAlpha = lit ? 1 : 0.1;
+      }
+
+      const isHub = !ITEM_TYPES.has(node.type);
+      const showLabel = (isHub && scale > 0.8) || scale > 1.7 || (hover && lit);
       if (showLabel && lit) {
         const raw = String(node.label ?? '');
         const label = raw.length > 42 ? raw.slice(0, 41) + '…' : raw;
-        const fs = Math.max(2.6, (isHub ? 4.6 : 3.4) / Math.sqrt(scale));
+        const fs = Math.max(2.4, (isHub ? 4.6 : 3.4) / Math.sqrt(scale));
         ctx.font = `${isHub ? 600 : 400} ${fs}px "Space Grotesk", system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
@@ -116,14 +185,19 @@ export default function GrafoEcosistema({ onStats }: { onStats?: (s: NonNullable
     [hover, isLit]
   );
 
+  const zoomBy = (f: number) => {
+    const fg = fgRef.current;
+    if (fg) fg.zoom(fg.zoom() * f, 300);
+  };
+
   return (
     <div ref={boxRef} className="relative w-full h-full">
-      {data ? (
+      {view ? (
         <ForceGraph2D
-          ref={fgRef}
+          ref={bindFg as any}
           width={dims.w}
           height={dims.h}
-          graphData={data}
+          graphData={view}
           backgroundColor="#0B1220"
           nodeCanvasObject={drawNode}
           nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
@@ -134,16 +208,15 @@ export default function GrafoEcosistema({ onStats }: { onStats?: (s: NonNullable
             ctx.fill();
           }}
           linkColor={(l: any) =>
-            !hover || (isLit(typeof l.source === 'object' ? l.source.id : l.source) && isLit(typeof l.target === 'object' ? l.target.id : l.target))
-              ? 'rgba(148,163,184,0.16)'
+            !hover || (isLit(lid(l.source)) && isLit(lid(l.target)))
+              ? 'rgba(148,163,184,0.18)'
               : 'rgba(148,163,184,0.03)'
           }
-          linkWidth={(l: any) => {
-            if (!hover) return 0.6;
-            const s = typeof l.source === 'object' ? l.source.id : l.source;
-            const t = typeof l.target === 'object' ? l.target.id : l.target;
-            return (s === hover.id || t === hover.id) ? 1.6 : 0.4;
-          }}
+          linkWidth={(l: any) => (touchesHover(l) ? 1.8 : 0.6)}
+          linkDirectionalParticles={(l: any) => (touchesHover(l) ? 2 : 0)}
+          linkDirectionalParticleWidth={1.8}
+          linkDirectionalParticleSpeed={0.007}
+          linkDirectionalParticleColor={() => '#5ed0ef'}
           onNodeHover={(n: any) => setHover(n ?? null)}
           onNodeClick={(n: any) => {
             if (n?.href) window.location.href = n.href;
@@ -151,11 +224,11 @@ export default function GrafoEcosistema({ onStats }: { onStats?: (s: NonNullable
           onEngineStop={() => {
             if (!fitted.current && fgRef.current) {
               fitted.current = true;
-              fgRef.current.zoomToFit(500, 40);
+              fgRef.current.zoomToFit(500, 50);
             }
           }}
-          cooldownTicks={140}
-          d3VelocityDecay={0.32}
+          cooldownTicks={160}
+          d3VelocityDecay={0.28}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-mono">
@@ -163,16 +236,38 @@ export default function GrafoEcosistema({ onStats }: { onStats?: (s: NonNullable
         </div>
       )}
 
+      {/* Controles de zoom */}
+      <div className="absolute bottom-4 left-4 flex flex-col gap-1.5">
+        <ZBtn label="+" testid="zoom-in" onClick={() => zoomBy(1.5)} />
+        <ZBtn label="−" testid="zoom-out" onClick={() => zoomBy(1 / 1.5)} />
+        <ZBtn label="⤢" testid="zoom-fit" onClick={() => fgRef.current?.zoomToFit(500, 50)} />
+      </div>
+
       {/* tooltip del nodo bajo el cursor */}
       {hover && (
-        <div className="pointer-events-none absolute left-4 bottom-4 max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur">
+        <div className="pointer-events-none absolute left-16 bottom-4 max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur">
           <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR[hover.type] }}>
             {hover.type}
+            {hover.nuevo ? ' · nuevo' : ''}
+            {hover.estado && ITEM_TYPES.has(hover.type) ? ` · ${hover.estado}` : ''}
           </div>
           <div className="text-sm text-slate-100 leading-snug">{hover.label}</div>
           {hover.href && <div className="text-[10px] text-slate-400 mt-0.5">clic para abrir ficha →</div>}
         </div>
       )}
     </div>
+  );
+}
+
+function ZBtn({ label, onClick, testid }: { label: string; onClick: () => void; testid: string }) {
+  return (
+    <button
+      data-testid={testid}
+      onClick={onClick}
+      className="h-9 w-9 rounded-lg border border-slate-700/70 bg-slate-900/80 text-slate-200 text-lg leading-none backdrop-blur hover:border-cyan-500/60 hover:text-cyan-300 transition-colors"
+      aria-label={label === '+' ? 'Acercar' : label === '−' ? 'Alejar' : 'Encuadrar'}
+    >
+      {label}
+    </button>
   );
 }
