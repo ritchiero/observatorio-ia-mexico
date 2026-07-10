@@ -35,7 +35,7 @@ type GLinkData = {
 };
 type GNode = NodeObject<GNodeData>;
 type GLink = LinkObject<GNodeData, GLinkData>;
-type GData = { nodes: GNode[]; links: GLink[]; stats?: { anuncios: number; iniciativas: number; casos: number } };
+type GData = { nodes: GNode[]; links: GLink[]; stats?: { anuncios: number; iniciativas: number; casos: number; comunidades?: number } };
 const ForceGraph2D = ForceGraph2DRaw as unknown as ComponentType<
   ForceGraphProps<GNodeData, GLinkData> & {
     ref?: (instance: ForceGraphMethods<GNodeData, GLinkData> | null) => void;
@@ -71,6 +71,9 @@ export default function GrafoEcosistema({
   const [data, setData] = useState<GData | null>(null);
   const [dims, setDims] = useState({ w: 800, h: 600 });
   const [hover, setHover] = useState<GNode | null>(null);
+  const [selected, setSelected] = useState<GNode | null>(null);
+  const [query, setQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
   const fitted = useRef(false);
   const seededData = useRef<GData | null>(null);
 
@@ -218,14 +221,64 @@ export default function GrafoEcosistema({
     return { neigh };
   }, [view]);
 
+  // foco activo = hover o selección (el panel mantiene la isla iluminada sin mouse encima)
+  const active = hover ?? selected;
   const isLit = useCallback(
-    (id: string) => !hover || hover.id === id || (neigh.get(hover.id)?.has(id) ?? false),
-    [hover, neigh]
+    (id: string) => !active || active.id === id || (neigh.get(String(active.id))?.has(id) ?? false),
+    [active, neigh]
   );
   const touchesHover = useCallback(
-    (l: GLink) => hover && (lid(l.source) === hover.id || lid(l.target) === hover.id),
-    [hover]
+    (l: GLink) => active && (lid(l.source) === active.id || lid(l.target) === active.id),
+    [active]
   );
+
+  // índice por id + búsqueda sin acentos (hubs primero: temas/actores/cámaras)
+  const byId = useMemo(() => new Map((view?.nodes ?? []).map((n) => [String(n.id), n])), [view]);
+  const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const results = useMemo(() => {
+    const q = slug(query.trim());
+    if (!view || q.length < 2) return [];
+    const hit = (n: GNode) =>
+      slug(String(n.label ?? '')).includes(q) || slug(String(n.communityLabel ?? '')).includes(q);
+    const hubs = view.nodes.filter((n) => !ITEM_TYPES.has(n.type) && hit(n));
+    const items = view.nodes.filter((n) => ITEM_TYPES.has(n.type) && hit(n));
+    return [...hubs, ...items].slice(0, 8);
+  }, [view, query]);
+
+  // viajar a un nodo: centrar + acercar + seleccionar (abre el panel)
+  const goTo = useCallback((n: GNode) => {
+    setSelected(n);
+    setQuery('');
+    const fg = fgRef.current;
+    if (fg && n.x != null && n.y != null) {
+      fg.centerAt(n.x, n.y, 650);
+      fg.zoom(Math.max(fg.zoom(), 2.8), 650);
+    }
+  }, []);
+
+  // enfocar la isla del nodo seleccionado (bbox de su comunidad)
+  const focusIsla = useCallback(() => {
+    const fg = fgRef.current;
+    const com = selected?.community;
+    if (fg && com) fg.zoomToFit(600, 70, (n: GNodeData) => n.community === com);
+  }, [selected]);
+
+  // teclado: '/' enfoca el buscador · Esc cierra panel/limpia búsqueda
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = (e.target as HTMLElement)?.tagName === 'INPUT';
+      if (e.key === '/' && !typing) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      } else if (e.key === 'Escape') {
+        setSelected(null);
+        setQuery('');
+        searchRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const drawCommunities = useCallback(
     (ctx: CanvasRenderingContext2D, scale: number) => {
@@ -281,6 +334,23 @@ export default function GrafoEcosistema({
       ctx.fill();
       ctx.shadowBlur = 0;
 
+      // anillo fijo de SELECCIÓN (doble trazo, sin pulso: es un estado, no una alerta)
+      if (selected && node.id === selected.id) {
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.arc(x, y, r + 3.2, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#f8fafc';
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, r + 5.4, 0, 2 * Math.PI);
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
       // anillo pulsante para lo NUEVO (últimos 90 días)
       if (node.nuevo && lit) {
         const pulse = 1 + 0.22 * Math.sin(Date.now() / 300);
@@ -312,7 +382,7 @@ export default function GrafoEcosistema({
       }
       ctx.restore();
     },
-    [hover, isLit]
+    [hover, isLit, selected]
   );
 
   const zoomBy = (f: number) => {
@@ -351,9 +421,8 @@ export default function GrafoEcosistema({
           linkDirectionalParticleSpeed={0.007}
           linkDirectionalParticleColor={() => '#5ed0ef'}
           onNodeHover={(n: GNode | null) => setHover(n ?? null)}
-          onNodeClick={(n: GNode) => {
-            if (n?.href) window.location.href = n.href;
-          }}
+          onNodeClick={(n: GNode) => setSelected(n ?? null)}
+          onBackgroundClick={() => setSelected(null)}
           onEngineStop={() => {
             if (!fitted.current && fgRef.current) {
               fitted.current = true;
@@ -377,8 +446,99 @@ export default function GrafoEcosistema({
         <ZBtn label="⤢" testid="zoom-fit" onClick={() => fgRef.current?.zoomToFit(500, 50)} />
       </div>
 
-      {/* tooltip del nodo bajo el cursor */}
-      {hover && (
+      {/* Buscador de conceptos ( / ) */}
+      <div className="absolute top-3 right-3 w-64 sm:w-72">
+        <input
+          ref={searchRef}
+          data-testid="grafo-buscar"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar tema, dependencia, registro…  /"
+          className="w-full rounded-lg border border-slate-700/70 bg-slate-900/85 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 backdrop-blur focus:outline-none focus:border-cyan-500/60"
+        />
+        {results.length > 0 && (
+          <div className="mt-1 overflow-hidden rounded-lg border border-slate-700/70 bg-slate-900/95 backdrop-blur">
+            {results.map((n) => (
+              <button
+                key={String(n.id)}
+                onClick={() => goTo(n)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800/80"
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: COLOR[n.type] ?? '#94a3b8' }} />
+                <span className="truncate">{n.label}</span>
+                <span className="ml-auto shrink-0 font-mono text-[9px] uppercase text-slate-500">{n.type}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Panel lateral: el apunte del nodo (clic = leer sin salir del mapa) */}
+      {selected && (
+        <div className="absolute right-3 top-16 bottom-4 w-80 max-w-[86vw] overflow-y-auto rounded-xl border border-slate-700/70 bg-slate-900/90 p-4 backdrop-blur">
+          <div className="flex items-start justify-between gap-2">
+            <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: COLOR[selected.type] }}>
+              {selected.type}
+              {selected.nuevo ? ' · nuevo' : ''}
+              {selected.estado && ITEM_TYPES.has(selected.type) ? ` · ${selected.estado}` : ''}
+            </div>
+            <button
+              onClick={() => setSelected(null)}
+              aria-label="Cerrar"
+              className="rounded px-1.5 text-slate-400 hover:text-slate-100"
+            >
+              ✕
+            </button>
+          </div>
+          <h3 className="mt-1 text-sm font-semibold leading-snug text-slate-50">{selected.label}</h3>
+          {selected.communityLabel && (
+            <div className="mt-1 text-[11px] text-cyan-200/70">🏝 región · {selected.communityLabel}</div>
+          )}
+
+          {/* Conexiones (vecinos clicables: saltan en el mapa) */}
+          <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">Conexiones</div>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {[...(neigh.get(String(selected.id)) ?? [])].slice(0, 8).map((nid) => {
+              const v = byId.get(nid);
+              if (!v) return null;
+              return (
+                <button
+                  key={nid}
+                  onClick={() => goTo(v)}
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-800/60 px-2 py-0.5 text-[10px] text-slate-200 hover:border-cyan-500/50"
+                >
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: COLOR[v.type] ?? '#94a3b8' }} />
+                  <span className="truncate">{String(v.label).slice(0, 34)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-col gap-1.5">
+            {selected.community && (
+              <button
+                onClick={focusIsla}
+                data-testid="focus-isla"
+                className="rounded-lg border border-slate-700/70 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-100 hover:border-cyan-500/50"
+              >
+                Enfocar su isla
+              </button>
+            )}
+            {selected.href && (
+              <a
+                href={selected.href}
+                className="rounded-lg bg-cyan-600/90 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-cyan-500"
+              >
+                Abrir ficha completa →
+              </a>
+            )}
+          </div>
+          <div className="mt-3 text-[10px] text-slate-500">Esc para cerrar · clic en el vacío deselecciona</div>
+        </div>
+      )}
+
+      {/* tooltip del nodo bajo el cursor (transitorio; el panel es lo persistente) */}
+      {hover && !selected && (
         <div className="pointer-events-none absolute left-16 bottom-4 max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur">
           <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR[hover.type] }}>
             {hover.type}
@@ -389,7 +549,7 @@ export default function GrafoEcosistema({
           {hover.communityLabel && hover.communityLabel !== hover.label && (
             <div className="text-[10px] text-cyan-200/60 mt-0.5">región · {hover.communityLabel}</div>
           )}
-          {hover.href && <div className="text-[10px] text-slate-400 mt-0.5">clic para abrir ficha →</div>}
+          <div className="text-[10px] text-slate-400 mt-0.5">clic para leer el apunte →</div>
         </div>
       )}
     </div>

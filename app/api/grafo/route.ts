@@ -207,7 +207,12 @@ export async function GET() {
     return NextResponse.json({
       nodes: nodeList,
       links: finalLinks,
-      stats: { anuncios: anuncios.length, iniciativas: iniciativas.length, casos: casos.length },
+      stats: {
+        anuncios: anuncios.length,
+        iniciativas: iniciativas.length,
+        casos: casos.length,
+        comunidades: new Set(nodeList.map((n) => n.community).filter(Boolean)).size,
+      },
       generado: new Date().toISOString(),
     });
   } catch (e) {

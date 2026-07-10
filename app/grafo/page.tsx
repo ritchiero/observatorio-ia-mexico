@@ -17,7 +17,7 @@ const ESTADOS: { key: EstadoFilter; label: string }[] = [
 ];
 
 export default function GrafoPage() {
-  const [stats, setStats] = useState<{ anuncios: number; iniciativas: number; casos: number } | null>(null);
+  const [stats, setStats] = useState<{ anuncios: number; iniciativas: number; casos: number; comunidades?: number } | null>(null);
   const [poderes, setPoderes] = useState<PoderFilter>({ anuncio: true, iniciativa: true, caso: true });
   const [estado, setEstado] = useState<EstadoFilter>('todos');
 
@@ -84,6 +84,12 @@ export default function GrafoPage() {
               </button>
             ))}
           </div>
+
+          {stats?.comunidades ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1 text-[11px] text-cyan-200/80 backdrop-blur">
+              🏝 {stats.comunidades} islas
+            </span>
+          ) : null}
         </div>
       </div>
 
