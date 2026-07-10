@@ -521,7 +521,8 @@ export default function GrafoEcosistema({
 
       {/* Buscador de conceptos ( / ) */}
       {chrome && (
-      <div className="absolute top-3 right-3 w-64 sm:w-72">
+      <div className="absolute top-3 right-3 z-40 w-72 sm:w-80">
+        <div className="mb-1 text-right font-mono text-[9px] uppercase tracking-widest text-cyan-300/80">✨ Pregúntale al mapa</div>
         <input
           ref={searchRef}
           data-testid="grafo-buscar"
@@ -529,7 +530,7 @@ export default function GrafoEcosistema({
           onChange={(e) => { setQuery(e.target.value); if (ai) setAi(null); }}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); runAi(); } }}
           placeholder="Busca — o pregunta y da Enter…  /"
-          className="w-full rounded-lg border border-slate-700/70 bg-slate-900/85 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 backdrop-blur focus:outline-none focus:border-cyan-500/60"
+          className="w-full rounded-xl border border-cyan-500/40 bg-slate-900/95 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-400 shadow-[0_0_24px_rgba(61,224,255,0.15)] backdrop-blur focus:outline-none focus:border-cyan-400/70 focus:shadow-[0_0_32px_rgba(61,224,255,0.3)]"
         />
         {results.length > 0 && !ai && !aiBusy && (
           <div className="mt-1 overflow-hidden rounded-lg border border-slate-700/70 bg-slate-900/95 backdrop-blur">
