@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 // @ts-ignore — d3-force-3d (dep de force-graph) no publica tipos
-import { forceX, forceY } from 'd3-force-3d';
+import { forceX, forceY, forceCollide } from 'd3-force-3d';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
@@ -84,16 +84,22 @@ export default function GrafoEcosistema({
       return true;
     };
     const visibles = new Set(data.nodes.filter(itemOk).map((n) => n.id));
-    const links = data.links.filter((l) => {
+    // 1) aristas item→hub de items visibles
+    const rel = data.links.filter((l: any) => {
+      if (l.kind === 'mesh') return false;
       const s = byId.get(lid(l.source)); const t = byId.get(lid(l.target));
       if (!s || !t) return false;
       const item = ITEM_TYPES.has(s.type) ? s : t;
       return visibles.has(item.id);
     });
     const used = new Set<string>();
-    links.forEach((l) => { used.add(lid(l.source)); used.add(lid(l.target)); });
+    rel.forEach((l) => { used.add(lid(l.source)); used.add(lid(l.target)); });
+    // 2) la malla hub↔hub sobrevive si ambos hubs siguen en uso
+    const mesh = data.links.filter(
+      (l: any) => l.kind === 'mesh' && used.has(lid(l.source)) && used.has(lid(l.target))
+    );
     const nodes = data.nodes.filter((n) => (ITEM_TYPES.has(n.type) ? visibles.has(n.id) : used.has(n.id)));
-    return { nodes, links };
+    return { nodes, links: [...rel, ...mesh] };
   }, [data, poderes, estado]);
 
   // fuerzas más compactas (menos "lejano"): gravedad al centro para que los
@@ -101,12 +107,35 @@ export default function GrafoEcosistema({
   useEffect(() => {
     const fg = fgRef.current;
     if (!fg || !view || !fgReady) return;
-    fg.d3Force('charge')?.strength(-42);
-    fg.d3Force('link')?.distance(34);
-    fg.d3Force('gx', forceX(0).strength(0.07));
-    fg.d3Force('gy', forceY(0).strength(0.09));
+    // un solo organismo: repulsión suave + gravedad fuerte; la malla hub↔hub
+    // jala los cúmulos entre sí (distancia corta cuanto más comparten)
+    // grado por nodo (para aflojar los mega-hubs: halos amplios, no discos rígidos)
+    const deg = new Map<string, number>();
+    for (const l of view.links) {
+      deg.set(lid(l.source), (deg.get(lid(l.source)) ?? 0) + 1);
+      deg.set(lid(l.target), (deg.get(lid(l.target)) ?? 0) + 1);
+    }
+    const dg = (v: any) => deg.get(lid(v)) ?? 1;
+    // asimetría: los HUBS se repelen fuerte entre sí (macro-estructura de
+    // constelaciones separadas); los items apenas, para abrazar a su hub
+    fg.d3Force('charge')?.strength((n: any) => (ITEM_TYPES.has(n.type) ? -12 : -150));
+    fg.d3Force('link')
+      ?.distance((l: any) =>
+        l.kind === 'mesh'
+          ? Math.max(70, 150 - (l.w ?? 2) * 5)
+          : l.prim
+            ? 8 + Math.sqrt(Math.max(dg(l.source), dg(l.target))) * 2
+            : 60
+      )
+      .strength((l: any) =>
+        l.kind === 'mesh' ? 0.3 : l.prim ? Math.min(0.9, Math.max(0.3, 2 / Math.min(dg(l.source), dg(l.target)))) : 0.015
+      );
+    // gravedad selectiva: fuerte en hubs (macro-estructura), casi nula en items
+    fg.d3Force('gx', forceX(0).strength((n: any) => (ITEM_TYPES.has(n.type) ? 0.004 : 0.06)));
+    fg.d3Force('gy', forceY(0).strength((n: any) => (ITEM_TYPES.has(n.type) ? 0.005 : 0.075)));
+    fg.d3Force('collide', null as any); // sin colisión: los núcleos densos y la periferia rala dan el contraste
     fg.d3ReheatSimulation();
-    const t = setTimeout(() => fg.zoomToFit(500, 40), 1200);
+    const t = setTimeout(() => fg.zoomToFit(500, 30), 1400);
     return () => clearTimeout(t);
   }, [view, fgReady]);
 
@@ -141,7 +170,8 @@ export default function GrafoEcosistema({
 
   const drawNode = useCallback(
     (node: any, ctx: CanvasRenderingContext2D, scale: number) => {
-      const r = Math.sqrt(node.val ?? 2) * 2.1;
+      const isHubN = !ITEM_TYPES.has(node.type);
+      const r = Math.sqrt(node.val ?? 2) * (isHubN ? 2.3 : 1.45);
       const lit = isLit(node.id);
       const inactive = node.estado === 'inactivo';
       const color = COLOR[node.type] ?? '#94a3b8';
@@ -168,17 +198,22 @@ export default function GrafoEcosistema({
         ctx.globalAlpha = lit ? 1 : 0.1;
       }
 
+      // labels jerárquicos: los hubs grandes hablan fuerte (estilo "Geralt"),
+      // los medianos aparecen al acercarse, los items sólo de cerca o al hover
       const isHub = !ITEM_TYPES.has(node.type);
-      const showLabel = (isHub && scale > 0.8) || scale > 1.7 || (hover && lit);
+      const big = isHub && (node.val ?? 0) >= 7;
+      const showLabel = big || (isHub && scale > 1.1) || scale > 2.1 || (hover && lit);
       if (showLabel && lit) {
         const raw = String(node.label ?? '');
-        const label = raw.length > 42 ? raw.slice(0, 41) + '…' : raw;
-        const fs = Math.max(2.4, (isHub ? 4.6 : 3.4) / Math.sqrt(scale));
-        ctx.font = `${isHub ? 600 : 400} ${fs}px "Space Grotesk", system-ui, sans-serif`;
+        const label = raw.length > 40 ? raw.slice(0, 39) + '…' : raw;
+        const fs = big
+          ? Math.max(5, 3.4 + (node.val ?? 6) * 0.45)
+          : Math.max(2.4, (isHub ? 4.2 : 3.2) / Math.sqrt(scale));
+        ctx.font = `${big ? 700 : isHub ? 600 : 400} ${fs}px "Space Grotesk", system-ui, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillStyle = isHub ? 'rgba(233,237,246,0.92)' : 'rgba(174,185,212,0.85)';
-        ctx.fillText(label, node.x, node.y + r + 1.4);
+        ctx.fillStyle = big ? 'rgba(248,250,255,0.96)' : isHub ? 'rgba(233,237,246,0.9)' : 'rgba(174,185,212,0.85)';
+        ctx.fillText(label, node.x, node.y + r + 1.6);
       }
       ctx.restore();
     },
@@ -201,18 +236,19 @@ export default function GrafoEcosistema({
           backgroundColor="#0B1220"
           nodeCanvasObject={drawNode}
           nodePointerAreaPaint={(node: any, color: string, ctx: CanvasRenderingContext2D) => {
-            const r = Math.sqrt(node.val ?? 2) * 2.1 + 3;
+            const r = Math.sqrt(node.val ?? 2) * (ITEM_TYPES.has(node.type) ? 1.45 : 2.3) + 3;
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
             ctx.fill();
           }}
-          linkColor={(l: any) =>
-            !hover || (isLit(lid(l.source)) && isLit(lid(l.target)))
-              ? 'rgba(148,163,184,0.18)'
-              : 'rgba(148,163,184,0.03)'
-          }
-          linkWidth={(l: any) => (touchesHover(l) ? 1.8 : 0.6)}
+          linkCurvature={(l: any) => (l.kind === 'mesh' ? 0.3 : 0.22)}
+          linkColor={(l: any) => {
+            const dim = hover && !(isLit(lid(l.source)) && isLit(lid(l.target)));
+            if (dim) return 'rgba(148,163,184,0.03)';
+            return l.kind === 'mesh' ? 'rgba(94,208,239,0.16)' : 'rgba(148,163,184,0.15)';
+          }}
+          linkWidth={(l: any) => (touchesHover(l) ? 1.8 : l.kind === 'mesh' ? Math.min(0.5 + (l.w ?? 2) * 0.12, 1.6) : 0.5)}
           linkDirectionalParticles={(l: any) => (touchesHover(l) ? 2 : 0)}
           linkDirectionalParticleWidth={1.8}
           linkDirectionalParticleSpeed={0.007}
