@@ -2,6 +2,7 @@ const DEFAULT_PUBLIC_DATA_ORIGIN = 'https://www.observatorio-ia-mexico.com';
 
 type RuntimeEnv = {
   NODE_ENV?: string;
+  VERCEL_ENV?: string;
   FIREBASE_ADMIN_PROJECT_ID?: string;
   FIREBASE_ADMIN_CLIENT_EMAIL?: string;
   FIREBASE_ADMIN_PRIVATE_KEY?: string;
@@ -32,7 +33,9 @@ export function hasFirebaseAdminCredentials(env: RuntimeEnv = process.env): bool
 }
 
 export function shouldUsePublicReadFallback(env: RuntimeEnv = process.env): boolean {
-  return env.NODE_ENV === 'development' && !hasFirebaseAdminCredentials(env);
+  const safeReadOnlyEnvironment =
+    env.NODE_ENV === 'development' || env.VERCEL_ENV === 'preview';
+  return safeReadOnlyEnvironment && !hasFirebaseAdminCredentials(env);
 }
 
 export async function loadPublicReadFallback<T>(
