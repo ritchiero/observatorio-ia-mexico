@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import GrafoEcosistema, { EstadoFilter, PoderFilter } from '@/components/GrafoEcosistema';
+import GrafoEcosistema, { EstadoFilter, NodoLite, PoderFilter } from '@/components/GrafoEcosistema';
 
 // tokens de la skin glass del hero de la home (misma marca, mismo evento)
 const T = {
@@ -21,6 +21,10 @@ function IrisMark() {
   );
 }
 
+const PODER_COLOR: Record<string, string> = {
+  anuncio: '#22d3ee', iniciativa: '#7ea2ff', caso: '#c084fc',
+  actor: '#94a3b8', camara: '#7ea2ff', tema: '#34d399',
+};
 const PODER_META: { key: keyof PoderFilter; label: string; color: string }[] = [
   { key: 'anuncio', label: 'Ejecutivo', color: '#22d3ee' },
   { key: 'iniciativa', label: 'Legislativo', color: '#7ea2ff' },
@@ -39,6 +43,70 @@ export default function GrafoPage() {
   const [poderes, setPoderes] = useState<PoderFilter>({ anuncio: true, iniciativa: true, caso: true });
   const [estado, setEstado] = useState<EstadoFilter>('todos');
 
+  // ---- buscador del hero: instantáneo al teclear, análisis con Enter ----
+  const [nodos, setNodos] = useState<NodoLite[]>([]);
+  const [query, setQuery] = useState('');
+  const [aiBusy, setAiBusy] = useState(false);
+  const [ai, setAi] = useState<{ respuesta: string; nodos: { id: string; label: string; type: string }[] } | null>(null);
+  const [spotlight, setSpotlight] = useState<string[] | null>(null);
+  const [travel, setTravel] = useState<{ id: string; t: number } | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const slug = (x: string) => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const ITEMS = useMemo(() => new Set(['anuncio', 'iniciativa', 'caso']), []);
+  const results = useMemo(() => {
+    const q = slug(query.trim());
+    if (q.length < 2) return [];
+    const hit = (n: NodoLite) =>
+      slug(n.label).includes(q) || slug(n.communityLabel ?? '').includes(q) || slug(n.desc ?? '').includes(q);
+    const hubs = nodos.filter((n) => !ITEMS.has(n.type) && hit(n));
+    const items = nodos.filter((n) => ITEMS.has(n.type) && hit(n));
+    return [...hubs, ...items].slice(0, 8);
+  }, [nodos, query, ITEMS]);
+
+  const irA = (id: string) => {
+    setQuery('');
+    setTravel({ id, t: Date.now() });
+  };
+
+  const preguntar = async () => {
+    const q = query.trim();
+    if (q.length < 3 || aiBusy) return;
+    setAiBusy(true);
+    try {
+      const r = await fetch('/api/grafo/buscar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        setAi({ respuesta: d?.error ?? 'El buscador no está disponible.', nodos: [] });
+        setSpotlight(null);
+      } else {
+        setAi({ respuesta: d.respuesta, nodos: d.nodos ?? [] });
+        setSpotlight((d.nodos ?? []).map((n: { id: string }) => n.id));
+      }
+    } catch {
+      setAi({ respuesta: 'No se pudo consultar el buscador.', nodos: [] });
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const limpiarAi = () => { setAi(null); setSpotlight(null); };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = (e.target as HTMLElement)?.tagName === 'INPUT';
+      if (e.key === '/' && !typing) { e.preventDefault(); searchRef.current?.focus(); }
+      else if (e.key === 'Escape') { limpiarAi(); setQuery(''); searchRef.current?.blur(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const togglePoder = (k: keyof PoderFilter) =>
     setPoderes((p) => ({ ...p, [k]: !p[k] }));
 
@@ -46,7 +114,7 @@ export default function GrafoPage() {
     <div className="relative h-[calc(100dvh-4rem)] min-h-[560px] bg-[#0B1220] overflow-hidden">
       {/* Grafo a pantalla completa */}
       <div className="absolute inset-0">
-        <GrafoEcosistema onStats={setStats} poderes={poderes} estado={estado} />
+        <GrafoEcosistema onStats={setStats} onNodes={setNodos} spotlight={spotlight} travel={travel} poderes={poderes} estado={estado} />
       </div>
 
       {/* Overlay hero: primero QUIÉN (Observatorio) y QUÉ PELEA; el mapa es la prueba */}
@@ -76,6 +144,79 @@ export default function GrafoPage() {
         <p className="text-slate-300/90 text-xs sm:text-sm mt-1.5 max-w-2xl">
           Cada punto es un registro real del Estado. Pasa el cursor para iluminar su vecindario; haz clic para leer el apunte.
         </p>
+
+        {/* Buscador protagonista: instantáneo al teclear · análisis con Enter */}
+        <div className="mt-4 max-w-2xl pointer-events-auto relative">
+          <div className="flex items-center gap-2 rounded-2xl border border-cyan-500/40 bg-slate-900/95 px-4 py-1 shadow-[0_0_36px_rgba(61,224,255,0.18)] backdrop-blur focus-within:border-cyan-400/80 focus-within:shadow-[0_0_44px_rgba(61,224,255,0.32)]">
+            <span className="text-cyan-300 text-base" aria-hidden>✨</span>
+            <input
+              ref={searchRef}
+              data-testid="grafo-buscar"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); if (ai) limpiarAi(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); preguntar(); } }}
+              placeholder="Pregúntale al mapa: ¿qué pasa con los deepfakes? ¿qué opera hoy?…"
+              className="w-full bg-transparent py-2.5 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none"
+            />
+            <button
+              onClick={preguntar}
+              data-testid="grafo-preguntar"
+              className="shrink-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-3.5 py-1.5 text-xs font-semibold text-slate-950 transition-transform hover:scale-105 disabled:opacity-50"
+              disabled={aiBusy}
+            >
+              {aiBusy ? '…' : 'Preguntar'}
+            </button>
+          </div>
+
+          {results.length > 0 && !ai && !aiBusy && (
+            <div className="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-700/70 bg-slate-900/95 backdrop-blur">
+              {results.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => irA(n.id)}
+                  className="flex w-full items-center gap-2 px-3.5 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800/80"
+                >
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: PODER_COLOR[n.type] ?? '#94a3b8' }} />
+                  <span className="truncate">{n.label}</span>
+                  <span className="ml-auto shrink-0 font-mono text-[9px] uppercase text-slate-500">{n.type}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {(aiBusy || ai) && (
+            <div className="absolute inset-x-0 top-full z-50 mt-1 rounded-xl border border-cyan-800/50 bg-slate-900/95 p-3 backdrop-blur">
+              {aiBusy ? (
+                <div className="flex items-center gap-2 text-xs text-cyan-200/80">
+                  <span className="h-3 w-3 animate-spin rounded-full border border-cyan-400 border-t-transparent" />
+                  El Observatorio está leyendo el mapa…
+                </div>
+              ) : ai && (
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-mono text-[9px] uppercase tracking-widest text-cyan-400">✨ Respuesta del mapa</div>
+                    <button onClick={limpiarAi} aria-label="Cerrar" className="rounded px-1 text-slate-400 hover:text-slate-100">✕</button>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-200">{ai.respuesta}</p>
+                  {ai.nodos.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {ai.nodos.map((n) => (
+                        <button
+                          key={n.id}
+                          onClick={() => irA(n.id)}
+                          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-800/60 px-2 py-0.5 text-[10px] text-slate-200 hover:border-cyan-500/50"
+                        >
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: PODER_COLOR[n.type] ?? '#94a3b8' }} />
+                          <span className="truncate">{n.label.slice(0, 40)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Filtros */}
         <div className="flex flex-wrap items-center gap-2 mt-3 pointer-events-auto">

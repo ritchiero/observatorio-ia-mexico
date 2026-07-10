@@ -48,16 +48,22 @@ export async function POST(request: NextRequest) {
           n.id,
           n.type,
           n.estado ?? '',
+          (n as { fecha?: string }).fecha?.slice(0, 10) ?? '',
           n.label.slice(0, 90),
           (n.desc ?? '').replace(/\s+/g, ' ').slice(0, 110),
         ].join('|'),
       )
       .join('\n');
 
-    const system = `Eres el buscador del Observatorio IA México: un mapa (grafo) de cómo el Estado mexicano usa la inteligencia artificial. Recibes el catálogo completo de nodos (formato: id|tipo|estado|título|memoria) y una consulta del usuario en lenguaje natural.
+    const system = `Eres el buscador del Observatorio IA México: un mapa (grafo) de cómo el Estado mexicano usa la inteligencia artificial. Recibes el catálogo completo de nodos (formato: id|tipo|estado|fecha_ultimo_movimiento|título|memoria) y una consulta del usuario en lenguaje natural.
 Responde ÚNICAMENTE con JSON válido, sin markdown ni texto extra, con esta forma exacta:
 {"respuesta":"1 a 3 frases en español que respondan la consulta con base SOLO en el catálogo","nodos":["id1","id2"]}
-Reglas: máximo ${MAX_NODOS} nodos, ordenados por relevancia; usa exclusivamente ids que existan en el catálogo; si nada es relevante devuelve nodos:[] y dilo con honestidad en la respuesta; nunca inventes hechos que no estén en el catálogo.`;
+Reglas:
+1. PRIORIZA EL ESTADO ACTUAL: responde primero qué está pasando HOY —lo vigente/operando y lo en trámite, con su último movimiento y fecha—. Lo histórico o inactivo (desechado, archivado, abandonado) menciónalo solo al final y en una frase, como contexto.
+2. Ordena "nodos" igual: primero vigentes/en trámite (lo más reciente primero), al final los inactivos relevantes.
+3. Máximo ${MAX_NODOS} nodos; usa exclusivamente ids que existan en el catálogo.
+4. Si nada es relevante devuelve nodos:[] y dilo con honestidad.
+5. Nunca inventes hechos que no estén en el catálogo; cita fechas cuando existan.`;
 
     const or = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -104,7 +110,7 @@ Reglas: máximo ${MAX_NODOS} nodos, ordenados por relevancia; usa exclusivamente
         return { id: n.id, label: n.label, type: n.type, communityLabel: n.communityLabel };
       });
 
-    return NextResponse.json({ respuesta: parsed.respuesta.slice(0, 600), nodos, modelo: MODEL });
+    return NextResponse.json({ respuesta: parsed.respuesta.slice(0, 600), nodos });
   } catch (e) {
     console.error('[buscar] error:', e);
     const detalle = e instanceof Error ? e.message : String(e);
