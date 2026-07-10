@@ -53,13 +53,27 @@ const hash01 = (value: string) => {
   return (hash >>> 0) / 4294967295;
 };
 
+export type NodoLite = {
+  id: string; label: string; type: string;
+  estado?: string; nuevo?: boolean; desc?: string; communityLabel?: string;
+};
+
 export default function GrafoEcosistema({
   onStats,
+  onNodes,
+  spotlight = null,
+  travel = null,
   poderes = { anuncio: true, iniciativa: true, caso: true },
   estado = 'todos',
   chrome = true,
 }: {
   onStats?: (s: NonNullable<GData['stats']>) => void;
+  /** entrega el catálogo lite de nodos (para buscadores externos) */
+  onNodes?: (ns: NodoLite[]) => void;
+  /** ids a iluminar/enfocar (resultado de una búsqueda externa) */
+  spotlight?: string[] | null;
+  /** orden de viaje a un nodo (t cambia para re-disparar) */
+  travel?: { id: string; t: number } | null;
   poderes?: PoderFilter;
   estado?: EstadoFilter;
   /** false = modo ambiente (hero): sin buscador/zoom/panel; clic lleva a /grafo */
@@ -76,9 +90,7 @@ export default function GrafoEcosistema({
   const [dims, setDims] = useState({ w: 800, h: 600 });
   const [hover, setHover] = useState<GNode | null>(null);
   const [selected, setSelected] = useState<GNode | null>(null);
-  const [query, setQuery] = useState('');
   const [fotos, setFotos] = useState<Record<string, string>>({});
-  const searchRef = useRef<HTMLInputElement>(null);
   const fitted = useRef(false);
   const seededData = useRef<GData | null>(null);
 
@@ -94,6 +106,14 @@ export default function GrafoEcosistema({
       .then((d: GData) => {
         setData(d);
         if (d?.stats && onStats) onStats(d.stats);
+        if (onNodes) {
+          onNodes(
+            d.nodes.map((n) => ({
+              id: String(n.id), label: n.label, type: n.type,
+              estado: n.estado, nuevo: n.nuevo, desc: n.desc, communityLabel: n.communityLabel,
+            })),
+          );
+        }
       })
       .catch((e) => console.error('grafo fetch:', e));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -251,40 +271,47 @@ export default function GrafoEcosistema({
 
   // foco activo = hover o selección (el panel mantiene la isla iluminada sin mouse encima)
   const active = hover ?? selected;
+  const spotlightSet = useMemo(() => new Set(spotlight ?? []), [spotlight]);
   const isLit = useCallback(
-    (id: string) => !active || active.id === id || (neigh.get(String(active.id))?.has(id) ?? false),
-    [active, neigh]
+    (id: string) => {
+      if (active) return active.id === id || (neigh.get(String(active.id))?.has(id) ?? false);
+      if (spotlightSet.size) return spotlightSet.has(id);   // resultados de búsqueda iluminados
+      return true;
+    },
+    [active, neigh, spotlightSet]
   );
+
+  // reaccionar a órdenes externas: enfocar el conjunto / viajar a un nodo
+  useEffect(() => {
+    if (!spotlightSet.size || !fgRef.current) return;
+    const t = setTimeout(() => fgRef.current?.zoomToFit(700, 90, (n: GNodeData) => spotlightSet.has(n.id)), 80);
+    return () => clearTimeout(t);
+  }, [spotlightSet]);
   const touchesHover = useCallback(
     (l: GLink) => active && (lid(l.source) === active.id || lid(l.target) === active.id),
     [active]
   );
 
-  // índice por id + búsqueda sin acentos (hubs primero: temas/actores/cámaras)
+  // índice por id (panel de vecinos + órdenes de viaje externas)
   const byId = useMemo(() => new Map((view?.nodes ?? []).map((n) => [String(n.id), n])), [view]);
-  const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const results = useMemo(() => {
-    const q = slug(query.trim());
-    if (!view || q.length < 2) return [];
-    const hit = (n: GNode) =>
-      slug(String(n.label ?? '')).includes(q) ||
-      slug(String(n.communityLabel ?? '')).includes(q) ||
-      slug(String(n.desc ?? '')).includes(q);
-    const hubs = view.nodes.filter((n) => !ITEM_TYPES.has(n.type) && hit(n));
-    const items = view.nodes.filter((n) => ITEM_TYPES.has(n.type) && hit(n));
-    return [...hubs, ...items].slice(0, 8);
-  }, [view, query]);
 
   // viajar a un nodo: centrar + acercar + seleccionar (abre el panel)
   const goTo = useCallback((n: GNode) => {
     setSelected(n);
-    setQuery('');
     const fg = fgRef.current;
     if (fg && n.x != null && n.y != null) {
       fg.centerAt(n.x, n.y, 650);
       fg.zoom(Math.max(fg.zoom(), 2.8), 650);
     }
   }, []);
+
+  // viaje ordenado desde fuera (buscador del hero)
+  useEffect(() => {
+    if (!travel) return;
+    const n = byId.get(travel.id);
+    if (n) goTo(n);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [travel?.t]);
 
   // enfocar la isla del nodo seleccionado (bbox de su comunidad)
   const focusIsla = useCallback(() => {
@@ -296,15 +323,7 @@ export default function GrafoEcosistema({
   // teclado: '/' enfoca el buscador · Esc cierra panel/limpia búsqueda
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement)?.tagName === 'INPUT';
-      if (e.key === '/' && !typing) {
-        e.preventDefault();
-        searchRef.current?.focus();
-      } else if (e.key === 'Escape') {
-        setSelected(null);
-        setQuery('');
-        searchRef.current?.blur();
-      }
+      if (e.key === 'Escape') setSelected(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -479,35 +498,6 @@ export default function GrafoEcosistema({
         <span className="mt-1 hidden sm:block max-w-[9rem] font-mono text-[9px] leading-snug text-slate-500">
           Ctrl + rueda = zoom · rueda = seguir bajando
         </span>
-      </div>
-      )}
-
-      {/* Buscador de conceptos ( / ) */}
-      {chrome && (
-      <div className="absolute top-3 right-3 w-64 sm:w-72">
-        <input
-          ref={searchRef}
-          data-testid="grafo-buscar"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar tema, dependencia, registro…  /"
-          className="w-full rounded-lg border border-slate-700/70 bg-slate-900/85 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 backdrop-blur focus:outline-none focus:border-cyan-500/60"
-        />
-        {results.length > 0 && (
-          <div className="mt-1 overflow-hidden rounded-lg border border-slate-700/70 bg-slate-900/95 backdrop-blur">
-            {results.map((n) => (
-              <button
-                key={String(n.id)}
-                onClick={() => goTo(n)}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-slate-800/80"
-              >
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: COLOR[n.type] ?? '#94a3b8' }} />
-                <span className="truncate">{n.label}</span>
-                <span className="ml-auto shrink-0 font-mono text-[9px] uppercase text-slate-500">{n.type}</span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
       )}
 
