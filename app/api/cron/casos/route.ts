@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { searchWithClaude } from '@/lib/claude';
 import { Timestamp } from 'firebase-admin/firestore';
+import { requireCron } from '@/lib/auth';
 
 export const maxDuration = 300; // 5 minutos
 export const dynamic = 'force-dynamic';
@@ -96,16 +97,10 @@ function getCasosPrompt(nombresExistentes: string[]): string {
 }
 
 export async function GET(request: Request) {
-    try {
-          // Verificar que la petición viene de Vercel Cron
-      const authHeader = request.headers.get('authorization');
-          if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-                  return NextResponse.json(
-                    { error: 'Unauthorized' },
-                    { status: 401 }
-                          );
-          }
+    const authError = requireCron(request);
+    if (authError) return authError;
 
+    try {
       console.log('[CRON] Iniciando agente de casos judiciales...');
           const startTime = Date.now();
           const db = getAdminDb();

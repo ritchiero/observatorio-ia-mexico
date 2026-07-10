@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { requireAdmin } from '@/lib/auth';
 import { Timestamp } from 'firebase-admin/firestore';
 import { FuenteTipo } from '@/types';
 
@@ -7,7 +8,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface AddFuentesRequest {
-  adminKey: string;
   anuncioId: string;
   fuentes: Array<{
     url: string;
@@ -21,14 +21,12 @@ interface AddFuentesRequest {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const body: AddFuentesRequest = await request.json();
-    const { adminKey, anuncioId, fuentes } = body;
-    
-    // Verificar admin key (skip = viene del admin panel con sesión)
-    if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'skip') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { anuncioId, fuentes } = body;
 
     if (!anuncioId || !fuentes || fuentes.length === 0) {
       return NextResponse.json({ error: 'anuncioId y fuentes son requeridos' }, { status: 400 });

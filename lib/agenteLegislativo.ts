@@ -9,9 +9,14 @@
  * Ejecución: Semanal (cron)
  */
 
-import { collection, getDocs, addDoc, updateDoc, doc, query, where, Timestamp, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { IniciativaLegislativa, EventoLegislativo } from '@/types';
+import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { IniciativaLegislativa } from '@/types';
+
+type InitiativeChange = {
+  iniciativaId: string;
+  cambios: Record<string, unknown>;
+};
 
 interface DeteccionResult {
   nuevasIniciativas: number;
@@ -60,17 +65,16 @@ async function buscarNuevasIniciativas(): Promise<Partial<IniciativaLegislativa>
 /**
  * Monitorear cambios en iniciativas existentes
  */
-async function monitorearCambios(): Promise<{ iniciativaId: string; cambios: any }[]> {
+async function monitorearCambios(): Promise<InitiativeChange[]> {
   console.log('📡 Monitoreando cambios en iniciativas existentes...');
   
   try {
+    const db = getAdminDb();
     // Obtener todas las iniciativas activas
-    const q = query(
-      collection(db, 'iniciativas'),
-      where('status', '==', 'en_comisiones')
-    );
-    
-    const snapshot = await getDocs(q);
+    const snapshot = await db
+      .collection('iniciativas')
+      .where('status', '==', 'en_comisiones')
+      .get();
     const iniciativasActivas = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -78,33 +82,11 @@ async function monitorearCambios(): Promise<{ iniciativaId: string; cambios: any
     
     console.log(`   Encontradas ${iniciativasActivas.length} iniciativas activas`);
     
-    const cambios: { iniciativaId: string; cambios: any }[] = [];
-    
-    // Por cada iniciativa activa, verificar cambios en su URL de gaceta
-    for (const iniciativa of iniciativasActivas) {
-      // TODO: Implementar scraping de la URL específica
-      // Verificar si hay dictamen, votación, etc.
-      
-      // Ejemplo de lo que debería detectar:
-      /*
-      const nuevoStatus = await verificarStatusEnGaceta(iniciativa.urlGaceta);
-      if (nuevoStatus !== iniciativa.status) {
-        cambios.push({
-          iniciativaId: iniciativa.id,
-          cambios: {
-            status: nuevoStatus,
-            eventos: [
-              {
-                fecha: Timestamp.now(),
-                tipo: 'dictamen',
-                descripcion: 'Dictamen emitido por comisión'
-              }
-            ]
-          }
-        });
-      }
-      */
-    }
+    const cambios: InitiativeChange[] = [];
+
+    // TODO: Verificar cada URL oficial y poblar cambios sólo con evidencia.
+    // Mientras el scraper no exista, la consulta es estrictamente de lectura y
+    // no fabrica actualizaciones.
     
     return cambios;
   } catch (error) {
@@ -116,15 +98,16 @@ async function monitorearCambios(): Promise<{ iniciativaId: string; cambios: any
 /**
  * Aplicar cambios detectados a Firestore
  */
-async function aplicarCambios(cambios: { iniciativaId: string; cambios: any }[]): Promise<number> {
+async function aplicarCambios(cambios: InitiativeChange[]): Promise<number> {
   let actualizaciones = 0;
+  const db = getAdminDb();
   
   for (const { iniciativaId, cambios: cambiosData } of cambios) {
     try {
-      const docRef = doc(db, 'iniciativas', iniciativaId);
-      await updateDoc(docRef, {
+      const docRef = db.collection('iniciativas').doc(iniciativaId);
+      await docRef.update({
         ...cambiosData,
-        updatedAt: serverTimestamp()
+        updatedAt: FieldValue.serverTimestamp()
       });
       actualizaciones++;
       console.log(`✅ Iniciativa ${iniciativaId} actualizada`);
@@ -141,8 +124,9 @@ async function aplicarCambios(cambios: { iniciativaId: string; cambios: any }[])
  */
 async function registrarActividad(tipo: string, descripcion: string) {
   try {
-    await addDoc(collection(db, 'actividad_legislativa'), {
-      fecha: serverTimestamp(),
+    const db = getAdminDb();
+    await db.collection('actividad_legislativa').add({
+      fecha: FieldValue.serverTimestamp(),
       tipo,
       descripcion
     });
@@ -165,16 +149,17 @@ export async function ejecutarAgenteLegislativo(): Promise<DeteccionResult> {
   };
   
   try {
+    const db = getAdminDb();
     // 1. Buscar nuevas iniciativas
     const nuevas = await buscarNuevasIniciativas();
     
     for (const iniciativa of nuevas) {
       try {
-        await addDoc(collection(db, 'iniciativas'), {
+        await db.collection('iniciativas').add({
           ...iniciativa,
           creadoManualmente: false,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp()
         });
         result.nuevasIniciativas++;
         console.log(`✅ Nueva iniciativa agregada: ${iniciativa.titulo}`);
@@ -204,15 +189,4 @@ export async function ejecutarAgenteLegislativo(): Promise<DeteccionResult> {
   }
   
   return result;
-}
-
-/**
- * API endpoint para ejecutar el agente manualmente
- */
-export async function ejecutarAgenteLegislativoAPI(adminKey: string): Promise<DeteccionResult> {
-  if (adminKey !== process.env.ADMIN_KEY) {
-    throw new Error('Unauthorized');
-  }
-  
-  return await ejecutarAgenteLegislativo();
 }

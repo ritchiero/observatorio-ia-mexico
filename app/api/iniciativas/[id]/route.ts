@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { sanitizePublicRecord } from '@/lib/public-record-sanitizer';
 
 // Asegura que se ejecute en runtime de Node (necesario para Admin SDK)
 export const runtime = 'nodejs';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;    
@@ -26,18 +27,24 @@ export async function GET(
       );
     }
 
-    const data = doc.data() || {};    
+    const data = doc.data() || {};
+    const publicData = sanitizePublicRecord(data);
     // Convertir Timestamps a strings
     const iniciativa = {
       id: doc.id,
-      ...data,
+      ...publicData,
       fecha: data?.fecha?.toDate?.()?.toISOString() || data?.fecha,
       createdAt: data?.createdAt?.toDate?.()?.toISOString() || data?.createdAt,
       updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
-      pdfBackedUpAt: data?.pdfBackedUpAt?.toDate?.()?.toISOString() || data?.pdfBackedUpAt,
-      eventos: data?.eventos?.map((evento: any) => ({
+      eventos: data?.eventos?.map((evento: Record<string, unknown>) => ({
         ...evento,
-        fecha: evento?.fecha?.toDate?.()?.toISOString() || evento?.fecha,
+        fecha:
+          evento.fecha &&
+          typeof evento.fecha === 'object' &&
+          'toDate' in evento.fecha &&
+          typeof evento.fecha.toDate === 'function'
+            ? evento.fecha.toDate().toISOString()
+            : evento.fecha,
       })) || [],
     };
 

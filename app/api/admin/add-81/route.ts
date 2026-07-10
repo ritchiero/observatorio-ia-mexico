@@ -6,7 +6,10 @@ import { Timestamp } from 'firebase-admin/firestore';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function POST() {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const db = getAdminDb();
     

@@ -29,42 +29,16 @@ Esta guía te ayudará a desplegar el Observatorio IA México en Vercel con Fire
 
 ### 1.3 Configurar Reglas de Firestore
 
-1. Ve a la pestaña "Reglas"
-2. Reemplaza el contenido con:
+Despliega las reglas cerradas incluidas en el repositorio:
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Permitir lectura pública
-    match /{document=**} {
-      allow read: if true;
-    }
-    
-    // Restringir escritura (solo desde server)
-    match /{document=**} {
-      allow write: if false;
-    }
-  }
-}
+```bash
+firebase deploy --only firestore:rules
 ```
 
-3. Haz clic en "Publicar"
+No habilites lectura pública directa. Todas las lecturas del sitio pasan por
+APIs Next.js saneadas y toda operación privilegiada usa Firebase Admin.
 
-### 1.4 Obtener Credenciales Web
-
-1. Ve a "Configuración del proyecto" (ícono de engranaje)
-2. En la sección "Tus apps", haz clic en el ícono web `</>`
-3. Registra tu app (ej: "Observatorio IA Web")
-4. Copia las credenciales que aparecen:
-   - `apiKey`
-   - `authDomain`
-   - `projectId`
-   - `storageBucket`
-   - `messagingSenderId`
-   - `appId`
-
-### 1.5 Crear Service Account
+### 1.4 Crear Service Account
 
 1. Ve a "Configuración del proyecto" → "Cuentas de servicio"
 2. Haz clic en "Generar nueva clave privada"
@@ -98,7 +72,7 @@ git push -u origin main
 
 ### 3.2 Generar Secrets
 
-Genera dos strings aleatorios de 32 caracteres para `CRON_SECRET` y `ADMIN_KEY`:
+Genera secretos independientes para cron, integraciones y la sesión administrativa:
 
 ```bash
 # En Linux/Mac
@@ -131,29 +105,22 @@ ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
 #### Firebase Admin (Server)
 
 ```
-FIREBASE_PROJECT_ID=tu-project-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@tu-project-id.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEF...\n-----END PRIVATE KEY-----\n"
+FIREBASE_ADMIN_PROJECT_ID=tu-project-id
+FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-xxxxx@tu-project-id.iam.gserviceaccount.com
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEF...\n-----END PRIVATE KEY-----\n"
 ```
 
-**Importante**: El `FIREBASE_PRIVATE_KEY` debe incluir las comillas y los `\n` tal como aparecen en el JSON descargado.
-
-#### Firebase Web (Client)
-
-```
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=tu-project-id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=tu-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=tu-project-id.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
-NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:xxxxxxxxxxxxx
-```
+**Importante**: `FIREBASE_ADMIN_PRIVATE_KEY` debe incluir las comillas y los `\n` tal como aparecen en el JSON descargado.
 
 #### Seguridad
 
 ```
 CRON_SECRET=tu-string-aleatorio-de-32-caracteres
-ADMIN_KEY=otro-string-aleatorio-de-32-caracteres
+ADMIN_KEY=token-bearer-para-integraciones
+NEXTAUTH_SECRET=secreto-aleatorio-de-sesion
+SUBSCRIPTION_RATE_LIMIT_SECRET=secreto-hmac-independiente-de-32-caracteres
+ADMIN_USERNAME=tu-usuario-admin
+ADMIN_PASSWORD_HASH=hash-bcrypt-de-tu-password
 ```
 
 ### 4.3 Deploy
@@ -162,22 +129,22 @@ ADMIN_KEY=otro-string-aleatorio-de-32-caracteres
 2. Espera a que termine el build (2-3 minutos)
 3. Una vez completado, haz clic en "Visit" para ver tu sitio
 
-## Paso 5: Cargar Datos Iniciales
+### 4.4 Activar rate limiting antes de abrir tráfico
 
-Una vez desplegado, carga los datos iniciales:
+En Vercel Dashboard → Firewall crea una regla con estas condiciones:
 
-```bash
-curl -X POST https://tu-dominio.vercel.app/api/seed
-```
+- Método: `POST`
+- Request Path: `/api/suscripciones`
+- Estrategia: Fixed Window, 10 minutos, 5 solicitudes por IP
+- Acción: Rate Limit con respuesta 429
 
-Deberías recibir:
+Esta regla evita que tráfico rechazado llegue a la Function. El límite
+distribuido de Firestore que vive dentro de la ruta queda como segunda capa.
 
-```json
-{
-  "success": true,
-  "message": "10 anuncios iniciales cargados exitosamente"
-}
-```
+## Paso 5: Importar Datos Iniciales
+
+Usa el panel administrativo autenticado o un script local auditable. No hay una
+ruta pública de seed en producción.
 
 ## Paso 6: Verificar Cron Jobs
 
@@ -189,7 +156,7 @@ Deberías recibir:
 
 ## Paso 7: Probar el Panel de Admin
 
-1. Ve a `https://tu-dominio.vercel.app/admin?key=TU_ADMIN_KEY`
+1. Ve a `https://tu-dominio.vercel.app/admin/login`
 2. Deberías ver el panel de administración
 3. Prueba ejecutar los agentes manualmente
 
@@ -204,7 +171,7 @@ Deberías recibir:
 ### Error: "Firebase Admin not initialized"
 
 - Verifica que todas las variables de entorno de Firebase estén configuradas correctamente
-- Asegúrate de que `FIREBASE_PRIVATE_KEY` incluya los `\n` y las comillas
+- Asegúrate de que `FIREBASE_ADMIN_PRIVATE_KEY` incluya los `\n` y las comillas
 
 ### Error: "Anthropic API key invalid"
 
@@ -213,8 +180,8 @@ Deberías recibir:
 
 ### Error: "Firestore permission denied"
 
-- Verifica las reglas de Firestore
-- Asegúrate de permitir lectura pública y escritura desde server
+- Verifica que la operación se haga desde una API de servidor con Firebase Admin
+- No abras las reglas cliente para resolver este error
 
 ### Cron jobs no se ejecutan
 

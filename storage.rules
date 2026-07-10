@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Backups are written and read only with Firebase Admin on the server.
+    // No browser or unauthenticated client receives direct bucket access.
+    match /{object=**} {
+      allow read, write: if false;
+    }
+  }
+}

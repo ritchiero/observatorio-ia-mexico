@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { requireAdmin } from '@/lib/auth';
 import { Timestamp } from 'firebase-admin/firestore';
+import {
+  loadPublicReadFallback,
+  PublicReadFallbackError,
+} from '@/lib/public-read-fallback';
 
 // Helper para convertir Timestamp a ISO string
 function convertTimestamp(value: unknown): string | null {
@@ -15,6 +20,21 @@ function convertTimestamp(value: unknown): string | null {
 // GET /api/anuncios - Obtener todos los anuncios
 export async function GET() {
   try {
+    const fallback = await loadPublicReadFallback(
+      '/api/anuncios',
+      (payload): payload is { anuncios: unknown[] } =>
+        Boolean(
+          payload &&
+          typeof payload === 'object' &&
+          'anuncios' in payload &&
+          Array.isArray(payload.anuncios)
+        )
+    );
+    if (fallback.used) {
+      console.info('[api/anuncios] Usando datos públicos para la vista local');
+      return NextResponse.json(fallback.data);
+    }
+
     const db = getAdminDb();
     // No usamos orderBy de Firestore: si algún documento guardó `fechaAnuncio` como
     // string en vez de Timestamp, Firestore ordena por tipo (los strings van antes
@@ -62,13 +82,16 @@ export async function GET() {
     console.error('Error al obtener anuncios:', error);
     return NextResponse.json(
       { error: 'Error al obtener anuncios' },
-      { status: 500 }
+      { status: error instanceof PublicReadFallbackError ? error.status : 500 }
     );
   }
 }
 
 // POST /api/anuncios - Crear un anuncio manualmente
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const {

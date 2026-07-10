@@ -3,8 +3,8 @@
  * 
  * Uso:
  * 1. Asegúrate de tener el archivo informe_corregido_ia_mexico_69.md
- * 2. Configura ADMIN_KEY en .env.local
- * 3. Ejecuta: npx ts-node scripts/import-iniciativas.ts
+ * 2. Ejecuta: npx ts-node scripts/import-iniciativas.ts
+ * 3. Revisa el JSON y cárgalo desde el panel administrativo autenticado
  */
 
 import * as fs from 'fs';
@@ -15,7 +15,7 @@ function parseInformeMarkdown(filePath: string) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split('\n');
   
-  const iniciativas: any[] = [];
+  const iniciativas: Array<Record<string, unknown>> = [];
   let inTable = false;
   
   for (const line of lines) {
@@ -139,51 +139,6 @@ function parseInformeMarkdown(filePath: string) {
   return iniciativas;
 }
 
-// Función para importar a Firestore vía API
-async function importToFirestore(iniciativas: any[]) {
-  const ADMIN_KEY = process.env.ADMIN_KEY;
-  const API_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  
-  if (!ADMIN_KEY) {
-    console.error('❌ ADMIN_KEY no configurada en .env.local');
-    return;
-  }
-  
-  console.log(`📊 Importando ${iniciativas.length} iniciativas...`);
-  
-  let successCount = 0;
-  let errorCount = 0;
-  
-  for (const iniciativa of iniciativas) {
-    try {
-      const response = await fetch(`${API_URL}/api/admin/iniciativas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': ADMIN_KEY
-        },
-        body: JSON.stringify(iniciativa)
-      });
-      
-      if (response.ok) {
-        successCount++;
-        console.log(`✅ Iniciativa #${iniciativa.numero} importada`);
-      } else {
-        errorCount++;
-        const error = await response.json();
-        console.error(`❌ Error en iniciativa #${iniciativa.numero}:`, error);
-      }
-    } catch (error) {
-      errorCount++;
-      console.error(`❌ Error en iniciativa #${iniciativa.numero}:`, error);
-    }
-  }
-  
-  console.log(`\n📈 Resumen:`);
-  console.log(`   ✅ Exitosas: ${successCount}`);
-  console.log(`   ❌ Errores: ${errorCount}`);
-}
-
 // Función principal
 async function main() {
   const informePath = path.join(__dirname, '../informe_corregido_ia_mexico_69.md');
@@ -205,9 +160,7 @@ async function main() {
   fs.writeFileSync(jsonPath, JSON.stringify(iniciativas, null, 2));
   console.log(`✅ JSON guardado en: ${jsonPath}`);
   
-  // Preguntar si desea importar a Firestore
-  console.log('\n⚠️  Para importar a Firestore, ejecuta:');
-  console.log('   node scripts/import-to-firestore.js');
+  console.log('\n⚠️  Revisa el JSON y usa /admin/import-legislacion para importarlo.');
 }
 
 main().catch(console.error);

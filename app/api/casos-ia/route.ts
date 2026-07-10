@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { requireAdmin } from '@/lib/auth';
 import { Timestamp } from 'firebase-admin/firestore';
 import { CasoIA } from '@/types/casos-ia';
+import {
+  loadPublicReadFallback,
+  PublicReadFallbackError,
+} from '@/lib/public-read-fallback';
 
 // Helper para convertir Timestamps a strings
 function convertTimestamps(obj: Record<string, unknown>): Record<string, unknown> {
@@ -26,6 +31,21 @@ function convertTimestamps(obj: Record<string, unknown>): Record<string, unknown
 
 export async function GET() {
   try {
+    const fallback = await loadPublicReadFallback(
+      '/api/casos-ia',
+      (payload): payload is { casos: unknown[] } =>
+        Boolean(
+          payload &&
+          typeof payload === 'object' &&
+          'casos' in payload &&
+          Array.isArray(payload.casos)
+        )
+    );
+    if (fallback.used) {
+      console.info('[api/casos-ia] Usando datos públicos para la vista local');
+      return NextResponse.json(fallback.data);
+    }
+
     const db = getAdminDb();
     const snapshot = await db.collection('casos_ia').orderBy('fechaCreacion', 'desc').get();
     
@@ -47,12 +67,15 @@ export async function GET() {
     console.error('Error fetching casos:', error);
     return NextResponse.json(
       { error: 'Error al obtener los casos' },
-      { status: 500 }
+      { status: error instanceof PublicReadFallbackError ? error.status : 500 }
     );
   }
 }
 
 export async function POST(request: Request) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const db = getAdminDb();
     const body = await request.json();

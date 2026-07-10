@@ -2,12 +2,18 @@
   "name": "observatorio-ia-mexico",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "packageManager": "npm@10.9.8",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:grafo": "node --experimental-strip-types --test lib/grafo-comunidades.test.mjs lib/grafo-tiempo.test.mjs"
+    "test": "node --experimental-strip-types --test lib/*.test.mjs",
+    "test:grafo": "node --experimental-strip-types --test lib/grafo-comunidades.test.mjs lib/grafo-tiempo.test.mjs",
+    "test:security": "node --experimental-strip-types --test lib/api-security-policy.test.mjs lib/auth-policy.test.mjs lib/pdf-backup-security.test.mjs lib/public-read-fallback.test.mjs lib/public-record-sanitizer.test.mjs lib/subscription-policy.test.mjs lib/subscription-rate-limit.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -18,24 +24,23 @@
     "d3-force-3d": "^3.0.6",
     "date-fns": "^4.1.0",
     "firebase": "^12.6.0",
-    "firebase-admin": "^13.6.0",
+    "firebase-admin": "^14.1.0",
     "lucide-react": "^0.556.0",
-    "next": "16.0.7",
-    "next-auth": "^4.24.13",
+    "next": "16.2.10",
+    "next-auth": "^4.24.14",
     "openai": "^6.10.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "react-force-graph-2d": "^1.29.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/bcryptjs": "^3.0.0",
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.2.3",
     "eslint": "^9",
-    "eslint-config-next": "16.0.7",
+    "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

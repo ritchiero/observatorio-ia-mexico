@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { ejecutarAgenteDeteccion } from '@/lib/agents';
+import { requireCron } from '@/lib/auth';
 
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 
 // Umbrella cron: runs deteccion, then calls legislacion and casos endpoints internally
 export async function GET(request: Request) {
-    try {
-          const authHeader = request.headers.get('authorization');
-          if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-                  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-          }
+    const authError = requireCron(request);
+    if (authError) return authError;
+    const cronBearer = `Bearer ${process.env.CRON_SECRET}`;
 
+    try {
       const resultados: Record<string, unknown> = {};
           const erroresGlobales: string[] = [];
 
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
                     ? `https://${process.env.VERCEL_URL}`
                             : 'http://localhost:3000';
                   const legRes = await fetch(`${baseUrl}/api/cron/legislacion`, {
-                            headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+                            headers: { Authorization: cronBearer },
                   });
                   const legData = await legRes.json();
                   resultados.legislacion = legData;
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
                     ? `https://${process.env.VERCEL_URL}`
                             : 'http://localhost:3000';
                   const casosRes = await fetch(`${baseUrl}/api/cron/casos`, {
-                            headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+                            headers: { Authorization: cronBearer },
                   });
                   const casosData = await casosRes.json();
                   resultados.casos = casosData;

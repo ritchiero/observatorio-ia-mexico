@@ -5,7 +5,7 @@
 ### 1. Instalar dependencias
 
 ```bash
-pnpm install
+npm install
 ```
 
 ### 2. Configurar variables de entorno
@@ -21,42 +21,36 @@ Edita `.env.local` y completa las siguientes variables mínimas para desarrollo 
 ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
 
 # Firebase Admin (obligatorio)
-FIREBASE_PROJECT_ID=tu-project-id
-FIREBASE_CLIENT_EMAIL=tu-client-email
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-
-# Firebase Web (obligatorio)
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=tu-project-id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=tu-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=tu-project-id.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
-NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:xxxxxxxxxxxxx
+FIREBASE_ADMIN_PROJECT_ID=tu-project-id
+FIREBASE_ADMIN_CLIENT_EMAIL=tu-client-email
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
 # Seguridad (genera strings aleatorios)
 CRON_SECRET=cualquier-string-aleatorio
-ADMIN_KEY=cualquier-string-aleatorio
+ADMIN_KEY=token-bearer-para-servicios
+NEXTAUTH_SECRET=secreto-aleatorio-de-sesion
+SUBSCRIPTION_RATE_LIMIT_SECRET=secreto-hmac-de-al-menos-32-caracteres
+ADMIN_USERNAME=tu-usuario-admin
+ADMIN_PASSWORD_HASH=hash-bcrypt-de-tu-password
 ```
 
 ### 3. Iniciar servidor de desarrollo
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
-### 4. Cargar datos iniciales
+### 4. Datos locales
 
-En otra terminal:
-
-```bash
-curl -X POST http://localhost:3000/api/seed
-```
+En desarrollo, si no hay credenciales de Firebase Admin, las APIs de lectura
+usan la fuente pública del Observatorio. Las importaciones se ejecutan sólo
+desde el panel administrativo autenticado; no existe un endpoint público de seed.
 
 ### 5. Abrir en navegador
 
 - **Dashboard**: http://localhost:3000
 - **Actividad**: http://localhost:3000/actividad
-- **Admin**: http://localhost:3000/admin?key=TU_ADMIN_KEY
+- **Admin**: http://localhost:3000/admin/login
 
 ## 📋 Checklist de Configuración
 
@@ -64,8 +58,7 @@ curl -X POST http://localhost:3000/api/seed
 
 - [ ] Crear proyecto en [Firebase Console](https://console.firebase.google.com)
 - [ ] Habilitar Firestore Database
-- [ ] Configurar reglas de Firestore (lectura pública, escritura desde server)
-- [ ] Obtener credenciales web (API Key, Auth Domain, etc.)
+- [ ] Desplegar `firestore.rules` (sin lectura ni escritura cliente)
 - [ ] Crear service account y descargar JSON
 
 ### Claude API
@@ -78,45 +71,37 @@ curl -X POST http://localhost:3000/api/seed
 
 - [ ] Conectar repositorio Git
 - [ ] Configurar variables de entorno
+- [ ] Limitar `POST /api/suscripciones` en Vercel Firewall (5 por IP / 10 min)
 - [ ] Deploy
 - [ ] Cargar datos iniciales en producción
 
 ## 🧪 Probar Agentes Localmente
 
-### Ejecutar Detección Manual
-
-```bash
-curl -X POST http://localhost:3000/api/agents/detect
-```
-
-### Ejecutar Monitoreo Manual
-
-```bash
-curl -X POST http://localhost:3000/api/agents/monitor
-```
+Inicia sesión en `/admin/login` y ejecuta los agentes desde el panel. Las rutas
+manuales no aceptan llamadas anónimas.
 
 ## 📁 Archivos Importantes
 
 - `app/page.tsx` - Dashboard principal
 - `lib/agents.ts` - Lógica de agentes de IA
 - `lib/prompts.ts` - Prompts para Claude
-- `app/api/seed/route.ts` - Datos iniciales
+- `app/api/admin/import-iniciativas/route.ts` - Importación autenticada
 - `vercel.json` - Configuración de cron jobs
 
 ## 🔧 Comandos Útiles
 
 ```bash
 # Desarrollo
-pnpm dev
+npm run dev
 
 # Build
-pnpm build
+npm run build
 
 # Producción local
-pnpm start
+npm start
 
 # Linter
-pnpm lint
+npm run lint
 
 # Limpiar cache
 rm -rf .next
@@ -134,7 +119,7 @@ rm -rf .next
 
 ### "Cannot find module '@/types'"
 
-→ Ejecuta `pnpm install` de nuevo
+→ Ejecuta `npm install` de nuevo
 
 ### Página en blanco
 

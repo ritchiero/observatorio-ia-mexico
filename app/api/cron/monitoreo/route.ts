@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
 import { ejecutarAgenteMonitoreo } from '@/lib/agents';
+import { requireCron } from '@/lib/auth';
 
 export const maxDuration = 300; // 5 minutos
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  try {
-    // Verificar que la petición viene de Vercel Cron
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+  const authError = requireCron(request);
+  if (authError) return authError;
 
+  try {
     console.log('[CRON] Iniciando agente de monitoreo...');
     const resultado = await ejecutarAgenteMonitoreo('cron');
 

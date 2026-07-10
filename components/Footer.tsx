@@ -28,13 +28,6 @@ export default function Footer() {
               >
                 Historial
               </a>
-              <span className="text-gray-300 mx-1">·</span>
-              <a
-                href="/admin/dashboard"
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                Admin
-              </a>
             </p>
           </div>
           <div className="text-center md:text-right">

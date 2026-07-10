@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import Link from 'next/link';
 import iniciativasData from '@/iniciativas-final.json';
+
+const BATCH_SIZE = 20;
 
 export default function ImportLegislacionPage() {
   const [importing, setImporting] = useState(false);
@@ -25,43 +26,38 @@ export default function ImportLegislacionPage() {
     let successCount = 0;
     let errorCount = 0;
     
-    for (let i = 0; i < iniciativasData.length; i++) {
-      const iniciativa = iniciativasData[i];
-      
+    for (let i = 0; i < iniciativasData.length; i += BATCH_SIZE) {
+      const batch = iniciativasData.slice(i, i + BATCH_SIZE);
       try {
-        // Convertir fecha ISO string a Timestamp
-        const fecha = Timestamp.fromDate(new Date(iniciativa.fecha));
-        
-        // Convertir eventos
-        const eventos = iniciativa.eventos.map((evento: any) => ({
-          ...evento,
-          fecha: Timestamp.fromDate(new Date(evento.fecha))
-        }));
-        
-        // Preparar documento
-        const docData = {
-          ...iniciativa,
-          fecha,
-          eventos,
-          creadoManualmente: false,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
-        };
-        
-        // Agregar a Firestore
-        await addDoc(collection(db, 'iniciativas'), docData);
-        
-        successCount++;
-        setProgress(Math.round(((i + 1) / iniciativasData.length) * 100));
-        addLog(`✅ Iniciativa #${iniciativa.numero} importada (${successCount}/${iniciativasData.length})`);
-        
-      } catch (error: any) {
-        errorCount++;
-        addLog(`❌ Error en iniciativa #${iniciativa.numero}: ${error.message}`);
+        const response = await fetch('/api/admin/import-iniciativas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ iniciativas: batch }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || `Error HTTP ${response.status}`);
+        }
+
+        successCount += Number(result.imported ?? 0);
+        errorCount += Number(result.errors ?? 0);
+        for (const item of result.results ?? []) {
+          addLog(
+            item.status === 'success'
+              ? `✅ ${item.titulo || item.id} importada`
+              : `❌ ${item.titulo || item.id}: ${item.error || 'Error desconocido'}`
+          );
+        }
+      } catch (error: unknown) {
+        errorCount += batch.length;
+        addLog(
+          `❌ Error en lote ${Math.floor(i / BATCH_SIZE) + 1}: ${
+            error instanceof Error ? error.message : 'Error desconocido'
+          }`
+        );
       }
-      
-      // Pequeña pausa para no saturar
-      await new Promise(resolve => setTimeout(resolve, 100));
+
+      setProgress(Math.round((Math.min(i + BATCH_SIZE, iniciativasData.length) / iniciativasData.length) * 100));
     }
     
     addLog(`\n📈 Resumen:`);
@@ -111,12 +107,12 @@ export default function ImportLegislacionPage() {
           {completed && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-sm">
               <p className="text-green-700 font-semibold">✅ Importación completada</p>
-              <a
+              <Link
                 href="/legislacion"
                 className="text-blue-500 hover:underline mt-2 inline-block"
               >
                 Ver iniciativas →
-              </a>
+              </Link>
             </div>
           )}
           

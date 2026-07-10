@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireCron } from '@/lib/auth';
 
 export const maxDuration = 300; // 5 minutos
 export const dynamic = 'force-dynamic';
@@ -8,10 +9,8 @@ export const dynamic = 'force-dynamic';
 // Se ejecutan EN PARALELO: cada sub-endpoint corre en su propia función serverless
 // (con su propio maxDuration), así el tiempo total ≈ el agente más lento, no la suma.
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authError = requireCron(request);
+  if (authError) return authError;
 
   const host = request.headers.get('host');
   const base =

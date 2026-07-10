@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { requireAdmin } from '@/lib/auth';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
@@ -17,6 +18,9 @@ interface Fuente {
 
 // POST - Actualizar una fuente específica de un anuncio
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const { anuncioId, fuenteIndex, fuente } = body;

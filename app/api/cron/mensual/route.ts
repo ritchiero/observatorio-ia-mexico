@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { ejecutarAgenteRecapMensual } from '@/lib/agents';
+import { requireCron } from '@/lib/auth';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 // Monthly cron: runs recap first (fast ~30s), then dispatches monitoreo separately
 export async function GET(request: Request) {
-      try {
-              const authHeader = request.headers.get('authorization');
-              if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-                        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-              }
+      const authError = requireCron(request);
+      if (authError) return authError;
+      const cronBearer = `Bearer ${process.env.CRON_SECRET}`;
 
+      try {
         const resultados: Record<string, unknown> = {};
               const erroresGlobales: string[] = [];
 
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
                           ? `https://${process.env.VERCEL_URL}`
                                     : 'http://localhost:3000';
                         fetch(`${baseUrl}/api/cron/monitoreo`, {
-                                    headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+                                    headers: { Authorization: cronBearer },
                         }).catch(() => {});
                         resultados.monitoreo = { status: 'dispatched' };
               } catch (error) {

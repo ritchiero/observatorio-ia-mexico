@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-    import { Timestamp } from 'firebase-admin/firestore';
+import { requireAdmin } from '@/lib/auth';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
 // POST /api/admin/update-iniciativas - Batch update initiatives
-// Protected with CRON_SECRET
+// Protegido por la sesión administrativa.
 export async function POST(request: NextRequest) {
-        try {
-                    const authHeader = request.headers.get('authorization');
-                    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-                                    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-}
+        const authError = await requireAdmin();
+        if (authError) return authError;
 
+        try {
             const body = await request.json();
         const { updates } = body;
                     // updates: Array<{ id: string, fields: Record<string, any> }>

@@ -63,10 +63,7 @@ export async function POST(request: Request) {
   
   // Verificar autenticación de administrador
   const authError = await requireAdmin();
-  if (authError) {
-    console.log('[IMPORT API] Error de autenticación');
-    return authError;
-  }
+  if (authError) return authError;
 
   try {
     const body = await request.json();

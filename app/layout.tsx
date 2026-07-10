@@ -4,7 +4,6 @@ import Script from 'next/script';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import SessionProvider from '@/components/SessionProvider';
 import { Analytics } from '@vercel/analytics/react';
 
 const GTM_ID = 'GTM-KCCM2HNW';
@@ -72,13 +71,11 @@ export default function RootLayout({
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
-        <SessionProvider>
-          <Header />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </SessionProvider>
+        <Header />
+        <main className="flex-1">
+          {children}
+        </main>
+        <Footer />
                   <Analytics />
       </body>
     </html>
