@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { asignarComunidades } from '@/lib/grafo-comunidades';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -20,6 +21,8 @@ type Node = {
   status?: string;
   estado?: 'vigente' | 'tramite' | 'inactivo';  // bucket de segmentación
   nuevo?: boolean;      // detectado en los últimos 90 días
+  community?: string;   // casa primaria para separar el mapa en archipiélagos
+  communityLabel?: string;
 };
 
 const DIAS_NUEVO = 90;
@@ -33,7 +36,7 @@ function esNuevo(fecha: unknown): boolean {
   const t = fecha ? new Date(String(fecha)).getTime() : NaN;
   return Number.isFinite(t) && Date.now() - t < DIAS_NUEVO * 24 * 3600 * 1000;
 }
-type Link = { source: string; target: string; kind?: 'rel' | 'mesh'; w?: number; prim?: boolean };
+type Link = { source: string; target: string; kind?: 'rel' | 'mesh'; w?: number; prim?: boolean; cross?: boolean };
 
 const CAMARA_LABEL: Record<string, string> = {
   diputados: 'Cámara de Diputados',
@@ -181,11 +184,19 @@ export async function GET(request: Request) {
       linked.add(l.source);
       linked.add(l.target);
     }
-    const nodeList = [...nodes.values()].filter((n) => linked.has(n.id));
+    const nodeList = asignarComunidades(
+      [...nodes.values()].filter((n) => linked.has(n.id)),
+      links,
+    );
+    const communityByNode = new Map(nodeList.map((node) => [node.id, node.community]));
+    const finalLinks = links.map((link) => ({
+      ...link,
+      cross: communityByNode.get(link.source) !== communityByNode.get(link.target),
+    }));
 
     return NextResponse.json({
       nodes: nodeList,
-      links,
+      links: finalLinks,
       stats: { anuncios: anuncios.length, iniciativas: iniciativas.length, casos: casos.length },
       generado: new Date().toISOString(),
     });
