@@ -77,11 +77,18 @@ export default function GrafoEcosistema({
   const [hover, setHover] = useState<GNode | null>(null);
   const [selected, setSelected] = useState<GNode | null>(null);
   const [query, setQuery] = useState('');
+  const [fotos, setFotos] = useState<Record<string, string>>({});
   const searchRef = useRef<HTMLInputElement>(null);
   const fitted = useRef(false);
   const seededData = useRef<GData | null>(null);
 
   useEffect(() => {
+    if (chrome) {
+      fetch('/nodos/manifest.json')
+        .then((r) => (r.ok ? r.json() : {}))
+        .then(setFotos)
+        .catch(() => {});
+    }
     fetch('/api/grafo')
       .then((r) => r.json())
       .then((d: GData) => {
@@ -521,6 +528,15 @@ export default function GrafoEcosistema({
               ✕
             </button>
           </div>
+          {fotos[String(selected.id)] && (
+            <img
+              src={`/nodos/${fotos[String(selected.id)]}`}
+              alt=""
+              loading="lazy"
+              className="mt-2 w-full rounded-lg border border-slate-700/60 object-cover max-h-44"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          )}
           <h3 className="mt-1 text-sm font-semibold leading-snug text-slate-50">{selected.label}</h3>
           {selected.communityLabel && (
             <div className="mt-1 text-[11px] text-cyan-200/70">🏝 región · {selected.communityLabel}</div>
