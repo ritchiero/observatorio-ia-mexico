@@ -18,6 +18,7 @@ const COLOR: Record<string, string> = {
   actor: '#94a3b8',      // dependencias / responsables
   camara: '#7ea2ff',
   tema: '#34d399',       // temas: puentes entre poderes
+  persona: '#fbbf24',    // personas clave: políticos, jueces, quejosos
 };
 const ITEM_TYPES = new Set(['anuncio', 'iniciativa', 'caso']);
 
