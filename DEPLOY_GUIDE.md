@@ -18,7 +18,7 @@ Esta guía te ayudará a desplegar el Observatorio IA México en Vercel de forma
 3. Activa Firestore Database en modo producción
 4. Ve a Project Settings > Service Accounts
 5. Genera una nueva clave privada (descarga el JSON)
-6. Ve a Project Settings > General y copia la configuración web
+6. Despliega las reglas cerradas: `firebase deploy --only firestore:rules`
 
 ### 2. Obtener API Key de Claude
 
@@ -74,21 +74,16 @@ git push -u origin main
 #### Variables de Entorno Requeridas
 
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY=tu_firebase_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=tu-proyecto-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
-NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
-
 FIREBASE_ADMIN_PROJECT_ID=tu-proyecto-id
 FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk@tu-proyecto.iam.gserviceaccount.com
 FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTU_CLAVE_PRIVADA\n-----END PRIVATE KEY-----\n"
 
 ANTHROPIC_API_KEY=sk-ant-api03-tu-clave-de-claude
 
+CRON_SECRET=secreto-aleatorio-para-vercel-cron
 ADMIN_KEY=token-bearer-para-integraciones
 NEXTAUTH_SECRET=secreto-aleatorio-de-sesion
+SUBSCRIPTION_RATE_LIMIT_SECRET=secreto-hmac-independiente-de-32-caracteres
 ADMIN_USERNAME=tu-usuario-admin
 ADMIN_PASSWORD_HASH=hash-bcrypt-de-tu-password
 ```
@@ -101,6 +96,10 @@ ADMIN_PASSWORD_HASH=hash-bcrypt-de-tu-password
 5. Click en "Deploy"
 6. Espera a que termine el despliegue (2-3 minutos)
 
+Antes de abrir tráfico, crea en Vercel Firewall una regla para
+`POST /api/suscripciones`: ventana fija de 10 minutos, máximo 5 solicitudes por
+IP y respuesta 429.
+
 ### 5. Verificar Cron Jobs
 
 Los cron jobs están configurados en `vercel.json`:
@@ -109,8 +108,8 @@ Los cron jobs están configurados en `vercel.json`:
 {
   "crons": [
     {
-      "path": "/api/cron/semanal",
-      "schedule": "0 10 * * 1"
+      "path": "/api/cron/todo",
+      "schedule": "0 9 */3 * *"
     },
     {
       "path": "/api/cron/mensual",
@@ -120,12 +119,10 @@ Los cron jobs están configurados en `vercel.json`:
 }
 ```
 
-- `semanal` (Lunes 10am) corre detección + legislación + casos.
+- `todo` (cada tres días, 09:00 UTC) corre la orquestación completa.
 - `mensual` (día 1, 11am) corre recap + monitoreo.
 
 Más detalle en `CRON_JOBS.md`.
-
-**Nota**: Los cron jobs solo funcionan en planes Pro de Vercel ($20/mes). En el plan gratuito, puedes ejecutar los agentes manualmente desde el panel admin.
 
 ### 6. Importar datos
 

@@ -42,10 +42,7 @@ export async function PUT(request: NextRequest) {
   
   // Verificar autenticación de administrador
   const authError = await requireAdmin();
-  if (authError) {
-    console.log('[API PUT] Error de autenticación');
-    return authError;
-  }
+  if (authError) return authError;
   
   console.log('[API PUT] Autenticación exitosa');
 

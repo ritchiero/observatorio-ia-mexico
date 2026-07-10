@@ -84,41 +84,39 @@ cp .env.example .env.local
 - `FIREBASE_ADMIN_CLIENT_EMAIL`: Email del service account
 - `FIREBASE_ADMIN_PRIVATE_KEY`: Private key (con saltos de línea)
 
-**Firebase Web (Client):**
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-
 **Seguridad:**
 - `CRON_SECRET`: String aleatorio de 32 caracteres
 - `ADMIN_KEY`: Token Bearer para integraciones de servicio; no autentica el panel
 - `NEXTAUTH_SECRET`: Secreto aleatorio para firmar la sesión
+- `SUBSCRIPTION_RATE_LIMIT_SECRET`: Secreto HMAC de 32+ caracteres para el límite distribuido de altas (si se omite, usa `NEXTAUTH_SECRET`)
 - `ADMIN_USERNAME`: Usuario del panel
 - `ADMIN_EMAIL`: Correo opcional para iniciar sesión
 - `ADMIN_PASSWORD_HASH`: Hash bcrypt de la contraseña
 - `PDF_BACKUP_ALLOWED_HOSTS`: Allowlist opcional de repositorios PDF
+
+Para que los documentos efímeros del límite de suscripciones se eliminen de
+forma automática, configura una política TTL de Firestore sobre el campo
+`expiresAt` de la colección `_rate_limits`.
 
 ### 3. Configurar Firebase
 
 1. Crear proyecto en [Firebase Console](https://console.firebase.google.com)
 2. Habilitar Firestore Database
 3. Crear service account y descargar credenciales
-4. Configurar reglas de Firestore:
+4. Desplegar las reglas de Firestore incluidas en el repositorio:
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read: if true;
-      allow write: if false;
-    }
-  }
-}
+```bash
+firebase deploy --only firestore:rules
 ```
+
+Las reglas niegan toda lectura y escritura desde SDKs cliente. El sitio público
+lee exclusivamente mediante APIs Next.js saneadas; Firebase Admin opera sólo
+en servidor y aplica sus propias guardas de autorización.
+
+Antes de recibir tráfico, agrega en Vercel Firewall una regla de rate limiting
+para `POST /api/suscripciones`, con ventana fija de 10 minutos, máximo 5
+solicitudes por IP y respuesta 429. El límite Firestore incluido en la API es
+una segunda capa y no sustituye el filtro previo a la Function.
 
 ### 4. Datos iniciales
 

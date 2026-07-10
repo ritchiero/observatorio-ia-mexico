@@ -25,18 +25,11 @@ FIREBASE_ADMIN_PROJECT_ID=tu-project-id
 FIREBASE_ADMIN_CLIENT_EMAIL=tu-client-email
 FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
-# Firebase Web (obligatorio)
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=tu-project-id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=tu-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=tu-project-id.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
-NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:xxxxxxxxxxxxx
-
 # Seguridad (genera strings aleatorios)
 CRON_SECRET=cualquier-string-aleatorio
 ADMIN_KEY=token-bearer-para-servicios
 NEXTAUTH_SECRET=secreto-aleatorio-de-sesion
+SUBSCRIPTION_RATE_LIMIT_SECRET=secreto-hmac-de-al-menos-32-caracteres
 ADMIN_USERNAME=tu-usuario-admin
 ADMIN_PASSWORD_HASH=hash-bcrypt-de-tu-password
 ```
@@ -65,8 +58,7 @@ desde el panel administrativo autenticado; no existe un endpoint público de see
 
 - [ ] Crear proyecto en [Firebase Console](https://console.firebase.google.com)
 - [ ] Habilitar Firestore Database
-- [ ] Configurar reglas de Firestore (lectura pública, escritura desde server)
-- [ ] Obtener credenciales web (API Key, Auth Domain, etc.)
+- [ ] Desplegar `firestore.rules` (sin lectura ni escritura cliente)
 - [ ] Crear service account y descargar JSON
 
 ### Claude API
@@ -79,22 +71,14 @@ desde el panel administrativo autenticado; no existe un endpoint público de see
 
 - [ ] Conectar repositorio Git
 - [ ] Configurar variables de entorno
+- [ ] Limitar `POST /api/suscripciones` en Vercel Firewall (5 por IP / 10 min)
 - [ ] Deploy
 - [ ] Cargar datos iniciales en producción
 
 ## 🧪 Probar Agentes Localmente
 
-### Ejecutar Detección Manual
-
-```bash
-curl -X POST http://localhost:3000/api/agents/detect
-```
-
-### Ejecutar Monitoreo Manual
-
-```bash
-curl -X POST http://localhost:3000/api/agents/monitor
-```
+Inicia sesión en `/admin/login` y ejecuta los agentes desde el panel. Las rutas
+manuales no aceptan llamadas anónimas.
 
 ## 📁 Archivos Importantes
 

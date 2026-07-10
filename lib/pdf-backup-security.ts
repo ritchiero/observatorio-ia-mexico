@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { lookup } from 'node:dns/promises';
+import { request as httpsRequest, type RequestOptions } from 'node:https';
 import { isIP } from 'node:net';
+import { Readable } from 'node:stream';
 
 export const MAX_PDF_BYTES = 25 * 1024 * 1024;
 export const DEFAULT_FETCH_TIMEOUT_MS = 15_000;
@@ -53,6 +55,11 @@ type FetchValidatedPdfOptions = {
   timeoutMs?: number;
   maxBytes?: number;
   maxRedirects?: number;
+};
+
+type ResolvedSafeRemoteUrl = {
+  url: URL;
+  addresses: readonly string[];
 };
 
 function normalizeHostname(hostname: string): string {
@@ -204,11 +211,11 @@ const defaultResolveHost: ResolveHost = async (hostname) => {
   return addresses.map(({ address }) => address);
 };
 
-export async function assertSafeRemoteUrl(
+async function resolveSafeRemoteUrl(
   input: string | URL,
   allowedHosts: readonly HostRule[],
   resolveHost: ResolveHost = defaultResolveHost,
-): Promise<URL> {
+): Promise<ResolvedSafeRemoteUrl> {
   let url: URL;
   try {
     url = input instanceof URL ? new URL(input.href) : new URL(input);
@@ -260,7 +267,97 @@ export async function assertSafeRemoteUrl(
     );
   }
 
-  return url;
+  return { url, addresses };
+}
+
+export async function assertSafeRemoteUrl(
+  input: string | URL,
+  allowedHosts: readonly HostRule[],
+  resolveHost: ResolveHost = defaultResolveHost,
+): Promise<URL> {
+  return (await resolveSafeRemoteUrl(input, allowedHosts, resolveHost)).url;
+}
+
+/**
+ * Connect to the already-validated IP while retaining the original hostname
+ * for HTTP Host and TLS SNI/certificate validation. This closes the gap where
+ * a second DNS lookup during fetch could be rebound to a private address.
+ */
+export function buildPinnedHttpsRequestOptions(url: URL, address: string): RequestOptions {
+  return {
+    protocol: 'https:',
+    hostname: address,
+    port: 443,
+    method: 'GET',
+    path: `${url.pathname}${url.search}`,
+    headers: {
+      Accept: 'application/pdf',
+      Host: url.host,
+      'User-Agent': 'ObservatorioIAMexico-PdfPreserver/2.0',
+    },
+    ...(isIP(url.hostname) === 0 ? { servername: url.hostname } : {}),
+    family: isIP(address),
+    rejectUnauthorized: true,
+    agent: false,
+  };
+}
+
+async function fetchPinnedHttps(
+  url: URL,
+  address: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const request = httpsRequest(
+      {
+        ...buildPinnedHttpsRequestOptions(url, address),
+        signal,
+      },
+      (response) => {
+        try {
+          const status = response.statusCode ?? 502;
+          if (status < 200 || status > 599) {
+            response.destroy();
+            reject(
+              new PdfBackupValidationError(
+                'upstream_http_error',
+                `La fuente respondió HTTP ${status}.`,
+              ),
+            );
+            return;
+          }
+
+          const headers = new Headers();
+          for (const [name, value] of Object.entries(response.headers)) {
+            if (Array.isArray(value)) {
+              for (const item of value) headers.append(name, item);
+            } else if (value !== undefined) {
+              headers.set(name, String(value));
+            }
+          }
+
+          const bodyForbidden = [204, 205, 304].includes(status);
+          const body = bodyForbidden
+            ? null
+            : Readable.toWeb(response) as ReadableStream<Uint8Array>;
+          if (bodyForbidden) response.resume();
+          resolve(
+            new Response(body, {
+              status,
+              statusText: response.statusMessage,
+              headers,
+            }),
+          );
+        } catch (error) {
+          response.destroy();
+          reject(error);
+        }
+      },
+    );
+
+    request.once('error', reject);
+    request.end();
+  });
 }
 
 async function readBodyWithLimit(response: Response, maxBytes: number): Promise<Buffer> {
@@ -301,7 +398,6 @@ export async function fetchValidatedPdf(
   sourceUrl: string,
   options: FetchValidatedPdfOptions,
 ): Promise<ValidatedPdf> {
-  const fetchImpl = options.fetchImpl ?? fetch;
   const resolveHost = options.resolveHost ?? defaultResolveHost;
   const timeoutMs = Math.max(1, options.timeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS);
   const maxBytes = Math.min(MAX_PDF_BYTES, Math.max(1, options.maxBytes ?? MAX_PDF_BYTES));
@@ -309,19 +405,24 @@ export async function fetchValidatedPdf(
   let currentUrl = sourceUrl;
 
   for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount += 1) {
-    const safeUrl = await assertSafeRemoteUrl(currentUrl, options.allowedHosts, resolveHost);
+    const resolved = await resolveSafeRemoteUrl(currentUrl, options.allowedHosts, resolveHost);
+    const safeUrl = resolved.url;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetchImpl(safeUrl, {
-        redirect: 'manual',
-        signal: controller.signal,
-        headers: {
-          Accept: 'application/pdf',
-          'User-Agent': 'ObservatorioIAMexico-PdfPreserver/2.0',
-        },
-      });
+      // Tests may inject fetchImpl; production always uses the pinned HTTPS
+      // transport so the connection cannot trigger an unvalidated DNS lookup.
+      const response = options.fetchImpl
+        ? await options.fetchImpl(safeUrl, {
+            redirect: 'manual',
+            signal: controller.signal,
+            headers: {
+              Accept: 'application/pdf',
+              'User-Agent': 'ObservatorioIAMexico-PdfPreserver/2.0',
+            },
+          })
+        : await fetchPinnedHttps(safeUrl, resolved.addresses[0], controller.signal);
 
       if (isRedirect(response.status)) {
         const location = response.headers.get('location');

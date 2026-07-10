@@ -17,3 +17,11 @@ export function sanitizePublicRecord(
     Object.entries(record).filter(([field]) => !INTERNAL_FIELDS.has(field)),
   );
 }
+
+export function sanitizePublicRecords(records: readonly unknown[]): unknown[] {
+  return records.map((record) =>
+    record && typeof record === 'object' && !Array.isArray(record)
+      ? sanitizePublicRecord(record as Record<string, unknown>)
+      : record,
+  );
+}

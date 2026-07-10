@@ -7,6 +7,10 @@ import {
   SUBSCRIPTION_SUCCESS_MESSAGE,
   SubscriptionValidationError,
 } from '@/lib/subscription-policy';
+import {
+  enforceSubscriptionRateLimit,
+  SubscriptionRateLimitError,
+} from '@/lib/subscription-rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,6 +51,9 @@ export async function POST(request: Request) {
     if (subscription.honeypotTriggered) return successResponse();
 
     const db = getAdminDb();
+    // Shared Firestore windows work across warm instances and deployments. The
+    // limiter runs before the subscriber lookup/write and stores only an HMAC.
+    await enforceSubscriptionRateLimit(db, request);
     const existing = await db.collection('suscripciones')
       .where('email', '==', subscription.email)
       .limit(1)
@@ -88,6 +95,19 @@ export async function POST(request: Request) {
 
     return successResponse();
   } catch (error) {
+    if (error instanceof SubscriptionRateLimitError) {
+      return NextResponse.json(
+        { error: error.message },
+        {
+          status: error.status,
+          headers: {
+            ...responseHeaders,
+            'Retry-After': String(error.retryAfterSeconds),
+          },
+        },
+      );
+    }
+
     if (error instanceof SubscriptionValidationError) {
       return NextResponse.json(
         { error: error.message },

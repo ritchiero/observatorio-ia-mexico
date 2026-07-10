@@ -13,7 +13,7 @@
     "lint": "eslint",
     "test": "node --experimental-strip-types --test lib/*.test.mjs",
     "test:grafo": "node --experimental-strip-types --test lib/grafo-comunidades.test.mjs lib/grafo-tiempo.test.mjs",
-    "test:security": "node --experimental-strip-types --test lib/api-security-policy.test.mjs lib/auth-policy.test.mjs lib/pdf-backup-security.test.mjs lib/public-read-fallback.test.mjs lib/subscription-policy.test.mjs"
+    "test:security": "node --experimental-strip-types --test lib/api-security-policy.test.mjs lib/auth-policy.test.mjs lib/pdf-backup-security.test.mjs lib/public-read-fallback.test.mjs lib/public-record-sanitizer.test.mjs lib/subscription-policy.test.mjs lib/subscription-rate-limit.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

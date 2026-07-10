@@ -4,7 +4,10 @@ import {
   loadPublicReadFallback,
   PublicReadFallbackError,
 } from '@/lib/public-read-fallback';
-import { sanitizePublicRecord } from '@/lib/public-record-sanitizer';
+import {
+  sanitizePublicRecord,
+  sanitizePublicRecords,
+} from '@/lib/public-record-sanitizer';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -35,7 +38,10 @@ export async function GET() {
     );
     if (fallback.used) {
       console.info('[api/iniciativas] Usando datos públicos para la vista local');
-      return NextResponse.json(fallback.data);
+      return NextResponse.json({
+        ...fallback.data,
+        data: sanitizePublicRecords(fallback.data.data),
+      });
     }
 
     console.log('[API] Fetching iniciativas from Firestore...');
