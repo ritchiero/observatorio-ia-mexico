@@ -58,7 +58,11 @@ function keyify(s: string): string {
     .replace(/^-|-$/g, '');
 }
 
-export async function GET(request: Request) {
+type RawRecord = Record<string, unknown>;
+const isRecord = (value: unknown): value is RawRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+export async function GET() {
   try {
     const base =
       process.env.NEXT_PUBLIC_SITE_URL ||
@@ -69,9 +73,13 @@ export async function GET(request: Request) {
       fetch(`${base}/api/iniciativas`, { next: { revalidate: 300 } }),
       fetch(`${base}/api/casos-ia`, { next: { revalidate: 300 } }),
     ]);
-    const pick = (j: any, ...keys: string[]): any[] => {
-      if (Array.isArray(j)) return j;
-      for (const k of keys) if (Array.isArray(j?.[k])) return j[k];
+    const pick = (json: unknown, ...keys: string[]): RawRecord[] => {
+      if (Array.isArray(json)) return json.filter(isRecord);
+      if (!isRecord(json)) return [];
+      for (const key of keys) {
+        const value = json[key];
+        if (Array.isArray(value)) return value.filter(isRecord);
+      }
       return [];
     };
     const anuncios = pick(await anR.json(), 'anuncios', 'data');
@@ -104,7 +112,9 @@ export async function GET(request: Request) {
       const id = `i:${i.id}`;
       const st = norm(i.status ?? i.estatus);
       addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: st, estado: bucket(st), nuevo: esNuevo(i.fecha) });
-      const temas: string[] = Array.isArray(i.tematicas) ? i.tematicas : [];
+      const temas = Array.isArray(i.tematicas)
+        ? i.tematicas.filter((tema): tema is string => typeof tema === 'string')
+        : [];
       const hayTema = temas.some((t) => norm(t));
       const cam = norm(i.camara);
       if (cam) {
