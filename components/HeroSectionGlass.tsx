@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 // Tema dark (Holographic Glass)
+import GrafoEcosistema from './GrafoEcosistema';
+
 const T = {
   void: '#05070C', text: '#E7ECF7', body: '#B5BFD4', mute: '#7886A2',
   faint: '#48556F', cyan: '#3DE0FF', blue: '#4D7BFF', green: '#34E59C', violet: '#A47CFF',
@@ -119,7 +121,17 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
         maskImage: 'radial-gradient(ellipse at 50% 40%, #000 0%, transparent 85%)',
         WebkitMaskImage: 'radial-gradient(ellipse at 50% 40%, #000 0%, transparent 85%)',
       }} />
-      <ParticleField />
+      {/* EL MAPA VIVO — el grafo real del ecosistema como corazón del hero */}
+      <div className="absolute inset-0 z-0" aria-hidden="true">
+        <GrafoEcosistema chrome={false} />
+      </div>
+      {/* legibilidad del texto sobre el mapa (izquierda) + fundido inferior */}
+      <div className="absolute inset-0 z-[1] pointer-events-none" style={{
+        background: 'linear-gradient(90deg, rgba(5,7,12,0.90) 0%, rgba(5,7,12,0.62) 34%, rgba(5,7,12,0.12) 62%, rgba(5,7,12,0.30) 100%)',
+      }} />
+      <div className="absolute inset-x-0 bottom-0 z-[1] h-28 pointer-events-none" style={{
+        background: 'linear-gradient(180deg, rgba(5,7,12,0) 0%, rgba(5,7,12,0.9) 100%)',
+      }} />
 
       {/* Header glass FIJO — persiste en todo el scroll del home (el global se oculta en home).
           Se condensa y opaca al bajar; trae menú hamburguesa en móvil. */}
@@ -234,6 +246,12 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
               background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)' }}>
               Ver metodología
             </a>
+            <Link href="/grafo" className="font-sans-tech inline-flex items-center gap-2" style={{
+              fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.cyan, padding: '15px 26px', borderRadius: 100,
+              background: 'rgba(61,224,255,0.06)', backdropFilter: 'blur(20px)', border: `1px solid ${T.cyan}44` }}>
+              Explorar el mapa
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </Link>
           </div>
 
           <div className="mt-12 flex flex-wrap gap-3">
@@ -244,48 +262,9 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
           </div>
         </div>
 
-        {/* Columna derecha — glass cards (stack en mobile, flotantes en desktop) */}
-        <div className="relative flex flex-col gap-5 lg:block lg:min-h-[580px]">
-          <GlassCard className="lg:absolute lg:top-0 lg:right-0 lg:w-[380px]" style={{ padding: 22 }}>
-            <div className="flex items-center justify-between mb-3.5">
-              <div className="font-mono uppercase" style={{ fontSize: 10, letterSpacing: '0.22em', color: T.cyan, fontWeight: 700 }}>Stream activo</div>
-              <div className="flex items-center gap-1.5 font-mono" style={{ fontSize: 10, color: T.green, letterSpacing: '0.1em' }}>
-                <span style={{ width: 6, height: 6, borderRadius: 999, background: T.green, boxShadow: `0 0 8px ${T.green}`, animation: 'glass-pulse 2s ease-in-out infinite' }} />
-                LIVE
-              </div>
-            </div>
-            <div className="font-serif-display" style={{ fontSize: 60, fontWeight: 500, color: T.text, lineHeight: 1, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
-              {totalRastreado || '—'}
-            </div>
-            <div className="font-mono uppercase" style={{ fontSize: 10.5, letterSpacing: '0.18em', color: T.mute, marginTop: 6 }}>Registros rastreados · 2026</div>
-            <div style={{ marginTop: 16, height: 80, position: 'relative' }}><BigSpark /></div>
-            <div className="flex justify-between font-mono" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: 10.5, color: T.body, letterSpacing: '0.1em' }}>
-              <span>Anuncios · <span style={{ color: T.green }}>{loading ? '—' : stats.total}</span></span>
-              <span>Casos · {nCasos}</span>
-            </div>
-          </GlassCard>
-
-          <GlassCard className="lg:absolute lg:top-[280px] lg:right-[60px] lg:w-[340px]" style={{ padding: 18 }}>
-            <div className="font-mono uppercase" style={{ fontSize: 9.5, letterSpacing: '0.22em', color: T.violet, fontWeight: 700 }}>◇ Último anuncio oficial</div>
-            <div className="font-serif-display" style={{ fontSize: 19, lineHeight: 1.35, color: T.text, marginTop: 8 }}>
-              {ultimo ? ultimo.titulo : 'Cargando el evento más reciente…'}
-            </div>
-            <div className="flex items-center gap-2.5 font-mono" style={{ marginTop: 12, fontSize: 10.5, color: T.mute, letterSpacing: '0.08em' }}>
-              <span>{ultimo ? (ultimo.dependencia || '').slice(0, 28) : ''}</span>
-              {ultimo?.fecha && <span style={{ marginLeft: 'auto', color: T.cyan }}>{fechaCorta(ultimo.fecha)}</span>}
-            </div>
-          </GlassCard>
-
-          <GlassCard className="lg:absolute lg:top-[480px] lg:right-[240px] lg:w-[200px]" style={{ padding: 14 }}>
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center font-mono" style={{ width: 36, height: 36, borderRadius: 12, background: `linear-gradient(135deg, ${T.green}, ${T.cyan})`, fontSize: 11, color: T.void, fontWeight: 800, boxShadow: `0 4px 16px ${T.green}55` }}>OK</div>
-              <div>
-                <div className="font-sans-tech" style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{loading ? '—' : stats.operando} operando</div>
-                <div className="font-mono uppercase" style={{ fontSize: 9.5, color: T.mute, letterSpacing: '0.12em' }}>{loading ? '' : `${stats.incumplido} incumplido`}</div>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
+        {/* Columna derecha: despejada — el mapa vivo ES el visual del hero.
+            Clic en cualquier nodo lleva a /grafo (modo ambiente). */}
+        <div className="hidden lg:block" aria-hidden="true" />
       </div>
 
       {/* Modal de suscripción (preservado) */}

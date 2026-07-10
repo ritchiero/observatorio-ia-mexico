@@ -22,8 +22,15 @@ export default function Footer() {
               <span className="text-cyan-600">🤖</span>
               <span>Monitoreo automatizado con agentes de IA</span>
               <span className="text-gray-300 mx-1">·</span>
-              <a 
-                href="/admin/dashboard" 
+              <a
+                href="/historial"
+                className="text-cyan-600 hover:text-cyan-700 font-medium transition-colors"
+              >
+                Historial
+              </a>
+              <span className="text-gray-300 mx-1">·</span>
+              <a
+                href="/admin/dashboard"
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 Admin
