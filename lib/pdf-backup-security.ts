@@ -30,6 +30,42 @@ export class PdfBackupValidationError extends Error {
   }
 }
 
+const BUCKET_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{1,220}[a-z0-9]$/;
+
+/**
+ * Real backup candidates must never fall back to the site's public media
+ * bucket. The dedicated bucket is an operational prerequisite, not a default.
+ */
+export function requirePrivateBackupBucketName(
+  raw: string | undefined,
+  publicBucketName: string,
+): string {
+  const bucketName = raw?.trim();
+
+  if (!bucketName) {
+    throw new PdfBackupValidationError(
+      'private_bucket_required',
+      'Los respaldos reales requieren un bucket privado dedicado.',
+    );
+  }
+
+  if (!BUCKET_NAME_PATTERN.test(bucketName) || bucketName.includes('..')) {
+    throw new PdfBackupValidationError(
+      'invalid_private_bucket',
+      'El nombre del bucket privado no es válido.',
+    );
+  }
+
+  if (bucketName === publicBucketName.trim()) {
+    throw new PdfBackupValidationError(
+      'public_bucket_forbidden',
+      'El bucket público de medios no puede almacenar candidatos privados.',
+    );
+  }
+
+  return bucketName;
+}
+
 export type HostRule = {
   hostname: string;
   includeSubdomains: boolean;

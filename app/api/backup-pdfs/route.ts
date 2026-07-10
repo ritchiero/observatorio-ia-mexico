@@ -6,6 +6,7 @@ import {
   fetchValidatedPdf,
   parseAllowedHostRules,
   PdfBackupValidationError,
+  requirePrivateBackupBucketName,
   type ValidatedPdf,
 } from '@/lib/pdf-backup-security';
 
@@ -107,9 +108,10 @@ async function parseRequest(request: Request): Promise<{ ids: string[]; dryRun: 
 async function storeValidatedCandidate(
   pdf: ValidatedPdf,
   initiativeId: string,
+  bucketName: string,
 ): Promise<{ storageUri: string; storagePath: string }> {
   const storage = getAdminStorage();
-  const bucket = storage.bucket();
+  const bucket = storage.bucket(bucketName);
   const encodedId = Buffer.from(initiativeId, 'utf8').toString('base64url');
   const storagePath = `pdfs/iniciativas/${encodedId}/${pdf.sha256}/${randomUUID()}.pdf`;
   const file = bucket.file(storagePath);
@@ -138,9 +140,12 @@ async function storeValidatedCandidate(
   };
 }
 
-async function removeStoredCandidate(storagePath: string): Promise<void> {
+async function removeStoredCandidate(
+  bucketName: string,
+  storagePath: string,
+): Promise<void> {
   const storage = getAdminStorage();
-  await storage.bucket().file(storagePath).delete({ ignoreNotFound: true });
+  await storage.bucket(bucketName).file(storagePath).delete({ ignoreNotFound: true });
 }
 
 export async function GET() {
@@ -192,6 +197,25 @@ export async function POST(request: Request) {
     );
   }
 
+  let privateBucketName: string | null = null;
+  if (!parsed.dryRun) {
+    try {
+      privateBucketName = requirePrivateBackupBucketName(
+        process.env.PRIVATE_FIREBASE_STORAGE_BUCKET,
+        getAdminStorage().bucket().name,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Bucket privado inválido.';
+      const code = error instanceof PdfBackupValidationError
+        ? error.code
+        : 'invalid_private_bucket';
+      return NextResponse.json(
+        { success: false, error: message, errorCode: code },
+        { status: 503 },
+      );
+    }
+  }
+
   const db = getAdminDb();
   const processed: ProcessedResult[] = [];
 
@@ -223,7 +247,18 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const { storageUri, storagePath } = await storeValidatedCandidate(pdf, id);
+      if (!privateBucketName) {
+        throw new PdfBackupValidationError(
+          'private_bucket_required',
+          'Los respaldos reales requieren un bucket privado dedicado.',
+        );
+      }
+
+      const { storageUri, storagePath } = await storeValidatedCandidate(
+        pdf,
+        id,
+        privateBucketName,
+      );
       const candidateStoredAt = new Date();
 
       // Do not attach a candidate to a source that changed while it was downloading.
@@ -262,7 +297,7 @@ export async function POST(request: Request) {
           });
         });
       } catch (error) {
-        await removeStoredCandidate(storagePath).catch(() => undefined);
+        await removeStoredCandidate(privateBucketName, storagePath).catch(() => undefined);
         throw error;
       }
 
