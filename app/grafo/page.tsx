@@ -67,6 +67,43 @@ export default function GrafoPage() {
   }, [stats]);
   const [anio, setAnio] = useState(ANIO_ACTUAL);
   const estadoGuardado = useRef<EstadoFilter>('todos');
+
+  // ---- FILTRO DE PERIODO (🗓): recorta el mapa a un rango de años ----
+  const [periodo, setPeriodo] = useState<{ desde: number; hasta: number } | null>(null);
+  const [periodoOpen, setPeriodoOpen] = useState(false);
+  const periodoGuardado = useRef<{ desde: number; hasta: number } | null>(null);
+  const periodoRef = useRef<HTMLDivElement>(null);
+  // ids realmente presentes en el mapa tras filtros: el buscador no ofrece clics muertos
+  const [viewIds, setViewIds] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    if (!periodoOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (periodoRef.current && !periodoRef.current.contains(e.target as Node)) setPeriodoOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [periodoOpen]);
+  // años seleccionables: rango continuo del primer al último año con registros
+  const ANIOS = useMemo(() => {
+    const ys = Object.keys(stats?.anual?.porAnio ?? {}).map(Number).filter(Number.isFinite);
+    if (!ys.length) return [];
+    const [min, max] = [Math.min(...ys), Math.max(...ys)];
+    return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  }, [stats]);
+  const sumaPeriodo = (p: { desde: number; hasta: number }) => {
+    const acc = { anuncios: 0, iniciativas: 0, casos: 0 };
+    for (const [k, v] of Object.entries(stats?.anual?.porAnio ?? {})) {
+      const y = Number(k);
+      if (y >= p.desde && y <= p.hasta) { acc.anuncios += v.anuncios; acc.iniciativas += v.iniciativas; acc.casos += v.casos; }
+    }
+    return acc;
+  };
+  // el rango completo ES "sin filtro": evita excluir en silencio los registros sin fecha
+  const rango = (desde: number, hasta: number) =>
+    desde === ANIOS[0] && hasta === ANIOS[ANIOS.length - 1] ? null : { desde, hasta };
+  // el extremo no tocado hereda lo que el select ya muestra (el borde del rango disponible)
+  const setDesde = (d: number) => setPeriodo((p) => rango(d, Math.max(d, p?.hasta ?? ANIOS[ANIOS.length - 1])));
+  const setHasta = (h: number) => setPeriodo((p) => rango(Math.min(h, p?.desde ?? ANIOS[0]), h));
   const [reducedMotion, setReducedMotion] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -90,7 +127,10 @@ export default function GrafoPage() {
   };
   const abrirHistoria = () => {
     estadoGuardado.current = estado;
+    periodoGuardado.current = periodo;
     setEstado('todos');           // sólo existe estado ACTUAL, no historial anual
+    setPeriodo(null);             // Historia ES el tiempo: un rango encima confundiría
+    setPeriodoOpen(false);
     setAnio(ANIO_ACTUAL);         // se abre en la actualidad; Play reinicia en 2016
     setHistoria(true);
     limpiarAi();
@@ -100,6 +140,7 @@ export default function GrafoPage() {
     setPlaying(false);
     setAnio(ANIO_ACTUAL);
     setEstado(estadoGuardado.current);
+    setPeriodo(periodoGuardado.current);
   };
   const play = () => {
     if (reducedMotion) return;    // pasos discretos con ‹ › (accesibilidad)
@@ -125,11 +166,13 @@ export default function GrafoPage() {
     const hit = (n: NodoLite) =>
       slug(n.label).includes(q) || slug(n.communityLabel ?? '').includes(q) || slug(n.desc ?? '').includes(q);
     const enCorte = (n: NodoLite) => visibleEnAnio(n.anio ?? null, corte, ANIO_ACTUAL);
-    const hubs = nodos.filter((n) => !ITEMS.has(n.type) && hit(n) && enCorte(n));
-    const items = nodos.filter((n) => ITEMS.has(n.type) && hit(n) && enCorte(n));
+    // sólo lo que existe en el mapa filtrado es clicable (evita viajes a nodos ocultos)
+    const enView = (n: NodoLite) => !viewIds || viewIds.has(n.id);
+    const hubs = nodos.filter((n) => !ITEMS.has(n.type) && hit(n) && enCorte(n) && enView(n));
+    const items = nodos.filter((n) => ITEMS.has(n.type) && hit(n) && enCorte(n) && enView(n));
     return [...hubs, ...items].slice(0, 8);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodos, query, ITEMS, corte, ANIO_ACTUAL]);
+  }, [nodos, query, ITEMS, corte, ANIO_ACTUAL, viewIds]);
 
   const irA = (id: string) => {
     setQuery('');
@@ -164,17 +207,18 @@ export default function GrafoPage() {
 
   const limpiarAi = () => { setAi(null); setSpotlight(null); };
 
-  // al viajar al pasado, la respuesta de la IA (que habla de la actualidad) deja de aplicar
+  // al recortar el tiempo (Historia o Periodo), la respuesta de la IA —que habla de la
+  // actualidad completa— deja de aplicar; sin esto un spotlight sin intersección apaga el mapa
   useEffect(() => {
-    if (corte !== null) limpiarAi();
+    if (corte !== null || periodo) limpiarAi();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corte]);
+  }, [corte, periodo]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing = (e.target as HTMLElement)?.tagName === 'INPUT';
       if (e.key === '/' && !typing) { e.preventDefault(); searchRef.current?.focus(); }
-      else if (e.key === 'Escape') { limpiarAi(); setQuery(''); searchRef.current?.blur(); }
+      else if (e.key === 'Escape') { limpiarAi(); setQuery(''); setPeriodoOpen(false); searchRef.current?.blur(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -188,7 +232,7 @@ export default function GrafoPage() {
     <div className="relative h-[calc(100dvh-4rem)] min-h-[560px] bg-[#0B1220] overflow-hidden">
       {/* Grafo a pantalla completa */}
       <div className="absolute inset-0">
-        <GrafoEcosistema onStats={setStats} onNodes={setNodos} spotlight={spotlight} travel={travel} poderes={poderes} estado={estado} anio={corte} anioActual={ANIO_ACTUAL} />
+        <GrafoEcosistema onStats={setStats} onNodes={setNodos} onViewIds={setViewIds} spotlight={spotlight} travel={travel} poderes={poderes} estado={estado} periodo={periodo} anio={corte} anioActual={ANIO_ACTUAL} />
       </div>
 
       {/* Overlay hero: primero QUIÉN (Observatorio) y QUÉ PELEA; el mapa es la prueba */}
@@ -303,7 +347,7 @@ export default function GrafoPage() {
         <div className="flex flex-wrap items-center gap-2 mt-3 pointer-events-auto">
           {PODER_META.map((p) => {
             const on = poderes[p.key];
-            const fuente = corte !== null ? acumuladoHasta(anio) : stats;
+            const fuente = corte !== null ? acumuladoHasta(anio) : periodo ? sumaPeriodo(periodo) : stats;
             const count = fuente
               ? p.key === 'anuncio' ? fuente.anuncios : p.key === 'iniciativa' ? fuente.iniciativas : fuente.casos
               : null;
@@ -343,6 +387,76 @@ export default function GrafoPage() {
               </button>
             ))}
           </div>
+
+          {/* 🗓 periodo: buscar por rango de años (Historia manda cuando está abierta) */}
+          {ANIOS.length > 0 && (
+            <div className="relative" ref={periodoRef}>
+              <div
+                className={`inline-flex items-center gap-0.5 rounded-full border py-1 text-[11px] backdrop-blur transition-colors ${
+                  periodo && !historia ? 'pl-3 pr-1.5' : 'px-3'
+                } ${historia ? 'opacity-40' : ''} ${
+                  periodo
+                    ? 'border-cyan-400/70 bg-cyan-500/15 text-cyan-100'
+                    : 'border-slate-700/70 bg-slate-900/70 text-slate-200 hover:border-cyan-400/50'
+                }`}
+              >
+                <button
+                  data-testid="f-periodo"
+                  disabled={historia}
+                  title={historia ? 'En Historia el tiempo lo controla el recorrido' : 'Filtrar por rango de años'}
+                  onClick={() => setPeriodoOpen((o) => !o)}
+                  className="inline-flex items-center gap-1.5 disabled:cursor-not-allowed"
+                >
+                  🗓 {periodo ? `${periodo.desde}–${periodo.hasta}` : 'Periodo'}
+                </button>
+                {periodo && !historia && (
+                  <button
+                    aria-label="Quitar periodo"
+                    onClick={() => { setPeriodo(null); setPeriodoOpen(false); }}
+                    className="rounded-full px-1 text-cyan-200/70 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              {periodoOpen && !historia && (
+                <div className="absolute left-0 top-full z-50 mt-1 flex items-center gap-2 rounded-xl border border-slate-700/70 bg-slate-900/95 px-3 py-2 backdrop-blur">
+                  <select
+                    data-testid="periodo-desde"
+                    aria-label="Desde"
+                    value={periodo?.desde ?? ANIOS[0]}
+                    onChange={(e) => setDesde(Number(e.target.value))}
+                    className="rounded-md border border-slate-700 bg-slate-800 px-1.5 py-1 text-[11px] text-slate-100"
+                  >
+                    {ANIOS.map((y) => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                  <span className="text-[11px] text-slate-400">a</span>
+                  <select
+                    data-testid="periodo-hasta"
+                    aria-label="Hasta"
+                    value={periodo?.hasta ?? ANIOS[ANIOS.length - 1]}
+                    onChange={(e) => setHasta(Number(e.target.value))}
+                    className="rounded-md border border-slate-700 bg-slate-800 px-1.5 py-1 text-[11px] text-slate-100"
+                  >
+                    {ANIOS.map((y) => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                  <button
+                    onClick={() => { setPeriodo(null); setPeriodoOpen(false); }}
+                    className="rounded-full px-2 py-0.5 text-[10px] text-slate-400 hover:text-slate-100"
+                  >
+                    Todo el tiempo
+                  </button>
+                  {(() => {
+                    const sf = stats?.anual?.sinFecha;
+                    const n = sf ? sf.anuncios + sf.iniciativas + sf.casos : 0;
+                    return periodo && n > 0 ? (
+                      <span className="text-[10px] text-slate-500">{n} sin fecha fuera del periodo</span>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
 
           {stats?.comunidades ? (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-900/70 px-3 py-1 text-[11px] text-cyan-200/80 backdrop-blur">
