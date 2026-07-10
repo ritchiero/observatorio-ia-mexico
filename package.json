@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:grafo": "node --experimental-strip-types --test lib/grafo-comunidades.test.mjs"
+    "test:grafo": "node --experimental-strip-types --test lib/grafo-comunidades.test.mjs lib/grafo-tiempo.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

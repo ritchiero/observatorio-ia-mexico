@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import GrafoEcosistema, { EstadoFilter, NodoLite, PoderFilter } from '@/components/GrafoEcosistema';
+import { PLAYBACK_INICIO, visibleEnAnio } from '@/lib/grafo-tiempo';
 
 // tokens de la skin glass del hero de la home (misma marca, mismo evento)
 const T = {
@@ -39,7 +40,10 @@ const ESTADOS: { key: EstadoFilter; label: string }[] = [
 ];
 
 export default function GrafoPage() {
-  const [stats, setStats] = useState<{ anuncios: number; iniciativas: number; casos: number; comunidades?: number } | null>(null);
+  const [stats, setStats] = useState<{
+    anuncios: number; iniciativas: number; casos: number; comunidades?: number;
+    anual?: { porAnio: Record<string, { anuncios: number; iniciativas: number; casos: number }>; sinFecha: { anuncios: number; iniciativas: number; casos: number } };
+  } | null>(null);
   const [poderes, setPoderes] = useState<PoderFilter>({ anuncio: true, iniciativa: true, caso: true });
   const [estado, setEstado] = useState<EstadoFilter>('todos');
 
@@ -52,6 +56,67 @@ export default function GrafoPage() {
   const [travel, setTravel] = useState<{ id: string; t: number } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // ---- MODO HISTORIA (▶): recorrido acumulativo por año ----
+  const [historia, setHistoria] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const ANIO_ACTUAL = useMemo(() => {
+    // acotado al calendario: una fecha futura mal capturada no puede mover el "Hoy"
+    const hoy = new Date().getFullYear();
+    const ys = Object.keys(stats?.anual?.porAnio ?? {}).map(Number).filter(Number.isFinite);
+    return ys.length ? Math.min(Math.max(...ys), hoy) : hoy;
+  }, [stats]);
+  const [anio, setAnio] = useState(ANIO_ACTUAL);
+  const estadoGuardado = useRef<EstadoFilter>('todos');
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const fn = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
+
+  const anioVacio = (y: number) => {
+    const r = stats?.anual?.porAnio?.[String(y)];
+    return !r || (r.anuncios + r.iniciativas + r.casos === 0);
+  };
+  const acumuladoHasta = (y: number) => {
+    const acc = { anuncios: 0, iniciativas: 0, casos: 0 };
+    const porAnio = stats?.anual?.porAnio ?? {};
+    for (const [k, v] of Object.entries(porAnio)) {
+      if (Number(k) <= y) { acc.anuncios += v.anuncios; acc.iniciativas += v.iniciativas; acc.casos += v.casos; }
+    }
+    return acc;
+  };
+  const abrirHistoria = () => {
+    estadoGuardado.current = estado;
+    setEstado('todos');           // sólo existe estado ACTUAL, no historial anual
+    setAnio(ANIO_ACTUAL);         // se abre en la actualidad; Play reinicia en 2016
+    setHistoria(true);
+    limpiarAi();
+  };
+  const cerrarHistoria = () => {
+    setHistoria(false);
+    setPlaying(false);
+    setAnio(ANIO_ACTUAL);
+    setEstado(estadoGuardado.current);
+  };
+  const play = () => {
+    if (reducedMotion) return;    // pasos discretos con ‹ › (accesibilidad)
+    if (anio >= ANIO_ACTUAL) setAnio(PLAYBACK_INICIO);
+    setPlaying(true);
+  };
+  useEffect(() => {
+    if (!historia || !playing) return;
+    if (anio >= ANIO_ACTUAL) { setPlaying(false); return; }
+    const dur = anioVacio(anio) ? 350 : 1000;
+    const t = setTimeout(() => setAnio((y) => Math.min(y + 1, ANIO_ACTUAL)), dur);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historia, playing, anio, ANIO_ACTUAL]);
+
+  const corte = historia && anio < ANIO_ACTUAL ? anio : null;
+
   const slug = (x: string) => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const ITEMS = useMemo(() => new Set(['anuncio', 'iniciativa', 'caso']), []);
   const results = useMemo(() => {
@@ -59,10 +124,12 @@ export default function GrafoPage() {
     if (q.length < 2) return [];
     const hit = (n: NodoLite) =>
       slug(n.label).includes(q) || slug(n.communityLabel ?? '').includes(q) || slug(n.desc ?? '').includes(q);
-    const hubs = nodos.filter((n) => !ITEMS.has(n.type) && hit(n));
-    const items = nodos.filter((n) => ITEMS.has(n.type) && hit(n));
+    const enCorte = (n: NodoLite) => visibleEnAnio(n.anio ?? null, corte, ANIO_ACTUAL);
+    const hubs = nodos.filter((n) => !ITEMS.has(n.type) && hit(n) && enCorte(n));
+    const items = nodos.filter((n) => ITEMS.has(n.type) && hit(n) && enCorte(n));
     return [...hubs, ...items].slice(0, 8);
-  }, [nodos, query, ITEMS]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodos, query, ITEMS, corte, ANIO_ACTUAL]);
 
   const irA = (id: string) => {
     setQuery('');
@@ -71,6 +138,7 @@ export default function GrafoPage() {
 
   const preguntar = async () => {
     const q = query.trim();
+    if (corte !== null) return; // la IA responde sobre la actualidad, no sobre un año intermedio
     if (q.length < 3 || aiBusy) return;
     setAiBusy(true);
     try {
@@ -96,6 +164,12 @@ export default function GrafoPage() {
 
   const limpiarAi = () => { setAi(null); setSpotlight(null); };
 
+  // al viajar al pasado, la respuesta de la IA (que habla de la actualidad) deja de aplicar
+  useEffect(() => {
+    if (corte !== null) limpiarAi();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [corte]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing = (e.target as HTMLElement)?.tagName === 'INPUT';
@@ -114,7 +188,7 @@ export default function GrafoPage() {
     <div className="relative h-[calc(100dvh-4rem)] min-h-[560px] bg-[#0B1220] overflow-hidden">
       {/* Grafo a pantalla completa */}
       <div className="absolute inset-0">
-        <GrafoEcosistema onStats={setStats} onNodes={setNodos} spotlight={spotlight} travel={travel} poderes={poderes} estado={estado} />
+        <GrafoEcosistema onStats={setStats} onNodes={setNodos} spotlight={spotlight} travel={travel} poderes={poderes} estado={estado} anio={corte} anioActual={ANIO_ACTUAL} />
       </div>
 
       {/* Overlay hero: primero QUIÉN (Observatorio) y QUÉ PELEA; el mapa es la prueba */}
@@ -158,6 +232,12 @@ export default function GrafoPage() {
               placeholder="Pregúntale al mapa: ¿qué pasa con los deepfakes? ¿qué opera hoy?…"
               className="w-full bg-transparent py-2.5 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none"
             />
+            {corte !== null && (
+              <span className="shrink-0 font-mono text-[9px] uppercase text-amber-300/80" title="La IA responde sobre la actualidad">
+                🕰 {anio}
+              </span>
+            )}
+            {corte === null && (
             <button
               onClick={preguntar}
               data-testid="grafo-preguntar"
@@ -166,6 +246,7 @@ export default function GrafoPage() {
             >
               {aiBusy ? '…' : 'Preguntar'}
             </button>
+            )}
           </div>
 
           {results.length > 0 && !ai && !aiBusy && (
@@ -222,8 +303,9 @@ export default function GrafoPage() {
         <div className="flex flex-wrap items-center gap-2 mt-3 pointer-events-auto">
           {PODER_META.map((p) => {
             const on = poderes[p.key];
-            const count = stats
-              ? p.key === 'anuncio' ? stats.anuncios : p.key === 'iniciativa' ? stats.iniciativas : stats.casos
+            const fuente = corte !== null ? acumuladoHasta(anio) : stats;
+            const count = fuente
+              ? p.key === 'anuncio' ? fuente.anuncios : p.key === 'iniciativa' ? fuente.iniciativas : fuente.casos
               : null;
             return (
               <button
@@ -250,6 +332,8 @@ export default function GrafoPage() {
               <button
                 key={e.key}
                 data-testid={`f-estado-${e.key}`}
+                disabled={historia}
+                title={historia ? 'En Historia sólo existe el estado actual' : undefined}
                 onClick={() => setEstado(e.key)}
                 className={`rounded-full px-2.5 py-0.5 text-[11px] transition-colors ${
                   estado === e.key ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-400 hover:text-slate-200'
@@ -265,6 +349,21 @@ export default function GrafoPage() {
               🏝 {stats.comunidades} islas
             </span>
           ) : null}
+
+          {/* sólo cuando hay datos anuales: sin ellos el recorrido sería un mapa vacío con avisos falsos */}
+          {stats?.anual && Object.keys(stats.anual.porAnio).length > 0 && (
+          <button
+            data-testid="historia-toggle"
+            onClick={() => (historia ? cerrarHistoria() : abrirHistoria())}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] backdrop-blur transition-colors ${
+              historia
+                ? 'border-amber-400/70 bg-amber-500/15 text-amber-200'
+                : 'border-slate-700/70 bg-slate-900/70 text-slate-200 hover:border-amber-400/50'
+            }`}
+          >
+            {historia ? '⏹ Salir de Historia' : '▶ Historia'}
+          </button>
+          )}
 
           <span className="mx-1 h-4 w-px bg-slate-700/70 hidden sm:block" />
 
@@ -283,6 +382,55 @@ export default function GrafoPage() {
           </Link>
         </div>
       </div>
+
+      {/* Dock del modo Historia */}
+      {historia && (
+        <div className="absolute bottom-4 left-1/2 z-40 w-[min(680px,92vw)] -translate-x-1/2 rounded-2xl border border-amber-500/30 bg-slate-900/95 px-4 py-3 backdrop-blur shadow-[0_0_40px_rgba(251,191,36,0.12)]">
+          <div className="flex items-center gap-3">
+            <button
+              data-testid="historia-play"
+              onClick={() => (playing ? setPlaying(false) : play())}
+              disabled={reducedMotion}
+              title={reducedMotion ? 'Movimiento reducido activo: usa ‹ › para avanzar' : undefined}
+              className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-sm font-bold text-slate-950 disabled:opacity-40"
+            >
+              {playing ? '⏸' : '▶'}
+            </button>
+            <button onClick={() => { setPlaying(false); setAnio((y) => Math.max(PLAYBACK_INICIO, y - 1)); }} className="h-8 w-8 shrink-0 rounded-full border border-slate-700 text-slate-300 hover:border-amber-400/60">‹</button>
+            <button onClick={() => { setPlaying(false); setAnio((y) => Math.min(ANIO_ACTUAL, y + 1)); }} className="h-8 w-8 shrink-0 rounded-full border border-slate-700 text-slate-300 hover:border-amber-400/60">›</button>
+            <div className="font-serif-display shrink-0 text-3xl font-semibold tabular-nums text-amber-200" style={{ minWidth: 86 }}>
+              {corte === null ? 'Hoy' : anio}
+            </div>
+            <input
+              type="range"
+              data-testid="historia-slider"
+              min={PLAYBACK_INICIO}
+              max={ANIO_ACTUAL}
+              value={anio}
+              onChange={(e) => { setPlaying(false); setAnio(Number(e.target.value)); }}
+              className="w-full accent-amber-400"
+            />
+            <button onClick={cerrarHistoria} aria-label="Cerrar Historia" className="shrink-0 rounded px-1.5 text-slate-400 hover:text-slate-100">✕</button>
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-slate-400">
+            {(() => { const c = corte !== null ? acumuladoHasta(anio) : stats; return c ? (
+              <>
+                <span><b className="text-cyan-300">{c.anuncios}</b> anuncios</span>
+                <span><b className="text-blue-300">{c.iniciativas}</b> iniciativas</span>
+                <span><b className="text-violet-300">{c.casos}</b> casos</span>
+              </>
+            ) : null; })()}
+            {corte !== null && anioVacio(anio) && (
+              <span className="text-amber-300/90 normal-case">Sin nuevos registros vinculados en {anio}</span>
+            )}
+            {corte === null && stats?.anual && (stats.anual.sinFecha.anuncios + stats.anual.sinFecha.iniciativas + stats.anual.sinFecha.casos) > 0 && (
+              <span className="normal-case text-slate-500">
+                {stats.anual.sinFecha.anuncios + stats.anual.sinFecha.iniciativas + stats.anual.sinFecha.casos} sin fecha (fuera del recorrido)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Leyenda */}
       <div className="pointer-events-none absolute right-4 bottom-4 rounded-lg border border-slate-700/60 bg-slate-900/80 px-3 py-2 backdrop-blur hidden sm:block">
