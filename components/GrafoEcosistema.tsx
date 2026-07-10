@@ -78,6 +78,8 @@ export default function GrafoEcosistema({
   const [selected, setSelected] = useState<GNode | null>(null);
   const [query, setQuery] = useState('');
   const [fotos, setFotos] = useState<Record<string, string>>({});
+  const [aiBusy, setAiBusy] = useState(false);
+  const [ai, setAi] = useState<{ respuesta: string; nodos: { id: string; label: string; type: string }[] } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const fitted = useRef(false);
   const seededData = useRef<GData | null>(null);
@@ -251,9 +253,14 @@ export default function GrafoEcosistema({
 
   // foco activo = hover o selección (el panel mantiene la isla iluminada sin mouse encima)
   const active = hover ?? selected;
+  const aiSet = useMemo(() => new Set((ai?.nodos ?? []).map((n) => n.id)), [ai]);
   const isLit = useCallback(
-    (id: string) => !active || active.id === id || (neigh.get(String(active.id))?.has(id) ?? false),
-    [active, neigh]
+    (id: string) => {
+      if (active) return active.id === id || (neigh.get(String(active.id))?.has(id) ?? false);
+      if (aiSet.size) return aiSet.has(id);   // resultados del buscador IA iluminados
+      return true;
+    },
+    [active, neigh, aiSet]
   );
   const touchesHover = useCallback(
     (l: GLink) => active && (lid(l.source) === active.id || lid(l.target) === active.id),
@@ -274,6 +281,35 @@ export default function GrafoEcosistema({
     const items = view.nodes.filter((n) => ITEM_TYPES.has(n.type) && hit(n));
     return [...hubs, ...items].slice(0, 8);
   }, [view, query]);
+
+  // buscador IA: Grok lee el catálogo del grafo y devuelve respuesta + nodos
+  const runAi = useCallback(async () => {
+    const q = query.trim();
+    if (q.length < 3 || aiBusy) return;
+    setAiBusy(true);
+    setSelected(null);
+    try {
+      const r = await fetch('/api/grafo/buscar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q }),
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        setAi({ respuesta: d?.error ?? 'El buscador no está disponible.', nodos: [] });
+      } else {
+        setAi({ respuesta: d.respuesta, nodos: d.nodos ?? [] });
+        const ids = new Set((d.nodos ?? []).map((n: { id: string }) => n.id));
+        if (ids.size && fgRef.current) {
+          fgRef.current.zoomToFit(700, 90, (n: GNodeData) => ids.has(n.id));
+        }
+      }
+    } catch {
+      setAi({ respuesta: 'No se pudo consultar el buscador.', nodos: [] });
+    } finally {
+      setAiBusy(false);
+    }
+  }, [query, aiBusy]);
 
   // viajar a un nodo: centrar + acercar + seleccionar (abre el panel)
   const goTo = useCallback((n: GNode) => {
@@ -303,6 +339,7 @@ export default function GrafoEcosistema({
       } else if (e.key === 'Escape') {
         setSelected(null);
         setQuery('');
+        setAi(null);
         searchRef.current?.blur();
       }
     };
@@ -489,11 +526,12 @@ export default function GrafoEcosistema({
           ref={searchRef}
           data-testid="grafo-buscar"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar tema, dependencia, registro…  /"
+          onChange={(e) => { setQuery(e.target.value); if (ai) setAi(null); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); runAi(); } }}
+          placeholder="Busca — o pregunta y da Enter…  /"
           className="w-full rounded-lg border border-slate-700/70 bg-slate-900/85 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 backdrop-blur focus:outline-none focus:border-cyan-500/60"
         />
-        {results.length > 0 && (
+        {results.length > 0 && !ai && !aiBusy && (
           <div className="mt-1 overflow-hidden rounded-lg border border-slate-700/70 bg-slate-900/95 backdrop-blur">
             {results.map((n) => (
               <button
@@ -506,6 +544,41 @@ export default function GrafoEcosistema({
                 <span className="ml-auto shrink-0 font-mono text-[9px] uppercase text-slate-500">{n.type}</span>
               </button>
             ))}
+          </div>
+        )}
+        {(aiBusy || ai) && (
+          <div className="mt-1 rounded-lg border border-cyan-800/50 bg-slate-900/95 p-3 backdrop-blur">
+            {aiBusy ? (
+              <div className="flex items-center gap-2 text-xs text-cyan-200/80">
+                <span className="h-3 w-3 animate-spin rounded-full border border-cyan-400 border-t-transparent" />
+                Grok está explorando el mapa…
+              </div>
+            ) : ai && (
+              <>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-cyan-400">✨ Respuesta del mapa</div>
+                  <button onClick={() => setAi(null)} aria-label="Cerrar" className="rounded px-1 text-slate-400 hover:text-slate-100">✕</button>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-slate-200">{ai.respuesta}</p>
+                {ai.nodos.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {ai.nodos.map((n) => {
+                      const v = byId.get(n.id);
+                      return (
+                        <button
+                          key={n.id}
+                          onClick={() => v && goTo(v)}
+                          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-800/60 px-2 py-0.5 text-[10px] text-slate-200 hover:border-cyan-500/50"
+                        >
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: COLOR[n.type] ?? '#94a3b8' }} />
+                          <span className="truncate">{n.label.slice(0, 40)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
