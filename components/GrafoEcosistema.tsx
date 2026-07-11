@@ -104,6 +104,15 @@ export default function GrafoEcosistema({
   const [hover, setHover] = useState<GNode | null>(null);
   const [selected, setSelected] = useState<GNode | null>(null);
   const [fotos, setFotos] = useState<Record<string, string>>({});
+  // táctil (pointer coarse): pinch-zoom nativo del grafo; en escritorio manda Ctrl+rueda
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)');
+    setCoarse(mq.matches);
+    const fn = (e: MediaQueryListEvent) => setCoarse(e.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
   const fitted = useRef(false);
   const seededData = useRef<GData | null>(null);
 
@@ -499,7 +508,8 @@ export default function GrafoEcosistema({
   };
 
   return (
-    <div ref={boxRef} className="relative w-full h-full">
+    // en modo ambiente (hero de la home) el canvas deja pasar el scroll táctil vertical
+    <div ref={boxRef} className="relative w-full h-full" style={{ touchAction: chrome ? 'none' : 'pan-y' }}>
       {view ? (
         <ForceGraph2D
           ref={bindFg}
@@ -542,7 +552,8 @@ export default function GrafoEcosistema({
           cooldownTicks={220}
           d3AlphaDecay={0.018}
           d3VelocityDecay={0.32}
-          enableZoomInteraction={false}
+          enableZoomInteraction={chrome && coarse}
+          enablePanInteraction={chrome}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-mono">
@@ -550,9 +561,9 @@ export default function GrafoEcosistema({
         </div>
       )}
 
-      {/* Controles de zoom */}
+      {/* Controles de zoom (móvil: columna flotante a media altura, lejos del dock y del sheet) */}
       {chrome && (
-      <div className="absolute bottom-4 left-4 flex flex-col gap-1.5">
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 sm:right-auto sm:top-auto sm:translate-y-0 sm:bottom-4 sm:left-4">
         <ZBtn label="+" testid="zoom-in" onClick={() => zoomBy(1.5)} />
         <ZBtn label="−" testid="zoom-out" onClick={() => zoomBy(1 / 1.5)} />
         <ZBtn label="⤢" testid="zoom-fit" onClick={() => fgRef.current?.zoomToFit(500, 50)} />
@@ -562,9 +573,9 @@ export default function GrafoEcosistema({
       </div>
       )}
 
-      {/* Panel lateral: el apunte del nodo (clic = leer sin salir del mapa) */}
+      {/* Panel lateral: el apunte del nodo (móvil: bottom sheet SOBRE los filtros; escritorio: columna derecha) */}
       {chrome && selected && (
-        <div className="absolute right-3 top-16 bottom-4 w-80 max-w-[86vw] overflow-y-auto rounded-xl border border-slate-700/70 bg-slate-900/90 p-4 backdrop-blur">
+        <div className="fixed inset-x-2 bottom-2 top-auto z-50 max-h-[55dvh] overflow-y-auto rounded-xl border border-slate-700/70 bg-slate-900/95 p-4 backdrop-blur sm:absolute sm:z-auto sm:inset-x-auto sm:right-3 sm:top-16 sm:bottom-4 sm:max-h-none sm:w-80 sm:max-w-[86vw] sm:bg-slate-900/90">
           <div className="flex items-start justify-between gap-2">
             <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: COLOR[selected.type] }}>
               {selected.type}
@@ -675,9 +686,9 @@ export default function GrafoEcosistema({
         </div>
       )}
 
-      {/* tooltip del nodo bajo el cursor (transitorio; el panel es lo persistente) */}
+      {/* tooltip del nodo bajo el cursor (hover: sólo escritorio; en táctil el tap abre el panel) */}
       {chrome && hover && !selected && (
-        <div className="pointer-events-none absolute left-16 bottom-4 max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur">
+        <div className="pointer-events-none absolute left-16 bottom-4 hidden max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur sm:block">
           <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR[hover.type] }}>
             {hover.type}
             {!enPasado && hover.nuevo ? ' · nuevo' : ''}

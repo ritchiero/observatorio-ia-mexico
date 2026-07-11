@@ -46,6 +46,8 @@ export default function GrafoPage() {
   } | null>(null);
   const [poderes, setPoderes] = useState<PoderFilter>({ anuncio: true, iniciativa: true, caso: true });
   const [estado, setEstado] = useState<EstadoFilter>('todos');
+  // móvil: la fila de filtros vive detrás de un toggle para no tapar el mapa
+  const [filtrosOpen, setFiltrosOpen] = useState(false);
 
   // ---- buscador del hero: instantáneo al teclear, análisis con Enter ----
   const [nodos, setNodos] = useState<NodoLite[]>([]);
@@ -236,7 +238,7 @@ export default function GrafoPage() {
       </div>
 
       {/* Overlay hero: primero QUIÉN (Observatorio) y QUÉ PELEA; el mapa es la prueba */}
-      <div className="pointer-events-none absolute top-0 left-0 right-0 p-5 sm:p-8 bg-gradient-to-b from-[#0B1220]/95 via-[#0B1220]/55 to-transparent">
+      <div className="pointer-events-none absolute top-0 left-0 right-0 p-4 sm:p-8 bg-gradient-to-b from-[#0B1220]/95 via-[#0B1220]/55 to-transparent">
         {/* marca hero-level (misma lockup de la home) */}
         <Link href="/" className="pointer-events-auto inline-flex items-center gap-3 group">
           <span className="transition-transform duration-300 group-hover:rotate-[8deg]"><IrisMark /></span>
@@ -247,7 +249,7 @@ export default function GrafoPage() {
         </Link>
 
         {/* voz de campaña + qué estás viendo */}
-        <h1 className="font-serif-display mt-3" style={{ fontSize: 'clamp(26px, 4.2vw, 46px)', lineHeight: 0.98, letterSpacing: '-0.03em', fontWeight: 500, color: T.text, maxWidth: 720 }}>
+        <h1 className="font-serif-display mt-3" style={{ fontSize: 'clamp(21px, 6vw, 46px)', lineHeight: 0.98, letterSpacing: '-0.03em', fontWeight: 500, color: T.text, maxWidth: 720 }}>
           La gran ilusión{' '}
           <span style={{ fontStyle: 'italic', fontWeight: 400,
             background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 50%, ${T.violet} 100%)`,
@@ -259,7 +261,7 @@ export default function GrafoPage() {
         <p className="font-mono uppercase mt-2" style={{ fontSize: 10, letterSpacing: '0.18em', color: T.body }}>
           Monitoreo ciudadano de la IA en el Estado mexicano · datos reales
         </p>
-        <p className="text-slate-300/90 text-xs sm:text-sm mt-1.5 max-w-2xl">
+        <p className="hidden sm:block text-slate-300/90 text-xs sm:text-sm mt-1.5 max-w-2xl">
           Cada punto es un registro real del Estado. Pasa el cursor para iluminar su vecindario; haz clic para leer el apunte.
         </p>
 
@@ -343,8 +345,25 @@ export default function GrafoPage() {
           )}
         </div>
 
+        {/* móvil: toggle que abre/cierra la fila de filtros; resume lo activo cuando está cerrada */}
+        <button
+          data-testid="filtros-toggle"
+          onClick={() => setFiltrosOpen((o) => !o)}
+          className={`sm:hidden mt-2.5 pointer-events-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] backdrop-blur ${
+            historia || periodo || estado !== 'todos' || !poderes.anuncio || !poderes.iniciativa || !poderes.caso
+              ? 'border-cyan-400/70 bg-cyan-500/15 text-cyan-100'
+              : 'border-slate-700/70 bg-slate-900/80 text-slate-200'
+          }`}
+        >
+          ☰ Filtros
+          {historia ? ' · Historia' : ''}
+          {periodo ? ` · ${periodo.desde}–${periodo.hasta}` : ''}
+          {estado !== 'todos' ? ` · ${ESTADOS.find((e) => e.key === estado)?.label ?? estado}` : ''}
+          <span className="text-slate-400">{filtrosOpen ? '▴' : '▾'}</span>
+        </button>
+
         {/* Filtros */}
-        <div className="flex flex-wrap items-center gap-2 mt-3 pointer-events-auto">
+        <div className={`${filtrosOpen ? 'flex' : 'hidden'} sm:flex flex-wrap items-center gap-2 mt-2 sm:mt-3 pointer-events-auto`}>
           {PODER_META.map((p) => {
             const on = poderes[p.key];
             const fuente = corte !== null ? acumuladoHasta(anio) : periodo ? sumaPeriodo(periodo) : stats;
