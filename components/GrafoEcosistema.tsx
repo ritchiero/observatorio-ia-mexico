@@ -118,9 +118,15 @@ export default function GrafoEcosistema({
 
   useEffect(() => {
     if (chrome) {
-      fetch('/nodos/manifest.json')
-        .then((r) => (r.ok ? r.json() : {}))
-        .then(setFotos)
+      // Dos fuentes: `manifest.json` lo genera el pipeline de imágenes; `personas.json`
+      // son retratos curados a mano. Van aparte para no reescribir el manifest
+      // generado (y para que un retrato curado gane sobre uno automático).
+      const cargar = (u: string) =>
+        fetch(u)
+          .then((r) => (r.ok ? r.json() : {}))
+          .catch(() => ({}));
+      Promise.all([cargar('/nodos/manifest.json'), cargar('/nodos/personas.json')])
+        .then(([auto, curadas]) => setFotos({ ...auto, ...curadas }))
         .catch(() => {});
     }
     fetch('/api/grafo')

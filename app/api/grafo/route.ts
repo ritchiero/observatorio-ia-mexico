@@ -64,7 +64,16 @@ function keyify(s: string): string {
 
 // heurística: nombres de instituciones no son 'personas clave'
 function esInstitucion(v: string): boolean {
+  // Cargos jurisdiccionales sin nombre propio ("Juez de Distrito", "Magistrada de
+  // Circuito") describen al órgano, no a una persona identificable.
+  if (/^(juez|jueza|magistrad[oa]|ministr[oa])\s+(de|del|en)\b/i.test(v)) return true;
   return /(secretar|agencia|instituto|comisi[oó]n|consejo|poder|gobierno|congreso|c[aá]mara|senado|fiscal[ií]a|ministerio|universidad|tribunal|juzgado|sala|direcci[oó]n|coordinaci[oó]n|grupo|partido|s\.a\.|empresa)/i.test(v);
+}
+
+// Descriptores colectivos de un expediente ("diversas personas quejosas", "terceros
+// interesados"): no son ni gente identificable ni instituciones, así que no merecen nodo.
+function esColectivoGenerico(v: string): boolean {
+  return /^(diversas |las |los )?(personas? (quejosas?|f[ií]sicas?)|quejosos?|terceros?|albaceas?|demandantes?|actores?|usuarios?)\b/i.test(v);
 }
 
 type RawRecord = Record<string, unknown>;
@@ -150,11 +159,17 @@ export async function GET() {
       if (tema) addConn(`t:${keyify(tema)}`, { id: `t:${keyify(tema)}`, label: tema.replace(/_/g, ' '), type: 'tema', val: 3 }, id, true);
       const mat = norm(c.materia);
       if (mat) addConn(`t:${keyify(mat)}`, { id: `t:${keyify(mat)}`, label: mat.replace(/_/g, ' '), type: 'tema', val: 3 }, id);
-      // partes clave del litigio (quejosos, demandados, terceros)
+      // partes clave del litigio (quejosos, demandados, terceros, ponentes)
+      // Las partes institucionales (juzgados, fiscalías, institutos) entran como 'actor',
+      // no como 'persona': si no, la capa de personas se llena de organismos y se pierde
+      // de vista quién es realmente la gente detrás de los casos.
       const partes = isRecord(c.partes) ? c.partes : {};
       for (const v of Object.values(partes)) {
         const parte = norm(v).slice(0, 70);
-        if (parte) addConn(`p:${keyify(parte)}`, { id: `p:${keyify(parte)}`, label: parte, type: 'persona', val: 3 }, id);
+        if (!parte) continue;
+        if (esColectivoGenerico(parte)) continue;
+        const tipo = esInstitucion(parte) ? 'actor' : 'persona';
+        addConn(`p:${keyify(parte)}`, { id: `p:${keyify(parte)}`, label: parte, type: tipo, val: 3 }, id);
       }
     }
 
