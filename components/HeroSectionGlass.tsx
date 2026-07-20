@@ -101,7 +101,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  const navItems: [string, string][] = [['Tracker', '/'], ['Legislación', '/legislacion'], ['Casos', '/casos-ia'], ['Recap', '/recap'], ['Actividad', '/actividad']];
+  const navItems: [string, string][] = [['Tracker', '/'], ['Legislación', '/legislacion'], ['Casos', '/casos-ia'], ['Hemeroteca', '/hemeroteca'], ['Recap', '/recap'], ['Actividad', '/actividad']];
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
