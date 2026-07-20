@@ -321,6 +321,41 @@ export function organoDe(camara?: string): { label: string; icono: string; tono:
   return { label: camara as string, icono: 'map-pin', tono: 'slate' };
 }
 
+export function logoDeOrgano(camara?: string): string | undefined {
+  const s = (camara ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  if (!s) return undefined;
+  if (s.includes('diputad')) return '/logos/camara-diputados.svg';
+  if (s.includes('senad')) return '/logos/senado.jpg';
+  if (s.includes('cdmx') || s.includes('ciudad de mexico')) return '/logos/congreso-cdmx.svg';
+  if (s.includes('michoacan')) return '/logos/congreso-michoacan.png';
+  if (s.includes('chihuahua')) return '/logos/congreso-chihuahua.png';
+  if (s.includes('queretaro')) return '/logos/congreso-queretaro.png';
+  if (s.includes('yucatan')) return '/logos/congreso-yucatan.png';
+  if (s.includes('guanajuato')) return '/logos/congreso-guanajuato.png';
+  if (s.includes('campeche')) return '/logos/congreso-campeche.png';
+  if (s.includes('quintana roo')) return '/logos/congreso-quintana-roo.svg';
+  if (s.includes('corte') || s.includes('scjn')) return '/logos/scjn.png';
+  if (s.includes('judicial') || s.includes('tribunal') || s.includes('juzgado')) return '/logos/pjf.svg';
+  if (s.includes('presidencia')) return '/logos/presidencia.jpg';
+  if (s.includes('economia')) return '/logos/economia.png';
+  if (s.includes('educacion') || s.includes('sep')) return '/logos/sep.png';
+  if (s.includes('cultura')) return '/logos/secretaria-cultura.svg';
+  if (s.includes('salud')) return '/logos/secretaria-salud.png';
+  if (s.includes('atdt') || s.includes('transformacion digital')) return '/logos/atdt.svg';
+  if (s.includes('secihti') || s.includes('ciencia')) return '/logos/secihti.svg';
+  return undefined;
+}
+
+export function jurisdiccionDe(camara?: string): string {
+  const g = camaraGrupo(camara);
+  if (g === 'Diputados' || g === 'Senado') return 'Federal';
+  if (g === 'Congresos locales') return 'Local';
+  return 'Institucional';
+}
+
 export function tipoEtiqueta(tipo?: string, estatus?: string): string {
   const t = (tipo ?? '').toLowerCase();
   if (t.includes('punto')) return 'Punto de acuerdo';
@@ -335,8 +370,10 @@ export interface ItemHemeroteca {
   id: string; slug: string; titulo: string; resumen: string;
   fecha?: string; anio: string; fechaLegible: string;
   materia: string; camaraGrupo: string;
-  organoLabel: string; organoIcono: string; organoTono: Tono;
+  jurisdiccion: string;
+  organoLabel: string; organoIcono: string; organoTono: Tono; organoLogo?: string;
   tipoLabel: string; vigenciaLabel: string; vigenciaTono: Tono;
+  proponente?: string; camara?: string; numero?: number;
   tags: string[]; tagsExtra: number;
   urlGaceta?: string; copiaRespaldo?: string; texto: string;
 }
@@ -353,12 +390,14 @@ export function toItem(f: FichaHemeroteca): ItemHemeroteca {
     id: f.id, slug: f.slug, titulo: f.titulo, resumen: f.resumen,
     fecha: f.fecha, anio: anioDe(f.fecha), fechaLegible,
     materia: materiaDe(f), camaraGrupo: camaraGrupo(f.camara),
-    organoLabel: org.label, organoIcono: org.icono, organoTono: org.tono,
+    jurisdiccion: jurisdiccionDe(f.camara),
+    organoLabel: org.label, organoIcono: org.icono, organoTono: org.tono, organoLogo: logoDeOrgano(f.camara),
     tipoLabel: tipoEtiqueta(f.tipo, f.estatus),
     vigenciaLabel: vig.label, vigenciaTono: vig.tono,
+    proponente: f.proponente, camara: f.camara, numero: f.numero,
     tags: temas.slice(0, 3), tagsExtra: Math.max(0, temas.length - 3),
     urlGaceta: f.urlGaceta, copiaRespaldo: f.copiaRespaldo,
-    texto: _norm([f.titulo, f.resumen, f.proponente, temas.join(' ')].filter(Boolean).join(' ')),
+    texto: _norm([f.titulo, f.resumen, f.proponente, f.camara, temas.join(' ')].filter(Boolean).join(' ')),
   };
 }
 
