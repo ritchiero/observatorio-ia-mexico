@@ -1,6 +1,6 @@
 import { getFicha } from '@/lib/hemeroteca';
 
-export const revalidate = 600;
+export const revalidate = 120;
 
 // Sirve la versión Markdown cruda del artículo (para lectura, cita e indexación por LLMs).
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {

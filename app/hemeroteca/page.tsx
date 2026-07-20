@@ -4,7 +4,7 @@ import { FileText, ExternalLink } from 'lucide-react';
 import { getFichas, CANONICAL_BASE } from '@/lib/hemeroteca';
 
 // Server-rendered con ISR: el contenido va en el HTML inicial → indexable.
-export const revalidate = 600;
+export const revalidate = 120;
 
 export const metadata: Metadata = {
   title: 'Hemeroteca — Observatorio IA México',
