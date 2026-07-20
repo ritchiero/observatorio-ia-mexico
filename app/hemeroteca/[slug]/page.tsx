@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Download, ExternalLink, FileDown } from 'lucide-react';
-import { getFicha, getFichas, renderMarkdown, CANONICAL_BASE } from '@/lib/hemeroteca';
+import { Download, ExternalLink, FileDown } from 'lucide-react';
+import { getFicha, getFichas, renderMarkdown, buildTitle, buildDescription, jsonLdGraph, CANONICAL_BASE } from '@/lib/hemeroteca';
 import '../articulo.css';
 
 export const revalidate = 600;
@@ -18,12 +18,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const f = await getFicha(slug);
   if (!f) return { title: 'Ficha no encontrada — Hemeroteca' };
   const url = `${CANONICAL_BASE}/hemeroteca/${f.slug}`;
+  const title = buildTitle(f);
+  const description = buildDescription(f);
+  const image = `${CANONICAL_BASE}/og-image.png`;
   return {
-    title: `${f.titulo} · Hemeroteca — Observatorio IA México`,
-    description: f.resumen,
+    title: { absolute: title },
+    description,
     alternates: { canonical: url },
-    openGraph: { title: f.titulo, description: f.resumen, url, type: 'article' },
-    twitter: { card: 'summary_large_image', title: f.titulo, description: f.resumen },
+    openGraph: { title, description, url, type: 'article', siteName: 'Observatorio IA México', locale: 'es_MX', images: [image], publishedTime: f.fecha },
+    twitter: { card: 'summary_large_image', title, description, images: [image] },
   };
 }
 
@@ -45,13 +48,21 @@ export default async function FichaPage({ params }: { params: Promise<{ slug: st
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-10">
-      <Link href="/hemeroteca" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-cyan-700 transition-colors mb-6">
-        <ArrowLeft className="w-4 h-4" /> Hemeroteca
-      </Link>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdGraph(f) }} />
+
+      <nav aria-label="breadcrumb" className="text-sm text-gray-500 mb-6">
+        <ol className="flex flex-wrap items-center gap-1.5">
+          <li><Link href="/" className="hover:text-cyan-700 transition-colors">Inicio</Link></li>
+          <li aria-hidden="true" className="text-gray-300">/</li>
+          <li><Link href="/hemeroteca" className="hover:text-cyan-700 transition-colors">Hemeroteca</Link></li>
+          <li aria-hidden="true" className="text-gray-300">/</li>
+          <li aria-current="page" className="text-gray-700 truncate max-w-[55%]">{f.titulo}</li>
+        </ol>
+      </nav>
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-4">
         {f.camara && <span className="px-2 py-0.5 rounded bg-gray-100">{f.camara}</span>}
-        {f.fecha && <span>{fmtFecha(f.fecha)}</span>}
+        {f.fecha && <time dateTime={f.fecha}>{fmtFecha(f.fecha)}</time>}
         {f.estatus && <span className="capitalize">· {f.estatus.replace(/_/g, ' ')}</span>}
         {f.proponente && <span>· {f.proponente}</span>}
       </div>

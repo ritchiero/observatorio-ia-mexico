@@ -18,16 +18,16 @@ async function fetchIds(path: string, key: string): Promise<string[]> {
   }
 }
 
-// Slugs de las fichas de hemeroteca (iniciativas con artículo publicado).
-async function fetchHemerotecaSlugs(): Promise<string[]> {
+// Fichas de hemeroteca (iniciativas con artículo publicado), con su fecha real.
+async function fetchHemeroteca(): Promise<Array<{ slug: string; fecha?: string; estatus?: string }>> {
   try {
     const r = await fetch(`${BASE}/api/iniciativas`, { next: { revalidate } });
     if (!r.ok) return [];
     const d = await r.json();
-    const arr: Array<{ articuloSlug?: string; articuloMD?: string }> = d.data || [];
+    const arr: Array<{ articuloSlug?: string; articuloMD?: string; fecha?: string; estatus?: string; status?: string }> = d.data || [];
     return arr
       .filter((x) => x.articuloMD && x.articuloSlug)
-      .map((x) => x.articuloSlug as string);
+      .map((x) => ({ slug: x.articuloSlug as string, fecha: x.fecha, estatus: x.estatus ?? x.status }));
   } catch {
     return [];
   }
@@ -38,10 +38,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     fetchIds('/api/anuncios', 'anuncios'),
     fetchIds('/api/iniciativas', 'data'),
     fetchIds('/api/casos-ia', 'casos'),
-    fetchHemerotecaSlugs(),
+    fetchHemeroteca(),
   ]);
 
   const now = new Date();
+  const fechaDe = (iso?: string) => {
+    const d = iso ? new Date(iso) : now;
+    return Number.isNaN(d.getTime()) ? now : d;
+  };
 
   const estaticas: MetadataRoute.Sitemap = [
     { url: `${BASE}/`, lastModified: now, changeFrequency: 'daily', priority: 1 },
@@ -58,7 +62,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...iniciativas.map((id) => ({ url: `${BASE}/legislacion/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
     ...casos.map((id) => ({ url: `${BASE}/casos-ia/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
     // Fichas de hemeroteca: contenido server-rendered → alta prioridad de indexación.
-    ...hemeroteca.map((slug) => ({ url: `${BASE}/hemeroteca/${slug}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.7 })),
+    // lastModified real (no `now`) para no mentirle a Google sobre la frescura.
+    ...hemeroteca.map((f) => ({
+      url: `${BASE}/hemeroteca/${f.slug}`,
+      lastModified: fechaDe(f.fecha),
+      changeFrequency: (f.estatus === 'turnada' ? 'weekly' : 'monthly') as 'weekly' | 'monthly',
+      priority: 0.7,
+    })),
   ];
 
   return [...estaticas, ...fichas];

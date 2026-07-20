@@ -19,10 +19,13 @@ export interface FichaHemeroteca {
   estatus?: string;
   urlGaceta?: string;
   copiaRespaldo?: string;
+  tematicas?: string[];
+  numero?: number;
 }
 
 interface IniciativaRecord {
   id: string;
+  numero?: number;
   titulo?: string;
   fecha?: string;
   camara?: string;
@@ -30,6 +33,7 @@ interface IniciativaRecord {
   partido?: string;
   status?: string;
   estatus?: string;
+  tematicas?: string[];
   urlGaceta?: string;
   urlPDFBackup?: string;
   articuloMD?: string;
@@ -51,6 +55,8 @@ function toFicha(i: IniciativaRecord): FichaHemeroteca {
     estatus: i.estatus ?? i.status,
     urlGaceta: i.urlGaceta,
     copiaRespaldo: i.urlPDFBackup,
+    tematicas: Array.isArray(i.tematicas) ? i.tematicas : undefined,
+    numero: typeof i.numero === 'number' ? i.numero : undefined,
   };
 }
 
@@ -127,4 +133,106 @@ export function renderMarkdown(md: string): string {
   }
   flushPara(); flushList();
   return html.join('\n');
+}
+
+// --- SEO: título, descripción y datos estructurados (ganar el clic en Google) ---
+
+/** Limpia el '..' accidental y normaliza espacios. */
+export function clean(s: string): string {
+  return (s ?? '').replace(/\.{2,}$/, '.').replace(/\s+/g, ' ').trim();
+}
+
+/** Recorta por palabra a `max` chars, limpia signos y palabras funcionales colgantes. */
+function recorta(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const cut = s.lastIndexOf(' ', max);
+  let r = s.slice(0, cut > 0 ? cut : max).replace(/[\s·:,.–—-]+$/, '');
+  let prev = '';
+  while (r !== prev) {
+    prev = r;
+    r = r.replace(/\s+(y|e|o|u|de|del|la|el|los|las|en|con|para|a|al|que|una|un|su|sus|por|sobre)$/i, '');
+  }
+  return r;
+}
+
+function anio(fecha?: string): string {
+  if (!fecha) return '';
+  const y = new Date(fecha).getFullYear();
+  return Number.isFinite(y) ? String(y) : '';
+}
+
+/** <title> ≤60 chars, keyword al frente, marca en el sufijo (NO duplicada). */
+export function buildTitle(f: FichaHemeroteca): string {
+  const y = anio(f.fecha);
+  const sufijo = ` · Iniciativa${f.camara ? ' ' + f.camara : ''}${y ? ' ' + y : ''}`;
+  return recorta(f.titulo, Math.max(24, 60 - sufijo.length)) + sufijo;
+}
+
+/** Meta description ≤155 chars: dato al frente, autoría si cabe entera, CTA verificable. */
+export function buildDescription(f: FichaHemeroteca): string {
+  const CTA = ' Texto oficial y PDF.';
+  const who = f.proponente ? ` ${f.proponente}${f.partido ? ` (${f.partido})` : ''}.` : '';
+  const base = clean(f.resumen);
+  const conAutor = clean(base + who);
+  if ((conAutor + CTA).length <= 155) return conAutor + CTA;
+  // No cabe la autoría entera: mejor un resumen limpio con elipsis que pegar el nombre a media frase.
+  const room = 155 - CTA.length;
+  if (base.length <= room) return base + CTA;
+  return recorta(base, room - 1) + '…' + CTA;
+}
+
+/** JSON-LD @graph (Article + Legislation + BreadcrumbList) — resultados enriquecidos. */
+export function jsonLdGraph(f: FichaHemeroteca): string {
+  const url = `${CANONICAL_BASE}/hemeroteca/${f.slug}`;
+  const img = `${CANONICAL_BASE}/og-image.png`;
+  const org = { '@type': 'Organization', name: 'Observatorio IA México', url: CANONICAL_BASE };
+  const temas = (f.tematicas ?? []).map((t) => t.replace(/_/g, ' '));
+  const article = {
+    '@type': 'Article',
+    '@id': `${url}#article`,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    url,
+    headline: recorta(f.titulo, 110),
+    name: f.titulo,
+    description: clean(f.resumen),
+    inLanguage: 'es-MX',
+    isAccessibleForFree: true,
+    datePublished: f.fecha,
+    dateModified: f.fecha,
+    image: [img],
+    author: org,
+    publisher: { ...org, logo: { '@type': 'ImageObject', url: img } },
+    isBasedOn: f.urlGaceta || undefined,
+    citation: f.urlGaceta || undefined,
+    about: [{ '@type': 'Thing', name: 'Inteligencia artificial' }, ...temas.map((t) => ({ '@type': 'Thing', name: t }))],
+    keywords: temas.join(', ') || undefined,
+    creativeWorkStatus: f.estatus,
+    associatedMedia: f.copiaRespaldo
+      ? { '@type': 'MediaObject', encodingFormat: 'application/pdf', contentUrl: f.copiaRespaldo }
+      : undefined,
+  };
+  const legislation = {
+    '@type': 'Legislation',
+    '@id': `${url}#legislation`,
+    name: f.titulo,
+    legislationType: 'Bill',
+    legislationDate: f.fecha,
+    legislationJurisdiction: { '@type': 'AdministrativeArea', name: 'México' },
+    legislationLegalForce: f.estatus === 'aprobada' ? 'InForce' : 'NotInForce',
+    legislationIdentifier: f.numero ? `Iniciativa ${f.numero}` : undefined,
+    legislationPassedBy: f.camara ? { '@type': 'GovernmentOrganization', name: f.camara } : undefined,
+    legislationResponsible: f.proponente ? { '@type': 'Person', name: f.proponente } : undefined,
+    creator: f.proponente ? { '@type': 'Person', name: f.proponente } : undefined,
+    inLanguage: 'es-MX',
+    url: f.urlGaceta || undefined,
+  };
+  const breadcrumb = {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: CANONICAL_BASE },
+      { '@type': 'ListItem', position: 2, name: 'Hemeroteca', item: `${CANONICAL_BASE}/hemeroteca` },
+      { '@type': 'ListItem', position: 3, name: f.titulo },
+    ],
+  };
+  return JSON.stringify({ '@context': 'https://schema.org', '@graph': [article, legislation, breadcrumb] });
 }
