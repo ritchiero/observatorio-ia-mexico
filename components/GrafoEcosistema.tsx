@@ -302,13 +302,24 @@ export default function GrafoEcosistema({
     return { nodes, links: [...rel, ...mesh] };
   }, [data, poderes, estado, periodo]);
 
-  // ente dominante de cada comunidad: votan sus nodos, los items pesan más que
-  // los conectores/temas (que son puentes entre poderes, no definen la casa).
+  // Un ente sólo es REGIÓN PRINCIPAL si tiene masa suficiente. Con menos, un nodo
+  // suelto (p.ej. el único de "privado") saldría volando a un ancla lejana con una
+  // arista que cruza todo el mapa; mejor que se quede junto a sus conexiones.
+  const MIN_ENTE = 4;
+  const principalEntes = useMemo(() => {
+    const c = new Map<Ente, number>();
+    if (data) for (const n of data.nodes) if (n.ente) c.set(n.ente, (c.get(n.ente) ?? 0) + 1);
+    return new Set([...c].filter(([, n]) => n >= MIN_ENTE).map(([e]) => e));
+  }, [data]);
+
+  // ente dominante de cada comunidad: votan sus nodos (items pesan más que los
+  // conectores/temas). Sólo cuentan los entes principales, para que ninguna
+  // comunidad quede asignada a un ente diminuto sin región propia.
   const communityEnte = useMemo(() => {
     const votes = new Map<string, Map<Ente, number>>();
     if (data) {
       for (const node of data.nodes) {
-        if (!node.community || !node.ente) continue;
+        if (!node.community || !node.ente || !principalEntes.has(node.ente)) continue;
         const w = ITEM_TYPES.has(node.type) ? 3 : 1;
         const m = votes.get(node.community) ?? new Map<Ente, number>();
         m.set(node.ente, (m.get(node.ente) ?? 0) + w);
@@ -320,7 +331,7 @@ export default function GrafoEcosistema({
       out.set(c, [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0]);
     }
     return out;
-  }, [data]);
+  }, [data, principalEntes]);
 
   // Los centros se calculan con el atlas COMPLETO, no con el filtro visible:
   // apagar un poder no debe hacer que las regiones restantes salten de lugar.
@@ -388,7 +399,7 @@ export default function GrafoEcosistema({
     // Segunda gravedad, FUERTE: cada nodo es atraído a la región de SU propio ente.
     // Es la que separa los cinco archipiélagos y rescata a los casos judiciales (o de
     // privado/academia) que caen en una comunidad de tema dominada por otro poder.
-    const enteA = (n: GNode) => (n.ente ? enteAnchors.get(n.ente) : undefined);
+    const enteA = (n: GNode) => (n.ente && principalEntes.has(n.ente) ? enteAnchors.get(n.ente) : undefined);
     fg.d3Force('ex', forceX((n: GNode) => enteA(n)?.x ?? centerOf(n).x).strength((n: GNode) => (enteA(n) ? (ITEM_TYPES.has(n.type) ? 0.16 : 0.1) : 0)));
     fg.d3Force('ey', forceY((n: GNode) => enteA(n)?.y ?? centerOf(n).y).strength((n: GNode) => (enteA(n) ? (ITEM_TYPES.has(n.type) ? 0.16 : 0.1) : 0)));
     fg.d3Force(
@@ -400,7 +411,7 @@ export default function GrafoEcosistema({
     fg.d3ReheatSimulation();
     const t = setTimeout(() => fg.zoomToFit(650, 36), 1700);
     return () => clearTimeout(t);
-  }, [view, fgReady, communityCenters, enteAnchors]);
+  }, [view, fgReady, communityCenters, enteAnchors, principalEntes]);
 
   useEffect(() => {
     if (!fitted.current || !fgRef.current) return;
