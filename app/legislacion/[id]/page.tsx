@@ -26,6 +26,7 @@ interface IniciativaAPI {
   tematicas?: string[];
   urlGaceta: string;
   urlPDF?: string;
+  articuloSlug?: string;
   resumenAgente?: string;
   eventos?: Array<{
     fecha: string; // ISO string
@@ -278,6 +279,19 @@ export default function IniciativaDetallePage() {
             {iniciativa.descripcion}
           </p>
         </div>
+
+        {/* Enlace a la ficha de hemeroteca (síntesis + copia del documento) */}
+        {iniciativa.articuloSlug && (
+          <Link
+            href={`/hemeroteca/${iniciativa.articuloSlug}`}
+            className="flex items-center gap-3 bg-cyan-50 border border-cyan-200 rounded-sm p-4 hover:border-cyan-400 transition-colors"
+          >
+            <FileText className="w-5 h-5 text-cyan-700 flex-shrink-0" />
+            <span className="font-sans text-sm text-cyan-900">
+              Leer la síntesis verificada y descargar el documento original en la Hemeroteca →
+            </span>
+          </Link>
+        )}
 
         {/* Análisis · Consecuencias (editorial del Observatorio) */}
         {iniciativa.analisis && (

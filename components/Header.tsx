@@ -45,6 +45,7 @@ export default function Header() {
             <Link href="/" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Tracker</Link>
             <Link href="/legislacion" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Legislación</Link>
             <Link href="/casos-ia" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Casos</Link>
+            <Link href="/hemeroteca" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Hemeroteca</Link>
             <Link href="/recap" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Recap</Link>
             <Link href="/actividad" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Actividad</Link>
             <Link href="/informe-2026" className="px-3 py-1.5 text-sm font-semibold text-cyan-700 hover:text-cyan-800 hover:bg-cyan-50 rounded-lg transition-all">Informe 2026</Link>
@@ -70,6 +71,7 @@ export default function Header() {
             <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Tracker</Link>
             <Link href="/legislacion" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Legislación</Link>
             <Link href="/casos-ia" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Casos IA</Link>
+            <Link href="/hemeroteca" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Hemeroteca</Link>
             <Link href="/recap" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Recap Mensual</Link>
             <Link href="/actividad" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Actividad</Link>
             <Link href="/informe-2026" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50 rounded-lg transition-colors">Informe 2026</Link>
