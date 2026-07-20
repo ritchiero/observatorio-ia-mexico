@@ -63,7 +63,7 @@ function toFicha(i: IniciativaRecord): FichaHemeroteca {
 /** Todas las fichas que tienen artículo, más recientes primero. */
 export async function getFichas(): Promise<FichaHemeroteca[]> {
   try {
-    const r = await fetch(`${CANONICAL_BASE}/api/iniciativas`, { next: { revalidate: 600 } });
+    const r = await fetch(`${CANONICAL_BASE}/api/iniciativas`, { next: { revalidate: 120 } });
     if (!r.ok) return [];
     const d = await r.json();
     const items: IniciativaRecord[] = d.data ?? d.iniciativas ?? [];

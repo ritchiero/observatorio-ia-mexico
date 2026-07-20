@@ -5,7 +5,7 @@ import { Download, ExternalLink, FileDown } from 'lucide-react';
 import { getFicha, getFichas, renderMarkdown, buildTitle, buildDescription, jsonLdGraph, CANONICAL_BASE } from '@/lib/hemeroteca';
 import '../articulo.css';
 
-export const revalidate = 600;
+export const revalidate = 120;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
