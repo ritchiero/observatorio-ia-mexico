@@ -303,12 +303,44 @@ export function facetasDe(fichas: FichaHemeroteca[]): FacetasHemeroteca {
 
 export type Tono = 'green' | 'blue' | 'amber' | 'red' | 'violet' | 'slate';
 
-export function vigenciaDe(estatus?: string): { label: string; tono: Tono } {
+const DIAS_SIN_ACTUALIZACION = 365;
+
+function diasDesde(fecha?: string): number | null {
+  if (!fecha) return null;
+  const d = new Date(fecha);
+  if (!Number.isFinite(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / 86_400_000);
+}
+
+export function estatusLegible(estatus?: string): string {
+  const s = (estatus ?? '').trim();
+  if (!s) return '';
+  const labels: Record<string, string> = {
+    aprobada: 'Aprobada',
+    archivada: 'Archivada',
+    desechada_termino: 'Desechada por término',
+    en_comisiones: 'En comisiones',
+    en_discusion: 'En discusión',
+    en_elaboracion: 'En elaboración',
+    en_proceso: 'En proceso',
+    presentada: 'Presentada',
+    presentado: 'Presentado',
+    publicada: 'Publicada',
+    recibida: 'Recibida',
+    rechazada: 'Rechazada',
+    turnada: 'Turnada',
+  };
+  return labels[s.toLowerCase()] ?? s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function vigenciaDe(estatus?: string, fecha?: string): { label: string; tono: Tono } {
   const s = (estatus ?? '').toLowerCase();
   if (/aprob|publicad|vigente|operando/.test(s)) return { label: 'Vigente', tono: 'green' };
   if (/derog|abrog|rechaz/.test(s)) return { label: 'Derogado', tono: 'red' };
   if (/desech|archiv|abandon|desist/.test(s)) return { label: 'Histórico', tono: 'amber' };
-  return { label: 'En proceso', tono: 'blue' };
+  const dias = diasDesde(fecha);
+  if (dias !== null && dias > DIAS_SIN_ACTUALIZACION) return { label: 'Sin actualización reciente', tono: 'slate' };
+  return { label: 'En seguimiento', tono: 'blue' };
 }
 
 export function organoDe(camara?: string): { label: string; icono: string; tono: Tono } {
@@ -373,6 +405,7 @@ export interface ItemHemeroteca {
   jurisdiccion: string;
   organoLabel: string; organoIcono: string; organoTono: Tono; organoLogo?: string;
   tipoLabel: string; vigenciaLabel: string; vigenciaTono: Tono;
+  estatusFuente?: string; estatusFuenteLabel?: string;
   proponente?: string; camara?: string; numero?: number;
   tags: string[]; tagsExtra: number;
   urlGaceta?: string; copiaRespaldo?: string; texto: string;
@@ -382,7 +415,7 @@ const _norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g
 
 export function toItem(f: FichaHemeroteca): ItemHemeroteca {
   const org = organoDe(f.camara);
-  const vig = vigenciaDe(f.estatus);
+  const vig = vigenciaDe(f.estatus, f.fecha);
   const temas = (f.tematicas ?? []).map((t) => t.replace(/_/g, ' '));
   let fechaLegible = '';
   try { if (f.fecha) fechaLegible = new Date(f.fecha).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { /* */ }
@@ -394,6 +427,8 @@ export function toItem(f: FichaHemeroteca): ItemHemeroteca {
     organoLabel: org.label, organoIcono: org.icono, organoTono: org.tono, organoLogo: logoDeOrgano(f.camara),
     tipoLabel: tipoEtiqueta(f.tipo, f.estatus),
     vigenciaLabel: vig.label, vigenciaTono: vig.tono,
+    estatusFuente: f.estatus,
+    estatusFuenteLabel: estatusLegible(f.estatus),
     proponente: f.proponente, camara: f.camara, numero: f.numero,
     tags: temas.slice(0, 3), tagsExtra: Math.max(0, temas.length - 3),
     urlGaceta: f.urlGaceta, copiaRespaldo: f.copiaRespaldo,

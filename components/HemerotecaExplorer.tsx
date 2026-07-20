@@ -66,7 +66,13 @@ export default function HemerotecaExplorer({ items }: { items: ItemHemeroteca[] 
   const fMat = facetar(items, (i) => i.materia);
   const fCam = facetar(items, (i) => i.camaraGrupo);
   const fEst = facetar(items, (i) => i.vigenciaLabel);
-  const tonoEst: Record<string, Tono> = { Vigente: 'green', 'En proceso': 'blue', Histórico: 'amber', Derogado: 'red' };
+  const tonoEst: Record<string, Tono> = {
+    Vigente: 'green',
+    'En seguimiento': 'blue',
+    'Sin actualización reciente': 'slate',
+    Histórico: 'amber',
+    Derogado: 'red',
+  };
 
   const toggle = (setter: Dispatch<SetStateAction<Set<string>>>, v: string) =>
     setter((s) => {
@@ -139,7 +145,7 @@ export default function HemerotecaExplorer({ items }: { items: ItemHemeroteca[] 
   const filtrosActivos = [
     ...[...fMateria].map((v) => ({ v, tipo: 'Materia', clear: () => toggle(setFMateria, v) })),
     ...[...fCamara].map((v) => ({ v, tipo: 'Órgano', clear: () => toggle(setFCamara, v) })),
-    ...[...fEstatus].map((v) => ({ v, tipo: 'Estatus', clear: () => toggle(setFEstatus, v) })),
+    ...[...fEstatus].map((v) => ({ v, tipo: 'Seguimiento', clear: () => toggle(setFEstatus, v) })),
   ];
 
   const Check = ({ on, label, n, dot, onClick }: { on: boolean; label: string; n: number; dot?: string; onClick: () => void }) => (
@@ -237,7 +243,7 @@ export default function HemerotecaExplorer({ items }: { items: ItemHemeroteca[] 
             </section>
 
             <section className="mt-5 border-t border-slate-100 pt-4">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Estatus</h3>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Seguimiento</h3>
               <div className="space-y-0.5">
                 {fEst.map((e) => <Check key={e.valor} on={fEstatus.has(e.valor)} label={e.valor} n={e.n} dot={TONO[tonoEst[e.valor] ?? 'slate'].dot} onClick={() => toggle(setFEstatus, e.valor)} />)}
               </div>
@@ -342,6 +348,11 @@ export default function HemerotecaExplorer({ items }: { items: ItemHemeroteca[] 
                             <div className={`mt-2 inline-flex items-center gap-1.5 text-xs font-semibold ${vig.text}`}>
                               <span className={`h-1.5 w-1.5 rounded-full ${vig.dot}`} />{it.vigenciaLabel}
                             </div>
+                            {it.estatusFuenteLabel && (
+                              <div className="mt-1 text-[11px] leading-4 text-slate-400">
+                                Fuente: {it.estatusFuenteLabel}
+                              </div>
+                            )}
                           </div>
                           <div className="mt-5 flex flex-wrap gap-2 md:flex-col">
                             <Link href={`/hemeroteca/${it.slug}`} className="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700">
