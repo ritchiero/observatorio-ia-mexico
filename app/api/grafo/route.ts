@@ -27,7 +27,13 @@ type Node = {
   desc?: string;        // memoria del nodo: qué es / qué pasa con el tema
   fecha?: string;       // último movimiento conocido (ISO)
   anio?: number | null; // año de APARICIÓN en el atlas (modo Historia)
+  ente?: Ente;          // rama/sector al que pertenece (para agrupar en 5 súper-regiones)
 };
+
+// Los cinco entes principales del ecosistema. Cada nodo se clasifica en uno para
+// que el mapa se lea como cinco archipiélagos (los tres Poderes + privado + academia),
+// que es lo que representa quién impulsa la IA en México.
+type Ente = 'legislativo' | 'ejecutivo' | 'judicial' | 'privado' | 'academia';
 
 const DIAS_NUEVO = 90;
 function bucket(status: string): 'vigente' | 'tramite' | 'inactivo' {
@@ -68,6 +74,19 @@ function esInstitucion(v: string): boolean {
   // Circuito") describen al órgano, no a una persona identificable.
   if (/^(juez|jueza|magistrad[oa]|ministr[oa])\s+(de|del|en)\b/i.test(v)) return true;
   return /(secretar|agencia|instituto|comisi[oó]n|consejo|poder|gobierno|congreso|c[aá]mara|senado|fiscal[ií]a|ministerio|universidad|tribunal|juzgado|sala|direcci[oó]n|coordinaci[oó]n|grupo|partido|s\.a\.|empresa)/i.test(v);
+}
+
+// clasifica una etiqueta (dependencia / actor) en uno de los cinco entes.
+// El orden importa: academia y privado antes que ejecutivo, porque una universidad
+// pública o una empresa también contienen palabras genéricas de institución.
+function enteDeLabel(v: string, fallback?: Ente): Ente | undefined {
+  const s = v.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (/(universidad|instituto tecnol|tecnologico nacional|tecnm|\bunam\b|\bipn\b|\bbuap\b|\bupy\b|\buam\b|colegio|escuela|educaci|docente|academic|facultad|centro de investigacion|conahcyt|cinvestav)/.test(s)) return 'academia';
+  if (/(empresa|cl-?uster|cluster|\bs\.?a\.?\b|nvidia|microsoft|google|\bibm\b|\baws\b|amazon|oracle|intel|\bmeta\b|cisco|salesforce|accenture|kyndryl|ericsson|axity|\btcs\b|\bflex\b|aifod|startup|c[aá]mara de comercio|iniciativa privada|sector privado|consejo coordinador empresarial|\bcce\b|planta|hub de ia)/.test(s)) return 'privado';
+  if (/(tribunal|juzgado|\bsala\b|poder judicial|fiscal[ií]a|ministerio p[uú]blico|scjn|suprema corte|judicatura|\btsj\b|magistrad|semanario judicial)/.test(s)) return 'judicial';
+  if (/(c[aá]mara de diputados|\bdiputad|\bsenado\b|congreso|legislat|parlament)/.test(s)) return 'legislativo';
+  if (/(secretar|agencia|gobierno|municipio|municipal|presidencia|\bimss\b|\bsat\b|\bine\b|\banam\b|\bimpi\b|\batdt\b|secihti|sectei|protecci[oó]n civil|comisi[oó]n|consejo|direcci[oó]n|coordinaci[oó]n|instituto)/.test(s)) return 'ejecutivo';
+  return fallback;
 }
 
 // Descriptores colectivos de un expediente ("diversas personas quejosas", "terceros
@@ -119,18 +138,21 @@ export async function GET() {
     for (const a of anuncios) {
       const id = `a:${a.id}`;
       const st = norm(a.status);
-      addItem({ id, label: norm(a.titulo), type: 'anuncio', val: 2, href: `/anuncio/${a.id}`, status: st, estado: bucket(st), nuevo: esNuevo(a.fechaAnuncio ?? a.createdAt), desc: norm(a.resumenAgente || a.descripcion).slice(0, 460), fecha: norm(a.fechaAnuncio ?? a.createdAt) || undefined, anio: anioAparicionItem('anuncio', a) });
       const dep = norm(a.dependencia);
-      if (dep) addConn(`d:${keyify(dep)}`, { id: `d:${keyify(dep)}`, label: dep, type: 'actor', val: 3 }, id, true);
+      // el ente del anuncio lo define su dependencia (ej. BUAP→academia, NVIDIA→privado,
+      // Poder Judicial→judicial); por default el aparato ejecutivo.
+      const ente = enteDeLabel(dep, 'ejecutivo') ?? 'ejecutivo';
+      addItem({ id, label: norm(a.titulo), type: 'anuncio', val: 2, href: `/anuncio/${a.id}`, status: st, estado: bucket(st), nuevo: esNuevo(a.fechaAnuncio ?? a.createdAt), desc: norm(a.resumenAgente || a.descripcion).slice(0, 460), fecha: norm(a.fechaAnuncio ?? a.createdAt) || undefined, anio: anioAparicionItem('anuncio', a), ente });
+      if (dep) addConn(`d:${keyify(dep)}`, { id: `d:${keyify(dep)}`, label: dep, type: 'actor', val: 3, ente }, id, true);
       const resp = norm(a.responsable);
-      if (resp && !esInstitucion(resp)) addConn(`r:${keyify(resp)}`, { id: `r:${keyify(resp)}`, label: resp, type: 'persona', val: 3 }, id);
-      else if (resp) addConn(`r:${keyify(resp)}`, { id: `r:${keyify(resp)}`, label: resp, type: 'actor', val: 3 }, id);
+      if (resp && !esInstitucion(resp)) addConn(`r:${keyify(resp)}`, { id: `r:${keyify(resp)}`, label: resp, type: 'persona', val: 3, ente }, id);
+      else if (resp) addConn(`r:${keyify(resp)}`, { id: `r:${keyify(resp)}`, label: resp, type: 'actor', val: 3, ente: enteDeLabel(resp, ente) }, id);
     }
 
     for (const i of iniciativas) {
       const id = `i:${i.id}`;
       const st = norm(i.status ?? i.estatus);
-      addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: st, estado: bucket(st), nuevo: esNuevo(i.fecha), desc: norm(i.descripcion).slice(0, 460), fecha: norm(i.fecha) || undefined, anio: anioAparicionItem('iniciativa', i) });
+      addItem({ id, label: norm(i.titulo), type: 'iniciativa', val: 2, href: '/legislacion', status: st, estado: bucket(st), nuevo: esNuevo(i.fecha), desc: norm(i.descripcion).slice(0, 460), fecha: norm(i.fecha) || undefined, anio: anioAparicionItem('iniciativa', i), ente: 'legislativo' });
       const temas = Array.isArray(i.tematicas)
         ? i.tematicas.filter((tema): tema is string => typeof tema === 'string')
         : [];
@@ -138,7 +160,7 @@ export async function GET() {
       const cam = norm(i.camara);
       if (cam) {
         const label = CAMARA_LABEL[cam.toLowerCase()] ?? cam.replace(/_/g, ' ');
-        addConn(`c:${keyify(cam)}`, { id: `c:${keyify(cam)}`, label, type: 'camara', val: 4 }, id, !hayTema);
+        addConn(`c:${keyify(cam)}`, { id: `c:${keyify(cam)}`, label, type: 'camara', val: 4, ente: 'legislativo' }, id, !hayTema);
       }
       temas.slice(0, 3).forEach((t, k) => {
         const tt = norm(t);
@@ -147,14 +169,14 @@ export async function GET() {
       // personas clave: quién propone (los recurrentes emergen con MIN_DEG)
       const prop = norm(i.proponente);
       if (prop && prop.length <= 60 && !esInstitucion(prop)) {
-        addConn(`p:${keyify(prop)}`, { id: `p:${keyify(prop)}`, label: prop, type: 'persona', val: 3 }, id);
+        addConn(`p:${keyify(prop)}`, { id: `p:${keyify(prop)}`, label: prop, type: 'persona', val: 3, ente: 'legislativo' }, id);
       }
     }
 
     for (const c of casos) {
       const id = `j:${c.id}`;
       const st = norm(c.estado);
-      addItem({ id, label: norm(c.nombre ?? c.titulo), type: 'caso', val: 3, href: `/casos-ia/${c.id}`, status: st, estado: bucket(st), nuevo: esNuevo(c.fechaActualizacion ?? c.fechaCreacion), desc: norm(c.resumen ?? c.hechos).slice(0, 460), fecha: norm(c.fechaActualizacion ?? c.fechaCreacion) || undefined, anio: anioAparicionItem('caso', c) });
+      addItem({ id, label: norm(c.nombre ?? c.titulo), type: 'caso', val: 3, href: `/casos-ia/${c.id}`, status: st, estado: bucket(st), nuevo: esNuevo(c.fechaActualizacion ?? c.fechaCreacion), desc: norm(c.resumen ?? c.hechos).slice(0, 460), fecha: norm(c.fechaActualizacion ?? c.fechaCreacion) || undefined, anio: anioAparicionItem('caso', c), ente: 'judicial' });
       const tema = norm(c.temaIA);
       if (tema) addConn(`t:${keyify(tema)}`, { id: `t:${keyify(tema)}`, label: tema.replace(/_/g, ' '), type: 'tema', val: 3 }, id, true);
       const mat = norm(c.materia);
@@ -169,7 +191,7 @@ export async function GET() {
         if (!parte) continue;
         if (esColectivoGenerico(parte)) continue;
         const tipo = esInstitucion(parte) ? 'actor' : 'persona';
-        addConn(`p:${keyify(parte)}`, { id: `p:${keyify(parte)}`, label: parte, type: tipo, val: 3 }, id);
+        addConn(`p:${keyify(parte)}`, { id: `p:${keyify(parte)}`, label: parte, type: tipo, val: 3, ente: 'judicial' }, id);
       }
     }
 
@@ -189,12 +211,13 @@ export async function GET() {
         nuevo: esNuevo('2026-05-29'),
         fecha: '2026-05-29',
         anio: 2025,
+        ente: 'judicial',
         desc:
           'Experimento del laboratorio del Observatorio: se solicitó a INDAUTOR el registro de dos obras visuales generadas con IA (GPT-4o, 1 prompt; Midjourney, 5 prompts) declarando el uso de IA, para forzar un pronunciamiento sobre la autoría humana asistida. INDAUTOR desechó ambos registros (jun-2025) y el TFJA (Sala de Propiedad Intelectual, exp. 1637/25-EPI-01-10) ratificó las negativas en mayo de 2026: “es la IA quien materializa la idea”. Próximo paso: amparo.',
       });
       addConn('t:derechos-autor', { id: 't:derechos-autor', label: 'derechos autor', type: 'tema', val: 3 }, labId, true);
       addConn('t:propiedad-intelectual', { id: 't:propiedad-intelectual', label: 'propiedad intelectual', type: 'tema', val: 3 }, labId);
-      addConn('p:aldo-ricardo-rodriguez-cortes', { id: 'p:aldo-ricardo-rodriguez-cortes', label: 'Aldo Ricardo Rodríguez Cortés', type: 'persona', val: 3 }, labId);
+      addConn('p:aldo-ricardo-rodriguez-cortes', { id: 'p:aldo-ricardo-rodriguez-cortes', label: 'Aldo Ricardo Rodríguez Cortés', type: 'persona', val: 3, ente: 'judicial' }, labId);
     }
 
     // materializar conectores con grado suficiente
