@@ -18,11 +18,27 @@ async function fetchIds(path: string, key: string): Promise<string[]> {
   }
 }
 
+// Slugs de las fichas de hemeroteca (iniciativas con artículo publicado).
+async function fetchHemerotecaSlugs(): Promise<string[]> {
+  try {
+    const r = await fetch(`${BASE}/api/iniciativas`, { next: { revalidate } });
+    if (!r.ok) return [];
+    const d = await r.json();
+    const arr: Array<{ articuloSlug?: string; articuloMD?: string }> = d.data || [];
+    return arr
+      .filter((x) => x.articuloMD && x.articuloSlug)
+      .map((x) => x.articuloSlug as string);
+  } catch {
+    return [];
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [anuncios, iniciativas, casos] = await Promise.all([
+  const [anuncios, iniciativas, casos, hemeroteca] = await Promise.all([
     fetchIds('/api/anuncios', 'anuncios'),
     fetchIds('/api/iniciativas', 'data'),
     fetchIds('/api/casos-ia', 'casos'),
+    fetchHemerotecaSlugs(),
   ]);
 
   const now = new Date();
@@ -31,6 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/`, lastModified: now, changeFrequency: 'daily', priority: 1 },
     { url: `${BASE}/legislacion`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/casos-ia`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/hemeroteca`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/recap`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/actividad`, lastModified: now, changeFrequency: 'daily', priority: 0.6 },
     { url: `${BASE}/proceso-legislativo`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
@@ -40,6 +57,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...anuncios.map((id) => ({ url: `${BASE}/anuncio/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
     ...iniciativas.map((id) => ({ url: `${BASE}/legislacion/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
     ...casos.map((id) => ({ url: `${BASE}/casos-ia/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
+    // Fichas de hemeroteca: contenido server-rendered → alta prioridad de indexación.
+    ...hemeroteca.map((slug) => ({ url: `${BASE}/hemeroteca/${slug}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.7 })),
   ];
 
   return [...estaticas, ...fichas];
