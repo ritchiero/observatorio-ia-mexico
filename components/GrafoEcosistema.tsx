@@ -23,6 +23,98 @@ const COLOR: Record<string, string> = {
 };
 const ITEM_TYPES = new Set(['anuncio', 'iniciativa', 'caso']);
 
+// ---- Los cinco entes: quién impulsa la IA en México ----
+type Ente = 'legislativo' | 'ejecutivo' | 'judicial' | 'privado' | 'academia';
+const ENTE_META: Record<Ente, { label: string; color: string }> = {
+  legislativo: { label: 'Poder Legislativo', color: '#7ea2ff' },
+  ejecutivo: { label: 'Poder Ejecutivo', color: '#22d3ee' },
+  judicial: { label: 'Poder Judicial', color: '#c084fc' },
+  privado: { label: 'Sector Privado', color: '#f59e0b' },
+  academia: { label: 'Academia', color: '#f472b6' },
+};
+const ENTES = Object.keys(ENTE_META) as Ente[];
+type Centro = { id: string; label: string; x: number; y: number; radius: number; count: number };
+type Anchor = { x: number; y: number; radius: number };
+const GA_FRONT = Math.PI * (3 - Math.sqrt(5));
+
+// Empaca círculos en espiral áurea rechazando colisiones (mismo criterio que el
+// atlas): sirve tanto para las comunidades dentro de un ente como para los 5 entes.
+function packCircles(items: Array<{ id: string; radius: number }>, gap = 24): Map<string, { x: number; y: number }> {
+  const ordered = [...items].sort((a, b) => b.radius - a.radius || a.id.localeCompare(b.id));
+  const placed: Array<{ x: number; y: number; radius: number }> = [];
+  const pos = new Map<string, { x: number; y: number }>();
+  for (const it of ordered) {
+    if (!placed.length) { placed.push({ x: 0, y: 0, radius: it.radius }); pos.set(it.id, { x: 0, y: 0 }); continue; }
+    let point = { x: 0, y: 0 };
+    for (let step = 1; step < 6000; step++) {
+      const distance = 12 * Math.sqrt(step);
+      const angle = step * GA_FRONT;
+      const cand = { x: Math.cos(angle) * distance * 1.18, y: Math.sin(angle) * distance * 0.9 };
+      if (placed.every((o) => Math.hypot(cand.x - o.x, cand.y - o.y) >= it.radius + o.radius + gap)) { point = cand; break; }
+    }
+    placed.push({ ...point, radius: it.radius });
+    pos.set(it.id, point);
+  }
+  return pos;
+}
+
+// Reagrupa los centroides de comunidad en cinco súper-regiones (una por ente):
+// dentro de cada ente empaca sus islas; luego empaca los cinco entes entre sí.
+// Así el mapa se lee como cinco archipiélagos principales sin perder el detalle.
+function regionalizar(
+  base: Map<string, Centro>,
+  enteDe: Map<string, Ente>,
+): { centers: Map<string, Centro>; anchors: Map<Ente, Anchor> } {
+  const byEnte = new Map<Ente, Centro[]>();
+  for (const c of base.values()) {
+    const e = enteDe.get(c.id) ?? 'ejecutivo';
+    (byEnte.get(e) ?? byEnte.set(e, []).get(e)!).push(c);
+  }
+  const localPos = new Map<string, { x: number; y: number }>();
+  const enteRadius = new Map<Ente, number>();
+  for (const [e, comms] of byEnte) {
+    const packed = packCircles(comms.map((c) => ({ id: c.id, radius: c.radius + 16 })), 30);
+    let extent = 46;
+    for (const c of comms) {
+      const p = packed.get(c.id) ?? { x: 0, y: 0 };
+      localPos.set(c.id, p);
+      extent = Math.max(extent, Math.hypot(p.x, p.y) + c.radius);
+    }
+    enteRadius.set(e, extent);
+  }
+  // Layout deliberado en dos filas: arriba los tres Poderes del Estado, abajo la
+  // sociedad (academia + privado). Se lee como un diagrama de gobierno, compacto
+  // y con los cinco entes visibles. La espiral los encimaba (Legislativo es enorme).
+  const has = (e: Ente) => enteRadius.has(e);
+  const R = (e: Ente) => enteRadius.get(e) ?? 60;
+  const rowX = (row: Ente[], gap: number) => {
+    const xs: number[] = [];
+    let cursor = 0;
+    let prevR = 0;
+    row.forEach((e, i) => { const r = R(e); if (i > 0) cursor += prevR + gap + r; xs.push(cursor); prevR = r; });
+    const mid = xs.length ? (xs[0] + xs[xs.length - 1]) / 2 : 0;
+    return new Map(row.map((e, i) => [e, xs[i] - mid]));
+  };
+  const top = (['legislativo', 'ejecutivo', 'judicial'] as Ente[]).filter(has);
+  const bot = (['academia', 'privado'] as Ente[]).filter(has);
+  const topX = rowX(top, 150);
+  const botX = rowX(bot, 260);
+  const maxTopR = Math.max(60, ...top.map(R));
+  const maxBotR = Math.max(60, ...bot.map(R));
+  const Y = (maxTopR + maxBotR + 150) / 2;
+  const anchors = new Map<Ente, Anchor>();
+  for (const e of top) anchors.set(e, { x: topX.get(e) ?? 0, y: -Y, radius: R(e) });
+  for (const e of bot) anchors.set(e, { x: botX.get(e) ?? 0, y: Y, radius: R(e) });
+  const centers = new Map<string, Centro>();
+  for (const c of base.values()) {
+    const e = enteDe.get(c.id) ?? 'ejecutivo';
+    const a = anchors.get(e) ?? { x: 0, y: 0 };
+    const lp = localPos.get(c.id) ?? { x: 0, y: 0 };
+    centers.set(c.id, { ...c, x: a.x + lp.x, y: a.y + lp.y });
+  }
+  return { centers, anchors };
+}
+
 export type PoderFilter = { anuncio: boolean; iniciativa: boolean; caso: boolean };
 export type EstadoFilter = 'todos' | 'nuevo' | 'vigente' | 'tramite' | 'inactivo';
 
@@ -31,6 +123,7 @@ type GNodeData = {
   href?: string; estado?: string; nuevo?: boolean;
   community?: string; communityLabel?: string;
   desc?: string; fecha?: string; anio?: number | null;
+  ente?: Ente;
 };
 type GLinkData = {
   kind?: 'rel' | 'mesh';
@@ -209,12 +302,33 @@ export default function GrafoEcosistema({
     return { nodes, links: [...rel, ...mesh] };
   }, [data, poderes, estado, periodo]);
 
+  // ente dominante de cada comunidad: votan sus nodos, los items pesan más que
+  // los conectores/temas (que son puentes entre poderes, no definen la casa).
+  const communityEnte = useMemo(() => {
+    const votes = new Map<string, Map<Ente, number>>();
+    if (data) {
+      for (const node of data.nodes) {
+        if (!node.community || !node.ente) continue;
+        const w = ITEM_TYPES.has(node.type) ? 3 : 1;
+        const m = votes.get(node.community) ?? new Map<Ente, number>();
+        m.set(node.ente, (m.get(node.ente) ?? 0) + w);
+        votes.set(node.community, m);
+      }
+    }
+    const out = new Map<string, Ente>();
+    for (const [c, m] of votes) {
+      out.set(c, [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0]);
+    }
+    return out;
+  }, [data]);
+
   // Los centros se calculan con el atlas COMPLETO, no con el filtro visible:
   // apagar un poder no debe hacer que las regiones restantes salten de lugar.
-  const communityCenters = useMemo(
-    () => (data ? centrosDeComunidades(data.nodes) : new Map()),
-    [data],
-  );
+  const { communityCenters, enteAnchors } = useMemo(() => {
+    const base = data ? (centrosDeComunidades(data.nodes) as Map<string, Centro>) : new Map<string, Centro>();
+    const { centers, anchors } = regionalizar(base, communityEnte);
+    return { communityCenters: centers, enteAnchors: anchors };
+  }, [data, communityEnte]);
 
   // Semilla estable una sola vez por payload. Evita el Math.random interno del
   // motor y permite comparar dos full reloads con el mismo mapa de partida.
@@ -269,8 +383,14 @@ export default function GrafoEcosistema({
               ? Math.min(0.75, Math.max(0.38, 2 / Math.min(dg(l.source), dg(l.target))))
               : 0.045
       );
-    fg.d3Force('gx', forceX((n: GNode) => centerOf(n).x).strength((n: GNode) => (ITEM_TYPES.has(n.type) ? 0.05 : 0.12)));
-    fg.d3Force('gy', forceY((n: GNode) => centerOf(n).y).strength((n: GNode) => (ITEM_TYPES.has(n.type) ? 0.05 : 0.12)));
+    fg.d3Force('gx', forceX((n: GNode) => centerOf(n).x).strength((n: GNode) => (ITEM_TYPES.has(n.type) ? 0.08 : 0.16)));
+    fg.d3Force('gy', forceY((n: GNode) => centerOf(n).y).strength((n: GNode) => (ITEM_TYPES.has(n.type) ? 0.08 : 0.16)));
+    // Segunda gravedad, FUERTE: cada nodo es atraído a la región de SU propio ente.
+    // Es la que separa los cinco archipiélagos y rescata a los casos judiciales (o de
+    // privado/academia) que caen en una comunidad de tema dominada por otro poder.
+    const enteA = (n: GNode) => (n.ente ? enteAnchors.get(n.ente) : undefined);
+    fg.d3Force('ex', forceX((n: GNode) => enteA(n)?.x ?? centerOf(n).x).strength((n: GNode) => (enteA(n) ? (ITEM_TYPES.has(n.type) ? 0.16 : 0.1) : 0)));
+    fg.d3Force('ey', forceY((n: GNode) => enteA(n)?.y ?? centerOf(n).y).strength((n: GNode) => (enteA(n) ? (ITEM_TYPES.has(n.type) ? 0.16 : 0.1) : 0)));
     fg.d3Force(
       'collide',
       forceCollide((n: GNode) => Math.sqrt(n.val ?? 2) * (ITEM_TYPES.has(n.type) ? 1.5 : 2.3) + 2)
@@ -280,7 +400,7 @@ export default function GrafoEcosistema({
     fg.d3ReheatSimulation();
     const t = setTimeout(() => fg.zoomToFit(650, 36), 1700);
     return () => clearTimeout(t);
-  }, [view, fgReady, communityCenters]);
+  }, [view, fgReady, communityCenters, enteAnchors]);
 
   useEffect(() => {
     if (!fitted.current || !fgRef.current) return;
@@ -403,6 +523,32 @@ export default function GrafoEcosistema({
   const drawCommunities = useCallback(
     (ctx: CanvasRenderingContext2D, scale: number) => {
       if (!view) return;
+      // Súper-etiquetas de los cinco entes principales: el marco del mapa. Se dibujan
+      // primero (capa de fondo) y sólo si el ente tiene nodos visibles con el filtro.
+      const enteCount = new Map<Ente, number>();
+      for (const node of view.nodes) {
+        if (!node.ente || !visibleEnAnio(node.anio ?? null, anio, anioActual)) continue;
+        enteCount.set(node.ente, (enteCount.get(node.ente) ?? 0) + 1);
+      }
+      for (const e of ENTES) {
+        const count = enteCount.get(e) ?? 0;
+        if (count < 1) continue;
+        const a = enteAnchors.get(e);
+        if (!a) continue;
+        const meta = ENTE_META[e];
+        const fontSize = Math.max(11, 26 / Math.sqrt(scale));
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `700 ${fontSize}px "Space Grotesk", system-ui, sans-serif`;
+        ctx.fillStyle = meta.color;
+        ctx.globalAlpha = 0.17;
+        ctx.fillText(meta.label.toUpperCase(), a.x, a.y - a.radius - fontSize * 1.05);
+        ctx.font = `600 ${fontSize * 0.46}px "Space Grotesk", system-ui, sans-serif`;
+        ctx.globalAlpha = 0.13;
+        ctx.fillText(`${count} registros`, a.x, a.y - a.radius - fontSize * 0.35);
+        ctx.restore();
+      }
       const visible = new Map<string, number>();
       for (const node of view.nodes) {
         if (!node.community) continue;
@@ -433,7 +579,7 @@ export default function GrafoEcosistema({
         ctx.restore();
       }
     },
-    [view, communityCenters, anio, anioActual],
+    [view, communityCenters, enteAnchors, anio, anioActual],
   );
 
   const drawNode = useCallback(
@@ -443,7 +589,12 @@ export default function GrafoEcosistema({
       const lit = isLit(node.id);
       // en el pasado no se atenúa por estado ACTUAL: sería un spoiler del destino del nodo
       const inactive = !enPasado && node.estado === 'inactivo';
-      const color = COLOR[node.type] ?? '#94a3b8';
+      // items conservan su color de poder (azul/cian/violeta); los conectores de
+      // privado/academia se tiñen con su color de ente para que salten a la vista.
+      const color =
+        !ITEM_TYPES.has(node.type) && (node.ente === 'privado' || node.ente === 'academia')
+          ? ENTE_META[node.ente].color
+          : COLOR[node.type] ?? '#94a3b8';
       const x = node.x ?? 0;
       const y = node.y ?? 0;
 
