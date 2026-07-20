@@ -236,3 +236,62 @@ export function jsonLdGraph(f: FichaHemeroteca): string {
   };
   return JSON.stringify({ '@context': 'https://schema.org', '@graph': [article, legislation, breadcrumb] });
 }
+
+// --- Clasificador: materia, cámara, estatus, año (para filtros y facetas) ---
+
+const MATERIA_REGLAS: Array<[string, RegExp]> = [
+  ['Deepfakes y violencia digital', /deepfake|violencia|pornograf|usurpac|proteccion_menores|proteccion_mujeres|delitos_sexuales/],
+  ['Justicia y proceso', /judicial|amparo|supervision_humana|justicia|procedimiento|responsabilidades|juicios_mercantiles|impugnacion/],
+  ['Datos y ciberseguridad', /privacidad|proteccion_datos|cibersegur|ciberdelin|delitos_inform|delitos_digit|\bseguridad\b/],
+  ['Propiedad intelectual', /derechos_autor|propiedad_intelectual/],
+  ['Educación', /educacion/],
+  ['Salud', /salud/],
+  ['Trabajo', /laboral|trabajo/],
+  ['Neuroderechos', /neuroderechos/],
+  ['Reforma constitucional', /reforma_constitucional|facultades_congreso/],
+  ['Regulación general', /regulacion_general|agencia_reguladora|clasificacion_riesgos|etica|uso_responsable|marco_institucional|transparencia|gobierno_digital|inteligencia_artificial/],
+];
+
+export function materiaDe(f: { tematicas?: string[]; titulo?: string }): string {
+  const t = ((f.tematicas ?? []).join(' ') + ' ' + (f.titulo ?? '')).toLowerCase();
+  for (const [label, re] of MATERIA_REGLAS) if (re.test(t)) return label;
+  return 'Otros';
+}
+
+export function camaraGrupo(c?: string): string {
+  const s = (c ?? '').toLowerCase();
+  if (s.includes('diputad')) return 'Diputados';
+  if (s.includes('senad')) return 'Senado';
+  if (!s) return 'Otro';
+  return 'Congresos locales';
+}
+
+export function estatusGrupo(e?: string): string {
+  const s = (e ?? '').toLowerCase();
+  if (/aprob|publicad|vigente/.test(s)) return 'Aprobada';
+  if (/desech|archiv|abandon|rechaz|desist/.test(s)) return 'Inactiva';
+  return 'En trámite';
+}
+
+export function anioDe(fecha?: string): string {
+  if (!fecha) return '';
+  const y = new Date(fecha).getFullYear();
+  return Number.isFinite(y) ? String(y) : '';
+}
+
+export interface Faceta { valor: string; n: number; }
+export interface FacetasHemeroteca { materia: Faceta[]; camara: Faceta[]; estatus: Faceta[]; anio: Faceta[]; }
+
+export function facetasDe(fichas: FichaHemeroteca[]): FacetasHemeroteca {
+  const cuenta = (fn: (f: FichaHemeroteca) => string) => {
+    const m = new Map<string, number>();
+    for (const f of fichas) { const v = fn(f); if (v) m.set(v, (m.get(v) ?? 0) + 1); }
+    return [...m.entries()].map(([valor, n]) => ({ valor, n })).sort((a, b) => b.n - a.n);
+  };
+  return {
+    materia: cuenta((f) => materiaDe(f)),
+    camara: cuenta((f) => camaraGrupo(f.camara)),
+    estatus: cuenta((f) => estatusGrupo(f.estatus)),
+    anio: cuenta((f) => anioDe(f.fecha)).sort((a, b) => b.valor.localeCompare(a.valor)),
+  };
+}
