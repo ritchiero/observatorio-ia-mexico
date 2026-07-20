@@ -10,7 +10,7 @@ export const revalidate = 120;
 export const metadata: Metadata = {
   title: 'Hemeroteca — Observatorio IA México',
   description:
-    'Archivo verificado de documentos del Poder Legislativo y Judicial, y del Poder Ejecutivo, relacionados con inteligencia artificial en México. Búsqueda con IA y filtros por materia, cámara, estatus y año.',
+    'Archivo verificado de documentos del Poder Legislativo, Judicial y Ejecutivo relacionados con inteligencia artificial en México. Búsqueda con IA y filtros por materia, órgano, seguimiento y año.',
   alternates: { canonical: `${CANONICAL_BASE}/hemeroteca` },
   openGraph: {
     title: 'Hemeroteca de la IA en el Estado mexicano',
