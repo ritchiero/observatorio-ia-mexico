@@ -17,6 +17,7 @@ export interface FichaHemeroteca {
   proponente?: string;
   partido?: string;
   estatus?: string;
+  tipo?: string;
   urlGaceta?: string;
   copiaRespaldo?: string;
   tematicas?: string[];
@@ -33,6 +34,7 @@ interface IniciativaRecord {
   partido?: string;
   status?: string;
   estatus?: string;
+  tipo?: string;
   tematicas?: string[];
   urlGaceta?: string;
   urlPDFBackup?: string;
@@ -53,6 +55,7 @@ function toFicha(i: IniciativaRecord): FichaHemeroteca {
     proponente: i.proponente,
     partido: i.partido,
     estatus: i.estatus ?? i.status,
+    tipo: i.tipo,
     urlGaceta: i.urlGaceta,
     copiaRespaldo: i.urlPDFBackup,
     tematicas: Array.isArray(i.tematicas) ? i.tematicas : undefined,
@@ -294,4 +297,78 @@ export function facetasDe(fichas: FichaHemeroteca[]): FacetasHemeroteca {
     estatus: cuenta((f) => estatusGrupo(f.estatus)),
     anio: cuenta((f) => anioDe(f.fecha)).sort((a, b) => b.valor.localeCompare(a.valor)),
   };
+}
+
+// --- Presentación de las filas (estilo hemeroteca legal) ---
+
+export type Tono = 'green' | 'blue' | 'amber' | 'red' | 'violet' | 'slate';
+
+export function vigenciaDe(estatus?: string): { label: string; tono: Tono } {
+  const s = (estatus ?? '').toLowerCase();
+  if (/aprob|publicad|vigente|operando/.test(s)) return { label: 'Vigente', tono: 'green' };
+  if (/derog|abrog|rechaz/.test(s)) return { label: 'Derogado', tono: 'red' };
+  if (/desech|archiv|abandon|desist/.test(s)) return { label: 'Histórico', tono: 'amber' };
+  return { label: 'En proceso', tono: 'blue' };
+}
+
+export function organoDe(camara?: string): { label: string; icono: string; tono: Tono } {
+  const s = (camara ?? '').toLowerCase();
+  if (s.includes('diputad')) return { label: 'Cámara de Diputados', icono: 'landmark', tono: 'green' };
+  if (s.includes('senad')) return { label: 'Cámara de Senadores', icono: 'landmark', tono: 'amber' };
+  if (s.includes('corte') || s.includes('scjn') || s.includes('judicial') || s.includes('tribunal')) return { label: 'Poder Judicial', icono: 'scale', tono: 'blue' };
+  if (s.includes('ejecutiv') || s.includes('presidencia') || s.includes('secretar')) return { label: 'Poder Ejecutivo', icono: 'building', tono: 'violet' };
+  if (!s) return { label: 'Legislativo', icono: 'landmark', tono: 'slate' };
+  return { label: camara as string, icono: 'map-pin', tono: 'slate' };
+}
+
+export function tipoEtiqueta(tipo?: string, estatus?: string): string {
+  const t = (tipo ?? '').toLowerCase();
+  if (t.includes('punto')) return 'Punto de acuerdo';
+  if (t.includes('constitucional')) return 'Reforma constitucional';
+  if (/aprob|publicad/.test((estatus ?? '').toLowerCase()) && t.startsWith('ley')) return 'Ley';
+  if (t.startsWith('reforma')) return 'Reforma';
+  if (t.startsWith('ley')) return 'Iniciativa de ley';
+  return 'Iniciativa';
+}
+
+export interface ItemHemeroteca {
+  id: string; slug: string; titulo: string; resumen: string;
+  fecha?: string; anio: string; fechaLegible: string;
+  materia: string; camaraGrupo: string;
+  organoLabel: string; organoIcono: string; organoTono: Tono;
+  tipoLabel: string; vigenciaLabel: string; vigenciaTono: Tono;
+  tags: string[]; tagsExtra: number;
+  urlGaceta?: string; copiaRespaldo?: string; texto: string;
+}
+
+const _norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+export function toItem(f: FichaHemeroteca): ItemHemeroteca {
+  const org = organoDe(f.camara);
+  const vig = vigenciaDe(f.estatus);
+  const temas = (f.tematicas ?? []).map((t) => t.replace(/_/g, ' '));
+  let fechaLegible = '';
+  try { if (f.fecha) fechaLegible = new Date(f.fecha).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { /* */ }
+  return {
+    id: f.id, slug: f.slug, titulo: f.titulo, resumen: f.resumen,
+    fecha: f.fecha, anio: anioDe(f.fecha), fechaLegible,
+    materia: materiaDe(f), camaraGrupo: camaraGrupo(f.camara),
+    organoLabel: org.label, organoIcono: org.icono, organoTono: org.tono,
+    tipoLabel: tipoEtiqueta(f.tipo, f.estatus),
+    vigenciaLabel: vig.label, vigenciaTono: vig.tono,
+    tags: temas.slice(0, 3), tagsExtra: Math.max(0, temas.length - 3),
+    urlGaceta: f.urlGaceta, copiaRespaldo: f.copiaRespaldo,
+    texto: _norm([f.titulo, f.resumen, f.proponente, temas.join(' ')].filter(Boolean).join(' ')),
+  };
+}
+
+export function statsDe(fichas: FichaHemeroteca[]) {
+  let diputados = 0, senado = 0, locales = 0;
+  for (const f of fichas) {
+    const g = camaraGrupo(f.camara);
+    if (g === 'Diputados') diputados++;
+    else if (g === 'Senado') senado++;
+    else locales++;
+  }
+  return { total: fichas.length, diputados, senado, locales };
 }
