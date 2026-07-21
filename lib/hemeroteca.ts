@@ -343,7 +343,9 @@ export function vigenciaDe(estatus?: string, fecha?: string): { label: string; t
   return { label: 'En seguimiento', tono: 'blue' };
 }
 
-export function organoDe(camara?: string): { label: string; icono: string; tono: Tono } {
+export function organoDe(camara?: string, contexto?: string): { label: string; icono: string; tono: Tono } {
+  const local = congresoLocalDetectado(camara, contexto);
+  if (local) return { label: local.label, icono: 'map-pin', tono: 'slate' };
   const s = (camara ?? '').toLowerCase();
   if (s.includes('diputad')) return { label: 'Cámara de Diputados', icono: 'landmark', tono: 'green' };
   if (s.includes('senad')) return { label: 'Cámara de Senadores', icono: 'landmark', tono: 'amber' };
@@ -353,16 +355,39 @@ export function organoDe(camara?: string): { label: string; icono: string; tono:
   return { label: camara as string, icono: 'map-pin', tono: 'slate' };
 }
 
-export function logoDeOrgano(camara?: string): string | undefined {
-  const s = (camara ?? '')
+function textoNormalizado(...partes: Array<string | undefined>): string {
+  return partes
+    .filter(Boolean)
+    .join(' ')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+function congresoLocalDetectado(camara?: string, contexto?: string): { label: string; logo: string } | undefined {
+  const s = textoNormalizado(camara, contexto);
+  if (!s) return undefined;
+  if (s.includes('estado de mexico') || s.includes('edomex') || s.includes('mexiquense')) {
+    return { label: 'Congreso del Estado de México', logo: '/logos/congreso-edomex.svg' };
+  }
+  if (s.includes('oaxaca')) return { label: 'Congreso del Estado de Oaxaca', logo: '/logos/congreso-oaxaca.svg' };
+  if (s.includes('cdmx') || s.includes('ciudad de mexico')) {
+    return { label: 'Congreso de la Ciudad de México', logo: '/logos/congreso-cdmx.svg' };
+  }
+  return undefined;
+}
+
+export function logoDeOrgano(camara?: string, contexto?: string): string | undefined {
+  const local = congresoLocalDetectado(camara, contexto);
+  if (local) return local.logo;
+  const s = textoNormalizado(camara);
   if (!s) return undefined;
   if (s.includes('diputad')) return '/logos/camara-diputados.svg';
   if (s.includes('senad')) return '/logos/senado.jpg';
   if (s.includes('cdmx') || s.includes('ciudad de mexico')) return '/logos/congreso-cdmx.svg';
+  if (s.includes('estado de mexico') || s.includes('edomex') || s.includes('mexiquense')) return '/logos/congreso-edomex.svg';
   if (s.includes('michoacan')) return '/logos/congreso-michoacan.png';
+  if (s.includes('oaxaca')) return '/logos/congreso-oaxaca.svg';
   if (s.includes('chihuahua')) return '/logos/congreso-chihuahua.png';
   if (s.includes('queretaro')) return '/logos/congreso-queretaro.png';
   if (s.includes('yucatan')) return '/logos/congreso-yucatan.png';
@@ -414,7 +439,8 @@ export interface ItemHemeroteca {
 const _norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 export function toItem(f: FichaHemeroteca): ItemHemeroteca {
-  const org = organoDe(f.camara);
+  const contexto = [f.titulo, f.resumen, f.proponente].filter(Boolean).join(' ');
+  const org = organoDe(f.camara, contexto);
   const vig = vigenciaDe(f.estatus, f.fecha);
   const temas = (f.tematicas ?? []).map((t) => t.replace(/_/g, ' '));
   let fechaLegible = '';
@@ -424,7 +450,7 @@ export function toItem(f: FichaHemeroteca): ItemHemeroteca {
     fecha: f.fecha, anio: anioDe(f.fecha), fechaLegible,
     materia: materiaDe(f), camaraGrupo: camaraGrupo(f.camara),
     jurisdiccion: jurisdiccionDe(f.camara),
-    organoLabel: org.label, organoIcono: org.icono, organoTono: org.tono, organoLogo: logoDeOrgano(f.camara),
+    organoLabel: org.label, organoIcono: org.icono, organoTono: org.tono, organoLogo: logoDeOrgano(f.camara, contexto),
     tipoLabel: tipoEtiqueta(f.tipo, f.estatus),
     vigenciaLabel: vig.label, vigenciaTono: vig.tono,
     estatusFuente: f.estatus,
