@@ -81,7 +81,10 @@ function esInstitucion(v: string): boolean {
 // pública o una empresa también contienen palabras genéricas de institución.
 function enteDeLabel(v: string, fallback?: Ente): Ente | undefined {
   const s = v.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  if (/(universidad|instituto tecnol|tecnologico nacional|tecnm|\bunam\b|\bipn\b|\bbuap\b|\bupy\b|\buam\b|colegio|escuela|educaci|docente|academic|facultad|centro de investigacion|conahcyt|cinvestav)/.test(s)) return 'academia';
+  // Academia = universidades y centros de investigación. OJO: NO usar "educaci"/"docente"
+  // como señal — "Secretaría de Educación Pública" (y las de educación estatales) son
+  // dependencias del EJECUTIVO, no academia; caían mal aquí por contener "educación".
+  if (/(universidad|instituto tecnol|tecnologico nacional|tecnm|\bunam\b|\bipn\b|\bbuap\b|\bupy\b|\buam\b|colegio|\bescuela\b|academic|facultad|rector|centro de investigacion|conahcyt|cinvestav)/.test(s)) return 'academia';
   if (/(empresa|cl-?uster|cluster|\bs\.?a\.?\b|nvidia|microsoft|google|\bibm\b|\baws\b|amazon|oracle|intel|\bmeta\b|cisco|salesforce|accenture|kyndryl|ericsson|axity|\btcs\b|\bflex\b|aifod|startup|c[aá]mara de comercio|iniciativa privada|sector privado|consejo coordinador empresarial|\bcce\b|planta|hub de ia)/.test(s)) return 'privado';
   if (/(tribunal|juzgado|\bsala\b|poder judicial|fiscal[ií]a|ministerio p[uú]blico|scjn|suprema corte|judicatura|\btsj\b|magistrad|semanario judicial)/.test(s)) return 'judicial';
   if (/(c[aá]mara de diputados|\bdiputad|\bsenado\b|congreso|legislat|parlament)/.test(s)) return 'legislativo';
