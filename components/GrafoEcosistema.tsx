@@ -32,86 +32,42 @@ const ENTE_META: Record<Ente, { label: string; color: string }> = {
   privado: { label: 'Sector Privado', color: '#f59e0b' },
   academia: { label: 'Academia', color: '#f472b6' },
 };
-const ENTES = Object.keys(ENTE_META) as Ente[];
 type Centro = { id: string; label: string; x: number; y: number; radius: number; count: number };
 type Anchor = { x: number; y: number; radius: number };
-const GA_FRONT = Math.PI * (3 - Math.sqrt(5));
 
-// Empaca círculos en espiral áurea rechazando colisiones (mismo criterio que el
-// atlas): sirve tanto para las comunidades dentro de un ente como para los 5 entes.
-function packCircles(items: Array<{ id: string; radius: number }>, gap = 24): Map<string, { x: number; y: number }> {
-  const ordered = [...items].sort((a, b) => b.radius - a.radius || a.id.localeCompare(b.id));
-  const placed: Array<{ x: number; y: number; radius: number }> = [];
-  const pos = new Map<string, { x: number; y: number }>();
-  for (const it of ordered) {
-    if (!placed.length) { placed.push({ x: 0, y: 0, radius: it.radius }); pos.set(it.id, { x: 0, y: 0 }); continue; }
-    let point = { x: 0, y: 0 };
-    for (let step = 1; step < 6000; step++) {
-      const distance = 12 * Math.sqrt(step);
-      const angle = step * GA_FRONT;
-      const cand = { x: Math.cos(angle) * distance * 1.18, y: Math.sin(angle) * distance * 0.9 };
-      if (placed.every((o) => Math.hypot(cand.x - o.x, cand.y - o.y) >= it.radius + o.radius + gap)) { point = cand; break; }
-    }
-    placed.push({ ...point, radius: it.radius });
-    pos.set(it.id, point);
-  }
-  return pos;
-}
+const ENTE_BIAS: Record<Ente, { x: number; y: number }> = {
+  legislativo: { x: -42, y: -4 },
+  ejecutivo: { x: 44, y: -8 },
+  judicial: { x: -12, y: 44 },
+  privado: { x: 34, y: 38 },
+  academia: { x: 6, y: -46 },
+};
 
-// Reagrupa los centroides de comunidad en cinco súper-regiones (una por ente):
-// dentro de cada ente empaca sus islas; luego empaca los cinco entes entre sí.
-// Así el mapa se lee como cinco archipiélagos principales sin perder el detalle.
+// Reagrupa los centroides sin partir el mapa en continentes. La primera versión
+// separaba los entes en filas y producía dos núcleos; aquí sólo hay una ligera
+// inclinación por origen, manteniendo una constelación compacta.
 function regionalizar(
   base: Map<string, Centro>,
   enteDe: Map<string, Ente>,
 ): { centers: Map<string, Centro>; anchors: Map<Ente, Anchor> } {
-  const byEnte = new Map<Ente, Centro[]>();
-  for (const c of base.values()) {
-    const e = enteDe.get(c.id) ?? 'ejecutivo';
-    (byEnte.get(e) ?? byEnte.set(e, []).get(e)!).push(c);
-  }
-  const localPos = new Map<string, { x: number; y: number }>();
-  const enteRadius = new Map<Ente, number>();
-  for (const [e, comms] of byEnte) {
-    const packed = packCircles(comms.map((c) => ({ id: c.id, radius: c.radius + 16 })), 30);
-    let extent = 46;
-    for (const c of comms) {
-      const p = packed.get(c.id) ?? { x: 0, y: 0 };
-      localPos.set(c.id, p);
-      extent = Math.max(extent, Math.hypot(p.x, p.y) + c.radius);
-    }
-    enteRadius.set(e, extent);
-  }
-  // Layout deliberado en dos filas: arriba los tres Poderes del Estado, abajo la
-  // sociedad (academia + privado). Se lee como un diagrama de gobierno, compacto
-  // y con los cinco entes visibles. La espiral los encimaba (Legislativo es enorme).
-  const has = (e: Ente) => enteRadius.has(e);
-  const R = (e: Ente) => enteRadius.get(e) ?? 60;
-  const rowX = (row: Ente[], gap: number) => {
-    const xs: number[] = [];
-    let cursor = 0;
-    let prevR = 0;
-    row.forEach((e, i) => { const r = R(e); if (i > 0) cursor += prevR + gap + r; xs.push(cursor); prevR = r; });
-    const mid = xs.length ? (xs[0] + xs[xs.length - 1]) / 2 : 0;
-    return new Map(row.map((e, i) => [e, xs[i] - mid]));
-  };
-  const top = (['legislativo', 'ejecutivo', 'judicial'] as Ente[]).filter(has);
-  const bot = (['academia', 'privado'] as Ente[]).filter(has);
-  const topX = rowX(top, 150);
-  const botX = rowX(bot, 260);
-  const maxTopR = Math.max(60, ...top.map(R));
-  const maxBotR = Math.max(60, ...bot.map(R));
-  const Y = (maxTopR + maxBotR + 150) / 2;
-  const anchors = new Map<Ente, Anchor>();
-  for (const e of top) anchors.set(e, { x: topX.get(e) ?? 0, y: -Y, radius: R(e) });
-  for (const e of bot) anchors.set(e, { x: botX.get(e) ?? 0, y: Y, radius: R(e) });
   const centers = new Map<string, Centro>();
+  const sums = new Map<Ente, { x: number; y: number; count: number; extent: number }>();
   for (const c of base.values()) {
     const e = enteDe.get(c.id) ?? 'ejecutivo';
-    const a = anchors.get(e) ?? { x: 0, y: 0 };
-    const lp = localPos.get(c.id) ?? { x: 0, y: 0 };
-    centers.set(c.id, { ...c, x: a.x + lp.x, y: a.y + lp.y });
+    const bias = ENTE_BIAS[e];
+    const x = c.x * 0.62 + bias.x;
+    const y = c.y * 0.62 + bias.y;
+    centers.set(c.id, { ...c, x, y });
+    const prev = sums.get(e) ?? { x: 0, y: 0, count: 0, extent: 0 };
+    const weight = Math.max(1, c.count);
+    prev.x += x * weight;
+    prev.y += y * weight;
+    prev.count += weight;
+    prev.extent = Math.max(prev.extent, Math.hypot(x, y) + c.radius);
+    sums.set(e, prev);
   }
+  const anchors = new Map<Ente, Anchor>();
+  for (const [e, sum] of sums) anchors.set(e, { x: sum.x / sum.count, y: sum.y / sum.count, radius: Math.max(60, sum.extent * 0.5) });
   return { centers, anchors };
 }
 
@@ -374,34 +330,34 @@ export default function GrafoEcosistema({
     const dg = (value: GLink['source']) => deg.get(lid(value)) ?? 1;
     const centerOf = (n: GNode) =>
       (n.community && communityCenters.get(n.community)) || { x: 0, y: 0 };
-    fg.d3Force('charge')?.strength((n: GNode) => (ITEM_TYPES.has(n.type) ? -14 : -110));
+    fg.d3Force('charge')?.strength((n: GNode) => (ITEM_TYPES.has(n.type) ? -10 : -58));
     fg.d3Force('link')
       ?.distance((l: GLink) =>
         l.cross
-          ? 170
+          ? 92
           : l.kind === 'mesh'
-            ? Math.max(58, 100 - (l.w ?? 2) * 4)
+            ? Math.max(50, 78 - (l.w ?? 2) * 4)
             : l.prim
               ? 16 + Math.sqrt(Math.max(dg(l.source), dg(l.target))) * 2
-              : 52
+              : 42
       )
       .strength((l: GLink) =>
         l.cross
-          ? 0
+          ? 0.04
           : l.kind === 'mesh'
-            ? 0.09
+            ? 0.16
             : l.prim
               ? Math.min(0.75, Math.max(0.38, 2 / Math.min(dg(l.source), dg(l.target))))
-              : 0.045
+              : 0.055
       );
-    fg.d3Force('gx', forceX((n: GNode) => centerOf(n).x).strength((n: GNode) => (ITEM_TYPES.has(n.type) ? 0.08 : 0.16)));
-    fg.d3Force('gy', forceY((n: GNode) => centerOf(n).y).strength((n: GNode) => (ITEM_TYPES.has(n.type) ? 0.08 : 0.16)));
-    // Segunda gravedad, FUERTE: cada nodo es atraído a la región de SU propio ente.
-    // Es la que separa los cinco archipiélagos y rescata a los casos judiciales (o de
-    // privado/academia) que caen en una comunidad de tema dominada por otro poder.
+    fg.d3Force('gx', forceX((n: GNode) => centerOf(n).x).strength((n: GNode) => (ITEM_TYPES.has(n.type) ? 0.055 : 0.11)));
+    fg.d3Force('gy', forceY((n: GNode) => centerOf(n).y).strength((n: GNode) => (ITEM_TYPES.has(n.type) ? 0.055 : 0.11)));
+    fg.d3Force('mapx', forceX(0).strength(0.042));
+    fg.d3Force('mapy', forceY(0).strength(0.042));
+    // Sesgo semántico muy bajo: ayuda al color/origen, sin abrir dos mapas.
     const enteA = (n: GNode) => (n.ente && principalEntes.has(n.ente) ? enteAnchors.get(n.ente) : undefined);
-    fg.d3Force('ex', forceX((n: GNode) => enteA(n)?.x ?? centerOf(n).x).strength((n: GNode) => (enteA(n) ? (ITEM_TYPES.has(n.type) ? 0.16 : 0.1) : 0)));
-    fg.d3Force('ey', forceY((n: GNode) => enteA(n)?.y ?? centerOf(n).y).strength((n: GNode) => (enteA(n) ? (ITEM_TYPES.has(n.type) ? 0.16 : 0.1) : 0)));
+    fg.d3Force('ex', forceX((n: GNode) => enteA(n)?.x ?? centerOf(n).x).strength((n: GNode) => (enteA(n) ? (ITEM_TYPES.has(n.type) ? 0.018 : 0.012) : 0)));
+    fg.d3Force('ey', forceY((n: GNode) => enteA(n)?.y ?? centerOf(n).y).strength((n: GNode) => (enteA(n) ? (ITEM_TYPES.has(n.type) ? 0.018 : 0.012) : 0)));
     fg.d3Force(
       'collide',
       forceCollide((n: GNode) => Math.sqrt(n.val ?? 2) * (ITEM_TYPES.has(n.type) ? 1.5 : 2.3) + 2)
@@ -534,32 +490,6 @@ export default function GrafoEcosistema({
   const drawCommunities = useCallback(
     (ctx: CanvasRenderingContext2D, scale: number) => {
       if (!view) return;
-      // Súper-etiquetas de los cinco entes principales: el marco del mapa. Se dibujan
-      // primero (capa de fondo) y sólo si el ente tiene nodos visibles con el filtro.
-      const enteCount = new Map<Ente, number>();
-      for (const node of view.nodes) {
-        if (!node.ente || !visibleEnAnio(node.anio ?? null, anio, anioActual)) continue;
-        enteCount.set(node.ente, (enteCount.get(node.ente) ?? 0) + 1);
-      }
-      for (const e of ENTES) {
-        const count = enteCount.get(e) ?? 0;
-        if (count < 1) continue;
-        const a = enteAnchors.get(e);
-        if (!a) continue;
-        const meta = ENTE_META[e];
-        const fontSize = Math.max(11, 26 / Math.sqrt(scale));
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = `700 ${fontSize}px "Space Grotesk", system-ui, sans-serif`;
-        ctx.fillStyle = meta.color;
-        ctx.globalAlpha = 0.17;
-        ctx.fillText(meta.label.toUpperCase(), a.x, a.y - a.radius - fontSize * 1.05);
-        ctx.font = `600 ${fontSize * 0.46}px "Space Grotesk", system-ui, sans-serif`;
-        ctx.globalAlpha = 0.13;
-        ctx.fillText(`${count} registros`, a.x, a.y - a.radius - fontSize * 0.35);
-        ctx.restore();
-      }
       const visible = new Map<string, number>();
       for (const node of view.nodes) {
         if (!node.community) continue;
@@ -579,18 +509,18 @@ export default function GrafoEcosistema({
         ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
         ctx.fillStyle = glow;
         ctx.fill();
-        if (count >= 5) {
+        if (count >= 8 && scale > 1.25) {
           const fontSize = Math.max(3.2, 7 / Math.sqrt(scale));
           ctx.font = `600 ${fontSize}px "Space Grotesk", system-ui, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
-          ctx.fillStyle = 'rgba(148,163,184,0.32)';
+          ctx.fillStyle = 'rgba(148,163,184,0.24)';
           ctx.fillText(center.label.toUpperCase(), center.x, center.y - radius * 0.58);
         }
         ctx.restore();
       }
     },
-    [view, communityCenters, enteAnchors, anio, anioActual],
+    [view, communityCenters, anio, anioActual],
   );
 
   const drawNode = useCallback(
@@ -696,14 +626,14 @@ export default function GrafoEcosistema({
             ctx.arc(node.x ?? 0, node.y ?? 0, r, 0, 2 * Math.PI);
             ctx.fill();
           }}
-          linkCurvature={(l: GLink) => (l.cross ? 0.42 : l.kind === 'mesh' ? 0.22 : 0.08)}
+          linkCurvature={(l: GLink) => (l.cross ? 0.18 : l.kind === 'mesh' ? 0.16 : 0.06)}
           linkColor={(l: GLink) => {
             const dim = hover && !(isLit(lid(l.source)) && isLit(lid(l.target)));
             if (dim) return 'rgba(148,163,184,0.03)';
-            if (l.cross) return 'rgba(94,208,239,0.11)';
-            return l.kind === 'mesh' ? 'rgba(94,208,239,0.14)' : 'rgba(148,163,184,0.16)';
+            if (l.cross) return 'rgba(94,208,239,0.16)';
+            return l.kind === 'mesh' ? 'rgba(94,208,239,0.16)' : 'rgba(148,163,184,0.16)';
           }}
-          linkWidth={(l: GLink) => (touchesHover(l) ? 1.8 : l.cross ? 0.42 : l.kind === 'mesh' ? Math.min(0.5 + (l.w ?? 2) * 0.1, 1.4) : 0.5)}
+          linkWidth={(l: GLink) => (touchesHover(l) ? 1.8 : l.cross ? 0.55 : l.kind === 'mesh' ? Math.min(0.55 + (l.w ?? 2) * 0.1, 1.35) : 0.5)}
           linkDirectionalParticles={(l: GLink) => (touchesHover(l) ? 2 : 0)}
           linkDirectionalParticleWidth={1.8}
           linkDirectionalParticleSpeed={0.007}

@@ -576,7 +576,7 @@ export default function GrafoPage() {
         <Leg color="#94a3b8" t="Dependencia / actor" />
         <Leg color="#f59e0b" t="Sector privado — empresas, clústeres" />
         <Leg color="#f472b6" t="Academia — universidades, centros" />
-        <div className="mt-1 text-[10px] text-slate-500">Cinco entes: los 3 Poderes + privado + academia · anillo = nuevo · tenue = inactivo</div>
+        <div className="mt-1 text-[10px] text-slate-500">Color = origen / tipo · anillo = nuevo · tenue = inactivo · clic = apunte</div>
       </div>
     </div>
   );
