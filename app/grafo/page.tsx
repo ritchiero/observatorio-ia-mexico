@@ -577,6 +577,11 @@ export default function GrafoPage() {
         <Leg color="#f59e0b" t="Sector privado — empresas, clústeres" />
         <Leg color="#f472b6" t="Academia — universidades, centros" />
         <div className="mt-1 text-[10px] text-slate-500">Color = origen / tipo · anillo = nuevo · tenue = inactivo · clic = apunte</div>
+        <div className="mt-1 text-[10px]">
+          <Link href="/grafo/tabla" className="pointer-events-auto text-cyan-400/80 hover:text-cyan-300 underline">
+            Vista accesible: los mismos datos en tabla →
+          </Link>
+        </div>
       </div>
     </div>
   );
