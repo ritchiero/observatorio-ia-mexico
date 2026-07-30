@@ -279,7 +279,9 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
 
           <div className="mt-12 flex flex-wrap gap-3">
             <MetricPill n={nAnuncios} l="Anuncios" c={T.cyan} href="/" />
-            <MetricPill n={nProductos} l="Productos" c={T.blue} href="/" />
+            {/* OIA-002: "Productos" era engañoso — son anuncios en estado operando
+                (incluye cursos, convenios, políticas), no sólo productos utilizables */}
+            <MetricPill n={nProductos} l="Operando" c={T.blue} href="/" />
             <MetricPill n={nIniciativas} l="Iniciativas" c={T.green} href="/legislacion" />
             <MetricPill n={nCasos} l="Casos" c={T.violet} href="/casos-ia" />
           </div>

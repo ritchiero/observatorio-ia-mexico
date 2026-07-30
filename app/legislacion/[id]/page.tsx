@@ -191,9 +191,11 @@ export default function IniciativaDetallePage() {
             <NivelConfianzaBadge item={iniciativa} size="md" />
             <FolioBadge folio={iniciativa.folio} />
             {iniciativa.estadoVerificacion === 'verificado' && (
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-sans border bg-emerald-50 text-emerald-700 border-emerald-200">
+              // OIA-007: la verificación fue automatizada; no se anuncia auditoría
+              // humana mientras no exista un revisor identificable en el registro.
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-sans border bg-sky-50 text-sky-700 border-sky-200">
                 <ShieldCheck size={16} />
-                Verificado por AI Agent
+                Verificación automatizada (IA) · pendiente de auditoría humana
               </span>
             )}
           </div>
@@ -203,11 +205,12 @@ export default function IniciativaDetallePage() {
             <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-sm">
               <div className="flex items-center gap-2 mb-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                <span className="font-sans font-bold text-emerald-800">Información Verificada por IA</span>
+                <span className="font-sans font-bold text-emerald-800">Verificación automatizada — pendiente de auditoría humana</span>
               </div>
               <p className="text-sm text-emerald-700">
-                Esta iniciativa ha sido verificada automáticamente utilizando <strong>Claude Sonnet 4</strong> de Anthropic, 
-                con búsqueda en fuentes oficiales del gobierno mexicano.
+                Esta ficha fue verificada de forma <strong>automatizada</strong> con <strong>Claude Sonnet 4</strong> (Anthropic),
+                contrastando contra fuentes oficiales del gobierno mexicano. La revisión por una persona se
+                indicará aquí cuando exista un revisor y una fecha identificables en el expediente.
               </p>
               {iniciativa.fechaVerificacion && (
                 <p className="text-xs text-emerald-600 mt-2 font-mono">
