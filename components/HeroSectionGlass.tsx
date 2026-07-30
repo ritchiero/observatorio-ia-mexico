@@ -148,9 +148,11 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
       <div className="absolute inset-0 z-0" aria-hidden="true">
         <GrafoEcosistema chrome={false} />
       </div>
-      {/* legibilidad del texto sobre el mapa (izquierda) + fundido inferior */}
+      {/* legibilidad del texto sobre el mapa: velo más profundo bajo el título
+          (el mapa competía con el h1) + banda superior; el mapa respira a la derecha */}
       <div className="absolute inset-0 z-[1] pointer-events-none" style={{
-        background: 'linear-gradient(90deg, rgba(5,7,12,0.90) 0%, rgba(5,7,12,0.62) 34%, rgba(5,7,12,0.12) 62%, rgba(5,7,12,0.30) 100%)',
+        background: `linear-gradient(90deg, rgba(5,7,12,0.97) 0%, rgba(5,7,12,0.91) 42%, rgba(5,7,12,0.68) 62%, rgba(5,7,12,0.18) 82%, rgba(5,7,12,0.34) 100%),
+          linear-gradient(180deg, rgba(5,7,12,0.62) 0%, rgba(5,7,12,0.18) 22%, rgba(5,7,12,0) 40%)`,
       }} />
       <div className="absolute inset-x-0 bottom-0 z-[1] h-28 pointer-events-none" style={{
         background: 'linear-gradient(180deg, rgba(5,7,12,0) 0%, rgba(5,7,12,0.9) 100%)',
