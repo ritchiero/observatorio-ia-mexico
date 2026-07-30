@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { asignarComunidades } from '@/lib/grafo-comunidades';
 import { anioAparicionItem, anioHub, anioMesh } from '@/lib/grafo-tiempo';
+import { enteDeLabel, type Ente } from '@/lib/entes';
+import { bucketDe } from '@/lib/estados';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -30,18 +32,10 @@ type Node = {
   ente?: Ente;          // rama/sector al que pertenece (para agrupar en 5 súper-regiones)
 };
 
-// Los cinco entes principales del ecosistema. Cada nodo se clasifica en uno para
-// que el mapa se lea como cinco archipiélagos (los tres Poderes + privado + academia),
-// que es lo que representa quién impulsa la IA en México.
-type Ente = 'legislativo' | 'ejecutivo' | 'judicial' | 'privado' | 'academia';
-
+// Los cinco entes y el bucket de estados viven en lib/ (fuente única compartida
+// con la tabla accesible, el buscador y las pruebas de integridad).
 const DIAS_NUEVO = 90;
-function bucket(status: string): 'vigente' | 'tramite' | 'inactivo' {
-  const s = status.toLowerCase();
-  if (/(operando|publicada|vigente|aprobada|resuelto|sentencia)/.test(s)) return 'vigente';
-  if (/(desechad|archivad|abandonad|incumplid|rechazad|desistid)/.test(s)) return 'inactivo';
-  return 'tramite';
-}
+const bucket = bucketDe;
 function esNuevo(fecha: unknown): boolean {
   const t = fecha ? new Date(String(fecha)).getTime() : NaN;
   return Number.isFinite(t) && Date.now() - t < DIAS_NUEVO * 24 * 3600 * 1000;
@@ -76,21 +70,7 @@ function esInstitucion(v: string): boolean {
   return /(secretar|agencia|instituto|comisi[oó]n|consejo|poder|gobierno|congreso|c[aá]mara|senado|fiscal[ií]a|ministerio|universidad|tribunal|juzgado|sala|direcci[oó]n|coordinaci[oó]n|grupo|partido|s\.a\.|empresa)/i.test(v);
 }
 
-// clasifica una etiqueta (dependencia / actor) en uno de los cinco entes.
-// El orden importa: academia y privado antes que ejecutivo, porque una universidad
-// pública o una empresa también contienen palabras genéricas de institución.
-function enteDeLabel(v: string, fallback?: Ente): Ente | undefined {
-  const s = v.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  // Academia = universidades y centros de investigación. OJO: NO usar "educaci"/"docente"
-  // como señal — "Secretaría de Educación Pública" (y las de educación estatales) son
-  // dependencias del EJECUTIVO, no academia; caían mal aquí por contener "educación".
-  if (/(universidad|instituto tecnol|tecnologico nacional|tecnm|\bunam\b|\bipn\b|\bbuap\b|\bupy\b|\buam\b|colegio|\bescuela\b|academic|facultad|rector|centro de investigacion|conahcyt|cinvestav)/.test(s)) return 'academia';
-  if (/(empresa|cl-?uster|cluster|\bs\.?a\.?\b|nvidia|microsoft|google|\bibm\b|\baws\b|amazon|oracle|intel|\bmeta\b|cisco|salesforce|accenture|kyndryl|ericsson|axity|\btcs\b|\bflex\b|aifod|startup|c[aá]mara de comercio|iniciativa privada|sector privado|consejo coordinador empresarial|\bcce\b|planta|hub de ia)/.test(s)) return 'privado';
-  if (/(tribunal|juzgado|\bsala\b|poder judicial|fiscal[ií]a|ministerio p[uú]blico|scjn|suprema corte|judicatura|\btsj\b|magistrad|semanario judicial)/.test(s)) return 'judicial';
-  if (/(c[aá]mara de diputados|\bdiputad|\bsenado\b|congreso|legislat|parlament)/.test(s)) return 'legislativo';
-  if (/(secretar|agencia|gobierno|municipio|municipal|presidencia|\bimss\b|\bsat\b|\bine\b|\banam\b|\bimpi\b|\batdt\b|secihti|sectei|protecci[oó]n civil|comisi[oó]n|consejo|direcci[oó]n|coordinaci[oó]n|instituto)/.test(s)) return 'ejecutivo';
-  return fallback;
-}
+// (enteDeLabel se importa de lib/entes — misma taxonomía que la tabla accesible)
 
 // Descriptores colectivos de un expediente ("diversas personas quejosas", "terceros
 // interesados"): no son ni gente identificable ni instituciones, así que no merecen nodo.

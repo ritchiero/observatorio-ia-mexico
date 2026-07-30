@@ -177,8 +177,9 @@ export default function GrafoEcosistema({
   }, []);
   useEffect(() => {
     if (!reducedMotion || chrome || !fgReady) return;
-    const t = setTimeout(() => fgRef.current?.pauseAnimation?.(), 2600);
-    return () => clearTimeout(t);
+    // INMEDIATO (auditoría): sin ventana de animación. Las posiciones vienen
+    // sembradas por comunidad, así que el mapa congelado ya es legible.
+    fgRef.current?.pauseAnimation?.();
   }, [reducedMotion, chrome, fgReady]);
 
   useEffect(() => {

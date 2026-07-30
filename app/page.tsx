@@ -8,6 +8,7 @@ import FolioBadge from '@/components/FolioBadge';
 import LegislacionEnriched from '@/components/LegislacionEnriched';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { STATUS_ANUNCIO } from '@/lib/estados';
 
 interface AnuncioData {
   id: string;
@@ -212,7 +213,7 @@ export default function Home() {
   // 'concluido' (eventos que ya ocurrieron) cuenta como estado de primera clase;
   // cualquier estado fuera del catálogo cae en 'sinClasificar' y se muestra, no se oculta.
   const stats = useMemo(() => {
-    const conocidos = ['operando', 'en_desarrollo', 'incumplido', 'prometido', 'concluido'];
+    const conocidos: string[] = [...STATUS_ANUNCIO];
     return {
       total: anuncios.length,
       operando: anuncios.filter(a => a.status === 'operando').length,
@@ -518,13 +519,16 @@ export default function Home() {
                 <span className="text-emerald-600 font-medium">{stats.operando} ya operan</span>,{' '}
                 <span className="text-blue-600 font-medium">{stats.enDesarrollo} en desarrollo</span>,{' '}
                 <span className="text-gray-500 font-medium">{stats.prometido} prometidas</span>
-                {stats.incumplido > 0 && <> y <span className="text-red-600 font-semibold">{stats.incumplido} incumplidas</span></>}.
+                {stats.concluido > 0 && <>, <span className="text-teal-600 font-medium">{stats.concluido} {stats.concluido === 1 ? 'concluida' : 'concluidas'}</span></>}
+                {stats.incumplido > 0 && <> y <span className="text-red-600 font-semibold">{stats.incumplido} incumplidas</span></>}
+                {stats.sinClasificar > 0 && <> ({stats.sinClasificar} sin clasificar)</>}.
               </p>
               {/* Barra de distribución */}
               <div className="flex h-2.5 rounded-full overflow-hidden border border-gray-200 bg-white">
                 <div className="bg-emerald-500 h-full" style={{ width: `${(stats.operando / stats.total) * 100}%` }} title={`Operando · ${stats.operando}`} />
                 <div className="bg-blue-500 h-full" style={{ width: `${(stats.enDesarrollo / stats.total) * 100}%` }} title={`En desarrollo · ${stats.enDesarrollo}`} />
                 <div className="bg-slate-400 h-full" style={{ width: `${(stats.prometido / stats.total) * 100}%` }} title={`Prometido · ${stats.prometido}`} />
+                <div className="bg-teal-500 h-full" style={{ width: `${(stats.concluido / stats.total) * 100}%` }} title={`Concluido · ${stats.concluido}`} />
                 <div className="bg-red-500 h-full" style={{ width: `${(stats.incumplido / stats.total) * 100}%` }} title={`Incumplido · ${stats.incumplido}`} />
               </div>
               {/* Leyenda + métrica */}
@@ -532,6 +536,9 @@ export default function Home() {
                 <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-emerald-500" />Operando <b className="text-gray-900">{stats.operando}</b></span>
                 <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-blue-500" />En desarrollo <b className="text-gray-900">{stats.enDesarrollo}</b></span>
                 <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-slate-400" />Prometido <b className="text-gray-900">{stats.prometido}</b></span>
+                {stats.concluido > 0 && (
+                  <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-teal-500" />Concluido <b className="text-gray-900">{stats.concluido}</b></span>
+                )}
                 <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-red-500" />Incumplido <b className="text-gray-900">{stats.incumplido}</b></span>
                 <span className="ml-auto text-gray-500">
                   <b className="text-emerald-600 text-sm">{Math.round((stats.operando / stats.total) * 100)}%</b> en operación

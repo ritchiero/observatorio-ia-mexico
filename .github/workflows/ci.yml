@@ -1,0 +1,30 @@
+# CI verificable (auditoría externa 30-jul-2026, punto 6):
+# typecheck + pruebas de integridad (taxonomía de entes, catálogo de estados,
+# buckets) + pruebas de seguridad. Si los contadores o taxonomías divergen de
+# la fuente única (lib/entes.ts, lib/estados.ts), el check falla.
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Pruebas (integridad + unidad)
+        run: npm test
+      - name: Pruebas de seguridad
+        run: npm run test:security

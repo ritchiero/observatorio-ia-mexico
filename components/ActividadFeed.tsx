@@ -96,21 +96,43 @@ export default function ActividadFeed({ actividad }: ActividadFeedProps) {
           );
         }
         const { item } = entrada;
+        // OIA-010: una entrada superada o retractada se conserva (historial honesto)
+        // pero se marca visualmente para que nadie la lea como información vigente.
+        const marca = (item as ActividadLog & { estadoEditorial?: string }).estadoEditorial;
+        const notaEditorial = (item as ActividadLog & { notaEditorial?: string }).notaEditorial;
+        const atenuada = marca === 'superado' || marca === 'retractado';
         const fecha = item.fecha ? new Date(item.fecha as unknown as string) : null;
         const Icon = tipoIconos[item.tipo] || ClipboardDocumentListIcon;
 
         return (
           <div
             key={item.id}
-            className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 hover:border-cyan-300 hover:shadow-sm transition-all"
+            className={`rounded-lg border p-3 sm:p-4 transition-all ${
+              atenuada
+                ? 'bg-gray-50 border-dashed border-gray-200'
+                : 'bg-white border-gray-200 hover:border-cyan-300 hover:shadow-sm'
+            }`}
           >
             <div className="flex items-start gap-2 sm:gap-3">
-              <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-600 flex-shrink-0 mt-0.5" />
+              <Icon className={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 ${atenuada ? 'text-gray-300' : 'text-cyan-600'}`} />
               <div className="flex-1 min-w-0">
-                <div className="text-xs sm:text-sm text-gray-500 mb-1">
+                <div className="text-xs sm:text-sm text-gray-500 mb-1 flex items-center gap-2 flex-wrap">
                   {formatDate(fecha)}
+                  {marca === 'superado' && (
+                    <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                      Superado
+                    </span>
+                  )}
+                  {marca === 'retractado' && (
+                    <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                      Retractado
+                    </span>
+                  )}
                 </div>
-                <p className="text-sm sm:text-base text-gray-700">{item.descripcion}</p>
+                <p className={`text-sm sm:text-base ${atenuada ? 'text-gray-400' : 'text-gray-700'}`}>{item.descripcion}</p>
+                {atenuada && notaEditorial && (
+                  <p className="text-xs text-gray-500 mt-1 italic">{notaEditorial}</p>
+                )}
                 {item.anuncioId && item.anuncioTitulo && (
                   <Link
                     href={`/anuncio/${item.anuncioId}`}

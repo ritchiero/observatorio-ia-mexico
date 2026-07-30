@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { bucketDe } from '@/lib/estados';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -24,13 +25,6 @@ type GNode = {
 // cifra declarada SIEMPRE es el conteo autoritativo.
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 type ItemAut = { gid: string; tipo: 'anuncio' | 'iniciativa' | 'caso'; label: string; status: string; fecha: string };
-
-function bucketDe(status: string): 'vigente' | 'tramite' | 'inactivo' {
-  const s = status.toLowerCase();
-  if (/(operando|publicada|vigente|aprobada|resuelto|sentencia)/.test(s)) return 'vigente';
-  if (/(desechad|archivad|abandonad|incumplid|rechazad|desistid)/.test(s)) return 'inactivo';
-  return 'tramite';
-}
 
 const ESTADO_QUERIES: Array<{ re: RegExp; match: (it: ItemAut) => boolean; label: string }> = [
   { re: /incumplid/, match: (it) => norm(it.status).includes('incumplid'), label: 'incumplidos' },
@@ -75,12 +69,17 @@ async function catalogoAutoritativo(base: string): Promise<ItemAut[]> {
 async function fastPathEstados(
   pregunta: string,
   base: string,
-  byId: Map<string, GNode>,
 ): Promise<{ respuesta: string; nodos: GNode[] } | null> {
   const q = norm(pregunta);
   const query = ESTADO_QUERIES.find((e) => e.re.test(q));
   if (!query) return null;
   const items = await catalogoAutoritativo(base);
+  // el grafo SÓLO se usa para iluminar nodos; si falla, el conteo sale igual
+  let byId = new Map<string, GNode>();
+  try {
+    const g = await fetch(`${base}/api/grafo`, { cache: 'no-store' }).then((r) => r.json());
+    byId = new Map(((g?.nodes ?? []) as GNode[]).map((n) => [n.id, n]));
+  } catch { /* sin mapa no hay iluminación, pero la cifra es la misma */ }
   // alcance opcional por tipo ("anuncios incumplidos" vs "iniciativas vigentes")
   const tipos = (['anuncio', 'iniciativa', 'caso'] as const).filter((t) => q.includes(t));
   const hits = items
@@ -98,40 +97,28 @@ async function fastPathEstados(
     ? ` (${enMapa.length} de ${hits.length} se pintan en el mapa; el resto no tiene conexiones suficientes para aparecer como nodo).`
     : '';
   return {
-    respuesta: `Hay ${hits.length} ${alcance} ${query.label} — conteo directo de la base. ${lista}${extraCount}${notaMapa}`.slice(0, 600),
+    // sin truncar: la lista de títulos ya está acotada (MAX_NODOS × 65 chars)
+    respuesta: `Hay ${hits.length} ${alcance} ${query.label} — conteo directo de la base. ${lista}${extraCount}${notaMapa}`,
     nodos: enMapa,
   };
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const key = process.env.OPENROUTER_API_KEY;
-    if (!key) {
-      return NextResponse.json(
-        { error: 'Buscador IA no configurado (falta OPENROUTER_API_KEY en el entorno)' },
-        { status: 503 },
-      );
-    }
-
     const { q } = await request.json();
     const pregunta = String(q ?? '').trim().slice(0, 300);
     if (pregunta.length < 3) {
       return NextResponse.json({ error: 'Pregunta demasiado corta' }, { status: 400 });
     }
 
-    // catálogo del grafo (mismos nodos que ve el usuario)
     const base =
       process.env.NEXT_PUBLIC_SITE_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.observatorio-ia-mexico.com');
-    const g = await fetch(`${base}/api/grafo`, { cache: 'no-store' }).then((r) => r.json());
-    const nodes: GNode[] = g?.nodes ?? [];
-    if (!nodes.length) {
-      return NextResponse.json({ error: 'El grafo no tiene datos' }, { status: 502 });
-    }
-    const byId = new Map(nodes.map((n) => [n.id, n]));
 
-    // 1) conteos/estados: respuesta determinista desde las colecciones, sin modelo (OIA-009)
-    const fp = await fastPathEstados(pregunta, base, byId);
+    // 1) conteos/estados: determinista desde las colecciones — ANTES de exigir la
+    //    llave del modelo y sin depender del grafo (OIA-009: si falla OpenRouter o
+    //    el grafo, el conteo sale igual).
+    const fp = await fastPathEstados(pregunta, base);
     if (fp) {
       return NextResponse.json({
         respuesta: fp.respuesta,
@@ -140,7 +127,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 2) todo lo demás: el modelo redacta sobre el catálogo
+    // 2) todo lo demás: el modelo redacta sobre el catálogo del grafo
+    const key = process.env.OPENROUTER_API_KEY;
+    if (!key) {
+      return NextResponse.json(
+        { error: 'Buscador IA no configurado (falta OPENROUTER_API_KEY en el entorno)' },
+        { status: 503 },
+      );
+    }
+    const g = await fetch(`${base}/api/grafo`, { cache: 'no-store' }).then((r) => r.json());
+    const nodes: GNode[] = g?.nodes ?? [];
+    if (!nodes.length) {
+      return NextResponse.json({ error: 'El grafo no tiene datos' }, { status: 502 });
+    }
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+
     const catalogo = nodes
       .map((n) =>
         [

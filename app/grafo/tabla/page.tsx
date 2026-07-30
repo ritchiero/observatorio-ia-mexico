@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { enteDeLabel, ENTE_NOMBRE } from '@/lib/entes';
 
-// OIA-013: alternativa accesible al grafo — los MISMOS registros en una tabla
-// server-rendered: legible sin JavaScript, navegable por teclado y archivable.
+// OIA-013: alternativa accesible al grafo — el catálogo COMPLETO de registros en
+// una tabla server-rendered: legible sin JavaScript, navegable por teclado y
+// archivable. Clasifica cada fila con el MISMO clasificador de entes del grafo.
 export const revalidate = 300;
 
 export const metadata: Metadata = {
@@ -15,7 +17,7 @@ export const metadata: Metadata = {
 const BASE = 'https://www.observatorio-ia-mexico.com';
 
 type Registro = {
-  tipo: 'Anuncio (Ejecutivo)' | 'Iniciativa (Legislativo)' | 'Caso (Judicial)';
+  tipo: string;
   titulo: string;
   estado: string;
   fecha: string;
@@ -40,10 +42,14 @@ async function getRegistros(): Promise<Registro[]> {
     fetch(`${BASE}/api/casos-ia`, { next: { revalidate: 300 } }).then((r) => r.json()).catch(() => null),
   ]);
   const regs: Registro[] = [
-    ...arr(aR, 'data', 'anuncios').map((a): Registro => ({
-      tipo: 'Anuncio (Ejecutivo)', titulo: s(a.titulo), estado: s(a.status).replace(/_/g, ' '),
-      fecha: f10(a.fechaAnuncio), href: `/anuncio/${s(a.id)}`,
-    })),
+    ...arr(aR, 'data', 'anuncios').map((a): Registro => {
+      // mismo clasificador que el grafo: el ente del anuncio lo define su dependencia
+      const ente = enteDeLabel(s(a.dependencia) || s(a.responsable), 'ejecutivo') ?? 'ejecutivo';
+      return {
+        tipo: `Anuncio (${ENTE_NOMBRE[ente]})`, titulo: s(a.titulo), estado: s(a.status).replace(/_/g, ' '),
+        fecha: f10(a.fechaAnuncio), href: `/anuncio/${s(a.id)}`,
+      };
+    }),
     ...arr(iR, 'data', 'iniciativas').map((i): Registro => ({
       tipo: 'Iniciativa (Legislativo)', titulo: s(i.titulo), estado: s(i.status ?? i.estatus).replace(/_/g, ' '),
       fecha: f10(i.fecha), href: `/legislacion/${s(i.id)}`,
@@ -52,6 +58,15 @@ async function getRegistros(): Promise<Registro[]> {
       tipo: 'Caso (Judicial)', titulo: s(c.nombre ?? c.titulo), estado: s(c.estado).replace(/_/g, ' '),
       fecha: f10(c.fechaCreacion), href: `/casos-ia/${s(c.id)}`,
     })),
+    // el experimento propio del laboratorio también está en el mapa: se incluye,
+    // etiquetado como lo que es (no cuenta como caso judicial — OIA-004)
+    {
+      tipo: 'Experimento (Legal-IA-Lab)',
+      titulo: 'Rompehielos INDAUTOR — obras generadas con IA (Legal-IA-Lab)',
+      estado: 'en proceso',
+      fecha: '2026-05-29',
+      href: 'https://aldoricardo.com/Legal-IA-Lab/Rompehielos-Indautor-Obras-generadas-con-IA',
+    },
   ];
   return regs.sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
@@ -70,8 +85,9 @@ export default async function GrafoTablaPage() {
       </nav>
       <h1 className="font-serif text-3xl text-gray-900 mb-2">El mapa, en tabla</h1>
       <p className="text-gray-600 mb-1 max-w-3xl">
-        Los mismos registros del mapa interactivo, en una tabla accesible: funciona sin JavaScript,
-        se navega con teclado y se puede citar o archivar.
+        El catálogo completo de registros del observatorio en una tabla accesible: funciona sin
+        JavaScript, se navega con teclado y se puede citar o archivar. Incluye el experimento del
+        laboratorio; el mapa interactivo pinta el subconjunto con conexiones suficientes.
       </p>
       <p className="text-sm text-gray-500 mb-6">
         {Object.entries(conteo).map(([t, n]) => `${n} ${t.toLowerCase()}`).join(' · ')} ·{' '}
