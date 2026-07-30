@@ -13,8 +13,95 @@ const MAX_NODOS = 8;
 
 type GNode = {
   id: string; label: string; type: string;
-  estado?: string; desc?: string; community?: string; communityLabel?: string;
+  estado?: string; status?: string; fecha?: string;
+  desc?: string; community?: string; communityLabel?: string;
 };
+
+// ---- FAST-PATH determinista (OIA-009) ----
+// Las preguntas sobre estados/conteos NO se resuelven con el modelo NI contra el
+// subconjunto visible del grafo (que descarta huérfanos por MIN_DEG — de ahí venía
+// el "4 incumplidos" cuando hay 8): se consultan las COLECCIONES completas y la
+// cifra declarada SIEMPRE es el conteo autoritativo.
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+type ItemAut = { gid: string; tipo: 'anuncio' | 'iniciativa' | 'caso'; label: string; status: string; fecha: string };
+
+function bucketDe(status: string): 'vigente' | 'tramite' | 'inactivo' {
+  const s = status.toLowerCase();
+  if (/(operando|publicada|vigente|aprobada|resuelto|sentencia)/.test(s)) return 'vigente';
+  if (/(desechad|archivad|abandonad|incumplid|rechazad|desistid)/.test(s)) return 'inactivo';
+  return 'tramite';
+}
+
+const ESTADO_QUERIES: Array<{ re: RegExp; match: (it: ItemAut) => boolean; label: string }> = [
+  { re: /incumplid/, match: (it) => norm(it.status).includes('incumplid'), label: 'incumplidos' },
+  { re: /\boperando\b/, match: (it) => norm(it.status) === 'operando', label: 'operando' },
+  { re: /en desarrollo/, match: (it) => norm(it.status) === 'en_desarrollo', label: 'en desarrollo' },
+  { re: /prometid/, match: (it) => norm(it.status) === 'prometido', label: 'prometidos' },
+  { re: /concluid/, match: (it) => norm(it.status) === 'concluido', label: 'concluidos' },
+  { re: /abandonad/, match: (it) => norm(it.status).includes('abandonad'), label: 'abandonados' },
+  { re: /vigente/, match: (it) => bucketDe(it.status) === 'vigente', label: 'vigentes' },
+  { re: /inactiv/, match: (it) => bucketDe(it.status) === 'inactivo', label: 'inactivos' },
+  { re: /en tramite|tramite/, match: (it) => bucketDe(it.status) === 'tramite', label: 'en trámite' },
+];
+
+async function catalogoAutoritativo(base: string): Promise<ItemAut[]> {
+  const [aR, iR, cR] = await Promise.all([
+    fetch(`${base}/api/anuncios?limit=500`, { cache: 'no-store' }).then((r) => r.json()),
+    fetch(`${base}/api/iniciativas`, { cache: 'no-store' }).then((r) => r.json()),
+    fetch(`${base}/api/casos-ia`, { cache: 'no-store' }).then((r) => r.json()),
+  ]);
+  const arr = (j: unknown, ...keys: string[]): Record<string, unknown>[] => {
+    if (Array.isArray(j)) return j as Record<string, unknown>[];
+    for (const k of keys) {
+      const v = (j as Record<string, unknown>)?.[k];
+      if (Array.isArray(v)) return v as Record<string, unknown>[];
+    }
+    return [];
+  };
+  const s = (v: unknown) => String(v ?? '').trim();
+  return [
+    ...arr(aR, 'data', 'anuncios').map((a): ItemAut => ({
+      gid: `a:${s(a.id)}`, tipo: 'anuncio', label: s(a.titulo), status: s(a.status), fecha: s(a.fechaAnuncio),
+    })),
+    ...arr(iR, 'data', 'iniciativas').map((i): ItemAut => ({
+      gid: `i:${s(i.id)}`, tipo: 'iniciativa', label: s(i.titulo), status: s(i.status ?? i.estatus), fecha: s(i.fecha),
+    })),
+    ...arr(cR, 'casos', 'data').map((c): ItemAut => ({
+      gid: `j:${s(c.id)}`, tipo: 'caso', label: s(c.nombre ?? c.titulo), status: s(c.estado), fecha: s(c.fechaActualizacion ?? c.fechaCreacion),
+    })),
+  ];
+}
+
+async function fastPathEstados(
+  pregunta: string,
+  base: string,
+  byId: Map<string, GNode>,
+): Promise<{ respuesta: string; nodos: GNode[] } | null> {
+  const q = norm(pregunta);
+  const query = ESTADO_QUERIES.find((e) => e.re.test(q));
+  if (!query) return null;
+  const items = await catalogoAutoritativo(base);
+  // alcance opcional por tipo ("anuncios incumplidos" vs "iniciativas vigentes")
+  const tipos = (['anuncio', 'iniciativa', 'caso'] as const).filter((t) => q.includes(t));
+  const hits = items
+    .filter((it) => (tipos.length === 0 || tipos.includes(it.tipo)) && query.match(it))
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const alcance = tipos.length === 1 ? `${tipos[0]}s` : 'registros';
+  if (!hits.length) {
+    return { respuesta: `No hay ${alcance} ${query.label} (conteo directo de la base, no estimación).`, nodos: [] };
+  }
+  const lista = hits.slice(0, MAX_NODOS).map((it) => `«${it.label.slice(0, 65)}»`).join(' · ');
+  const extraCount = hits.length > MAX_NODOS ? ` …y ${hits.length - MAX_NODOS} más.` : '';
+  // para iluminar: sólo los que existen como nodo en el mapa (el conteo NO depende de esto)
+  const enMapa = hits.filter((it) => byId.has(it.gid)).slice(0, MAX_NODOS).map((it) => byId.get(it.gid)!);
+  const notaMapa = enMapa.length < Math.min(hits.length, MAX_NODOS)
+    ? ` (${enMapa.length} de ${hits.length} se pintan en el mapa; el resto no tiene conexiones suficientes para aparecer como nodo).`
+    : '';
+  return {
+    respuesta: `Hay ${hits.length} ${alcance} ${query.label} — conteo directo de la base. ${lista}${extraCount}${notaMapa}`.slice(0, 600),
+    nodos: enMapa,
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +129,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El grafo no tiene datos' }, { status: 502 });
     }
     const byId = new Map(nodes.map((n) => [n.id, n]));
+
+    // 1) conteos/estados: respuesta determinista desde las colecciones, sin modelo (OIA-009)
+    const fp = await fastPathEstados(pregunta, base, byId);
+    if (fp) {
+      return NextResponse.json({
+        respuesta: fp.respuesta,
+        nodos: fp.nodos.map((n) => ({ id: n.id, label: n.label, type: n.type, communityLabel: n.communityLabel })),
+        determinista: true,
+      });
+    }
+
+    // 2) todo lo demás: el modelo redacta sobre el catálogo
     const catalogo = nodes
       .map((n) =>
         [

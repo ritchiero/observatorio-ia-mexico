@@ -131,6 +131,28 @@ export default function Informe2026() {
             ))}
           </Card>
         </div>
+        {/* OIA-003: toda cifra publica su universo, fórmula y fecha de corte */}
+        <div style={{ marginTop: 16 }}>
+          <Card>
+            <details>
+              <summary className="font-sans-tech" style={{ fontSize: 13, color: C.mute, cursor: 'pointer' }}>
+                Cómo se calcula este índice (universo, fórmula y corte)
+              </summary>
+              <div className="font-sans-tech" style={{ fontSize: 12.5, color: C.body, lineHeight: 1.75, marginTop: 10 }}>
+                <p><b>Universo:</b> los {t.ejecutivo.n} anuncios clasificados como <b>Poder Ejecutivo</b> (por su
+                dependencia/responsable). Es un subconjunto del total del Tracker de la portada, que incluye
+                también anuncios del Legislativo, Judicial, academia y otros — por eso ambas cifras difieren
+                y ninguna está mal: miden universos distintos.</p>
+                <p style={{ marginTop: 8 }}><b>Fórmula:</b> promedio de pesos por estatus × 100. Pesos: operando = 1 ·
+                en desarrollo = 0.5 (0.35 si su fecha prometida ya venció) · prometido = 0.25 · incumplido y
+                abandonado = 0. Un compromiso &quot;en desarrollo&quot; con fecha vencida penaliza; uno operando suma completo.</p>
+                <p style={{ marginTop: 8 }}><b>Corte:</b> los datos se calculan en vivo desde la base al cargar esta página
+                (no es una foto mensual). Las cifras legislativas distinguen estatus del proceso
+                (presentada / en comisiones / aprobada / publicada): &quot;aprobada&quot; no implica &quot;vigente&quot;.</p>
+              </div>
+            </details>
+          </Card>
+        </div>
       </Section>
 
       {/* CAP 2 — LEGISLACIÓN */}

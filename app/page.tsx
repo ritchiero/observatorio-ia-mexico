@@ -469,6 +469,16 @@ export default function Home() {
           <div className="sm:hidden text-center mt-2">
             <span className="text-[10px] text-gray-900/30 font-mono">Actualización mensual</span>
           </div>
+
+          {/* Datos abiertos (OIA-013): el público cita y reutiliza sin scrapear */}
+          <div className="mt-2 text-center sm:text-right text-[11px] font-mono text-gray-900/40">
+            Datos abiertos (CSV):{' '}
+            <a href="/api/export?coleccion=anuncios" className="underline hover:text-blue-600">anuncios</a>
+            {' · '}
+            <a href="/api/export?coleccion=iniciativas" className="underline hover:text-blue-600">iniciativas</a>
+            {' · '}
+            <a href="/api/export?coleccion=casos" className="underline hover:text-blue-600">casos</a>
+          </div>
         </div>
       </section>
 

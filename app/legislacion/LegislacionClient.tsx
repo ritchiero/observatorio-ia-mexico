@@ -475,7 +475,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
                           <div className="p-2 bg-emerald-50 border border-emerald-200/50 rounded-lg">
                             <div className="flex items-center gap-1.5">
                               <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                              <span className="font-sans-tech text-xs text-emerald-700">Verificado por IA</span>
+                              <span className="font-sans-tech text-xs text-emerald-700">Verificación automatizada (IA)</span>
                             </div>
                           </div>
                         )}
@@ -662,7 +662,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
                                   <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200/50 rounded-lg">
                                     <div className="flex items-center gap-2 mb-1">
                                       <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                                      <span className="font-sans-tech font-medium text-emerald-800 text-sm">Verificado por AI Agent</span>
+                                      <span className="font-sans-tech font-medium text-emerald-800 text-sm">Verificación automatizada (IA) · pendiente de auditoría humana</span>
                                     </div>
                                     <p className="text-xs text-emerald-700 font-mono">
                                       Modelo: Claude Sonnet 4 (Anthropic)

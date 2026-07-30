@@ -165,6 +165,22 @@ export default function GrafoEcosistema({
   const fitted = useRef(false);
   const seededData = useRef<GData | null>(null);
 
+  // Accesibilidad (OIA-013): el modo ambiente (hero) respeta prefers-reduced-motion —
+  // tras el acomodo inicial la simulación se congela; el mapa queda como imagen viva.
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const fn = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
+  useEffect(() => {
+    if (!reducedMotion || chrome || !fgReady) return;
+    const t = setTimeout(() => fgRef.current?.pauseAnimation?.(), 2600);
+    return () => clearTimeout(t);
+  }, [reducedMotion, chrome, fgReady]);
+
   useEffect(() => {
     if (chrome) {
       // Dos fuentes: `manifest.json` lo genera el pipeline de imágenes; `personas.json`
