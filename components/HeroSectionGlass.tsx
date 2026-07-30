@@ -244,11 +244,11 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
           </div>
 
           <h1 className="font-serif-display" style={{ margin: '32px 0 0', fontSize: 'clamp(56px, 9vw, 112px)', lineHeight: 0.94, letterSpacing: '-0.04em', fontWeight: 500, color: T.text }}>
-            La gran ilusión<br />
+            La IA en México,<br />
             <span style={{ fontStyle: 'italic', fontWeight: 400,
               background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 50%, ${T.violet} 100%)`,
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-              filter: `drop-shadow(0 0 40px ${T.cyan}55)` }}>artificial del estado</span>
+              filter: `drop-shadow(0 0 40px ${T.cyan}55)` }}>en un mapa vivo.</span>
           </h1>
 
           <p className="font-serif-display" style={{ margin: '32px 0 0', fontSize: 'clamp(17px,2.2vw,20px)', lineHeight: 1.45, color: T.body, maxWidth: 560 }}>
