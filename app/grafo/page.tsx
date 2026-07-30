@@ -250,13 +250,13 @@ export default function GrafoPage() {
 
         {/* voz de campaña + qué estás viendo */}
         <h1 className="font-serif-display mt-3" style={{ fontSize: 'clamp(21px, 6vw, 46px)', lineHeight: 0.98, letterSpacing: '-0.03em', fontWeight: 500, color: T.text, maxWidth: 720 }}>
-          La gran ilusión{' '}
+          La{' '}
           <span style={{ fontStyle: 'italic', fontWeight: 400,
             background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 50%, ${T.violet} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-            artificial del estado
+            IA en México
           </span>
-          , en un mapa.
+          , en un mapa vivo.
         </h1>
         <p className="font-mono uppercase mt-2" style={{ fontSize: 10, letterSpacing: '0.18em', color: T.body }}>
           Monitoreo ciudadano de la IA en el Estado mexicano · datos reales
