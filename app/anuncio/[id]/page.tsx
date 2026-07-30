@@ -373,6 +373,18 @@ function extraerMedio(url: string): string {
   }
 }
 
+// La etiqueta "Oficial" NO la decide quien captura la fuente: se deriva del dominio
+// (OIA-005 — un medio privado quedó marcado "Oficial"). gob.mx cubre dof/scjn/senado/
+// diputados; unam.mx cubre los boletines DGCS/Gaceta UNAM.
+function esDominioOficial(url?: string): boolean {
+  try {
+    const h = new URL(url ?? '').hostname.toLowerCase();
+    return h === 'gob.mx' || h.endsWith('.gob.mx') || h === 'unam.mx' || h.endsWith('.unam.mx');
+  } catch {
+    return false;
+  }
+}
+
 // Componente NoticiaCard - Tarjeta visual tipo noticia
 function NoticiaCard({ fuente }: { fuente: Fuente }) {
   const medio = fuente.medio || extraerMedio(fuente.url);
@@ -420,9 +432,11 @@ function NoticiaCard({ fuente }: { fuente: Fuente }) {
           {logoEmoji}
         </span>
         
-        {/* Badge de tipo */}
+        {/* Badge de tipo — "Oficial" sólo si el dominio realmente es de gobierno */}
         <span className={`absolute top-2 right-2 text-xs font-medium text-white px-2 py-0.5 rounded-full ${colores.accent} bg-opacity-80`}>
-          {etiquetaTipo[fuente.tipo] || 'Enlace'}
+          {fuente.tipo === 'anuncio_original' && !esDominioOficial(fuente.url)
+            ? 'Documentada'
+            : etiquetaTipo[fuente.tipo] || 'Enlace'}
         </span>
         
         {/* Indicador de no disponible */}
