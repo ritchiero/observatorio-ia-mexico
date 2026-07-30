@@ -195,6 +195,7 @@ export default function Home() {
       'en_desarrollo': 'EN DESARROLLO',
       'operando': 'OPERANDO',
       'incumplido': 'INCUMPLIDO',
+      'concluido': 'CONCLUIDO',
       'abandonado': 'ABANDONADO'
     };
     return labels[status] || status.toUpperCase();
@@ -207,13 +208,21 @@ export default function Home() {
   }, [filtroStatus, anuncios]);
 
   // Calcular estadísticas
-  const stats = useMemo(() => ({
-    total: anuncios.length,
-    operando: anuncios.filter(a => a.status === 'operando').length,
-    enDesarrollo: anuncios.filter(a => a.status === 'en_desarrollo').length,
-    incumplido: anuncios.filter(a => a.status === 'incumplido').length,
-    prometido: anuncios.filter(a => a.status === 'prometido').length,
-  }), [anuncios]);
+  // Integridad (OIA-001): el total DEBE ser la suma de los estados mostrados.
+  // 'concluido' (eventos que ya ocurrieron) cuenta como estado de primera clase;
+  // cualquier estado fuera del catálogo cae en 'sinClasificar' y se muestra, no se oculta.
+  const stats = useMemo(() => {
+    const conocidos = ['operando', 'en_desarrollo', 'incumplido', 'prometido', 'concluido'];
+    return {
+      total: anuncios.length,
+      operando: anuncios.filter(a => a.status === 'operando').length,
+      enDesarrollo: anuncios.filter(a => a.status === 'en_desarrollo').length,
+      incumplido: anuncios.filter(a => a.status === 'incumplido').length,
+      prometido: anuncios.filter(a => a.status === 'prometido').length,
+      concluido: anuncios.filter(a => a.status === 'concluido').length,
+      sinClasificar: anuncios.filter(a => !conocidos.includes(a.status ?? '')).length,
+    };
+  }, [anuncios]);
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -221,6 +230,7 @@ export default function Home() {
       en_desarrollo: 'bg-blue-50 text-blue-400 border-blue-800/30',
       prometido: 'bg-gray-800/40 text-gray-400 border-gray-700/30',
       operando: 'bg-emerald-900/20 text-emerald-400 border-emerald-800/30',
+      concluido: 'bg-teal-900/20 text-teal-400 border-teal-800/30',
       abandonado: 'bg-gray-800/40 text-gray-500 border-gray-700/30',
     };
     return colors[status as keyof typeof colors] || colors.prometido;
@@ -244,6 +254,7 @@ export default function Home() {
       en_desarrollo: '🟡',
       prometido: '⚪',
       operando: '🟢',
+      concluido: '✅',
       abandonado: '⚫',
     };
     return emojis[status as keyof typeof emojis] || '⚪';
@@ -365,7 +376,7 @@ export default function Home() {
       <section className="bg-white border-b border-gray-200/50 py-3 sm:py-4 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Vista móvil: grid compacto */}
-          <div className="grid grid-cols-5 gap-2 text-center sm:hidden">
+          <div className={`grid ${stats.concluido > 0 || stats.sinClasificar > 0 ? 'grid-cols-3' : 'grid-cols-5'} gap-2 text-center sm:hidden`}>
             <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
               <div className="text-lg font-bold text-gray-900">{stats.total}</div>
               <div className="text-[10px] text-gray-900/40">Total</div>
@@ -386,6 +397,18 @@ export default function Home() {
               <div className="text-lg font-bold text-gray-900/60">{stats.prometido}</div>
               <div className="text-[10px] text-gray-900/40">Prometido</div>
             </div>
+            {stats.concluido > 0 && (
+              <div className="bg-teal-50 rounded-lg py-2 px-1 border border-teal-200">
+                <div className="text-lg font-bold text-teal-600">{stats.concluido}</div>
+                <div className="text-[10px] text-gray-900/40">Concluido</div>
+              </div>
+            )}
+            {stats.sinClasificar > 0 && (
+              <div className="bg-amber-50 rounded-lg py-2 px-1 border border-amber-200">
+                <div className="text-lg font-bold text-amber-600">{stats.sinClasificar}</div>
+                <div className="text-[10px] text-gray-900/40">Sin clasificar</div>
+              </div>
+            )}
           </div>
 
           {/* Vista desktop: horizontal */}
@@ -415,6 +438,24 @@ export default function Home() {
                 <span className="font-medium text-gray-900/50">Prometido:</span>{' '}
                 <span className="text-gray-900/60">{stats.prometido}</span>
               </div>
+              {stats.concluido > 0 && (
+                <>
+                  <div className="h-4 w-px bg-gray-200 hidden md:block" />
+                  <div>
+                    <span className="font-medium text-teal-600">Concluido:</span>{' '}
+                    <span className="text-teal-600">{stats.concluido}</span>
+                  </div>
+                </>
+              )}
+              {stats.sinClasificar > 0 && (
+                <>
+                  <div className="h-4 w-px bg-gray-200 hidden md:block" />
+                  <div>
+                    <span className="font-medium text-amber-600">Sin clasificar:</span>{' '}
+                    <span className="text-amber-600">{stats.sinClasificar}</span>
+                  </div>
+                </>
+              )}
             </div>
             <div className="text-xs text-gray-900/30 flex items-center gap-1.5 font-mono">
               <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -452,6 +493,9 @@ export default function Home() {
                 <option value="en_desarrollo" className="bg-gray-50">🟡 En desarrollo ({stats.enDesarrollo})</option>
                 <option value="prometido" className="bg-gray-50">⚪ Prometido ({stats.prometido})</option>
                 <option value="operando" className="bg-gray-50">🟢 Operando ({stats.operando})</option>
+                {stats.concluido > 0 && (
+                  <option value="concluido" className="bg-gray-50">✅ Concluido ({stats.concluido})</option>
+                )}
               </select>
             </div>
           </div>

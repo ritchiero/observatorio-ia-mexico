@@ -513,19 +513,30 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
                           {/* Documentos de la instancia */}
                           {inst.documentos && inst.documentos.length > 0 && (
                             <div className="mt-4 flex flex-wrap gap-2">
-                              {inst.documentos.map((doc, dIdx) => (
-                                <a
-                                  key={dIdx}
-                                  href={doc.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 hover:border-purple-300 hover:text-purple-600 transition-colors"
-                                >
-                                  <FileText size={12} />
-                                  {doc.titulo}
-                                  <ExternalLink size={10} />
-                                </a>
-                              ))}
+                              {inst.documentos.map((doc, dIdx) => {
+                                const urlValida = typeof doc.url === 'string' && /^https?:\/\//i.test(doc.url);
+                                return urlValida ? (
+                                  <a
+                                    key={dIdx}
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 hover:border-purple-300 hover:text-purple-600 transition-colors"
+                                  >
+                                    <FileText size={12} />
+                                    {doc.titulo}
+                                    <ExternalLink size={10} />
+                                  </a>
+                                ) : (
+                                  <span
+                                    key={dIdx}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-dashed border-gray-200 rounded-lg text-xs text-gray-400"
+                                  >
+                                    <FileText size={12} />
+                                    {doc.titulo} · no disponible
+                                  </span>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -608,24 +619,41 @@ export default function CasoDetallePage({ params }: { params: Promise<{ id: stri
                   Documentos
                 </h3>
                 <div className="space-y-2">
-                  {caso.documentos.map((doc, idx) => (
-                    <a
-                      key={idx}
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50/50 transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText size={16} className="text-gray-400 group-hover:text-purple-500" />
-                        <div>
-                          <p className="text-sm text-gray-900 group-hover:text-purple-700">{doc.titulo}</p>
-                          <p className="text-xs text-gray-400 capitalize">{doc.tipo.replace('_', ' ')}</p>
+                  {caso.documentos.map((doc, idx) => {
+                    // OIA-008: sin URL real no se pinta un enlace roto — se declara no disponible
+                    const urlValida = typeof doc.url === 'string' && /^https?:\/\//i.test(doc.url);
+                    return urlValida ? (
+                      <a
+                        key={idx}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50/50 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText size={16} className="text-gray-400 group-hover:text-purple-500" />
+                          <div>
+                            <p className="text-sm text-gray-900 group-hover:text-purple-700">{doc.titulo}</p>
+                            <p className="text-xs text-gray-400 capitalize">{doc.tipo.replace('_', ' ')}</p>
+                          </div>
+                        </div>
+                        <ExternalLink size={14} className="text-gray-300 group-hover:text-purple-500" />
+                      </a>
+                    ) : (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 bg-gray-50 border border-dashed border-gray-200 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText size={16} className="text-gray-300" />
+                          <div>
+                            <p className="text-sm text-gray-500">{doc.titulo}</p>
+                            <p className="text-xs text-gray-400 capitalize">{doc.tipo.replace('_', ' ')} · Documento no disponible</p>
+                          </div>
                         </div>
                       </div>
-                      <ExternalLink size={14} className="text-gray-300 group-hover:text-purple-500" />
-                    </a>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

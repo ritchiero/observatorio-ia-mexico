@@ -334,7 +334,10 @@ export async function GET() {
       stats: {
         anuncios: anuncios.length,
         iniciativas: iniciativas.length,
-        casos: casos.length + 1, // + caso propio del laboratorio (Rompehielos INDAUTOR)
+        // OIA-004: el experimento propio (lab:*) NO cuenta como caso judicial;
+        // se reporta aparte para que portada (6) y grafo digan lo mismo.
+        casos: casos.length,
+        laboratorios: 1, // Rompehielos INDAUTOR (Legal-IA-Lab)
         comunidades: new Set(nodeList.map((n) => n.community).filter(Boolean)).size,
         // modo Historia: cuántos registros APARECEN cada año, por poder + sin fecha.
         // Se cuenta sobre el dataset COMPLETO (mismo universo que anuncios/iniciativas/casos
@@ -351,7 +354,8 @@ export async function GET() {
           for (const a of anuncios) cuenta('anuncios', anioAparicionItem('anuncio', a));
           for (const i of iniciativas) cuenta('iniciativas', anioAparicionItem('iniciativa', i));
           for (const c of casos) cuenta('casos', anioAparicionItem('caso', c));
-          cuenta('casos', 2025); // caso propio del laboratorio (Rompehielos INDAUTOR)
+          // el experimento del laboratorio no se cuenta en 'casos' (OIA-004):
+          // sum(porAnio) + sinFecha debe cuadrar con stats.casos de arriba.
           return { porAnio, sinFecha };
         })(),
       },
