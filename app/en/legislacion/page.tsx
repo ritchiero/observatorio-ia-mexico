@@ -1,96 +1,79 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Landmark } from 'lucide-react';
-import { traduccionIniciativa } from '@/lib/i18n/traducciones';
+'use client';
 
-const BASE = 'https://www.observatorio-ia-mexico.com';
+import { useEffect, useState } from 'react';
+import { IniciativaLegislativa } from '@/types';
+import { AlertCircle } from 'lucide-react';
+import LegislacionClientEn from '@/app/legislacion/LegislacionClientEn';
 
-export const revalidate = 300;
+export default function LegislacionPageEn() {
+  const [iniciativas, setIniciativas] = useState<IniciativaLegislativa[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export const metadata: Metadata = {
-  title: 'AI Legislation — federal and state bills',
-  description: 'Tracking every artificial-intelligence bill in Mexico’s federal Congress and state legislatures: status, sponsors and progress.',
-  alternates: { canonical: '/en/legislacion', languages: { es: '/legislacion', en: '/en/legislacion' } },
-};
+  useEffect(() => {
+    async function fetchIniciativas() {
+      try {
+        console.log('[CLIENT] Fetching bills from API...');
+        const response = await fetch('/api/iniciativas');
 
-interface Iniciativa {
-  id: string; numero?: number; titulo: string; descripcion?: string;
-  proponente?: string; partido?: string; fecha?: string; camara?: string;
-  estatus?: string; status?: string;
-}
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-const ESTATUS_EN: Record<string, string> = {
-  aprobada: 'Approved', archivada: 'Archived', desechada_termino: 'Discarded (term expired)',
-  en_comisiones: 'In committee', en_discusion: 'Under debate', en_elaboracion: 'Drafting',
-  en_proceso: 'In progress', presentada: 'Introduced', presentado: 'Introduced', publicada: 'Published',
-  recibida: 'Received', rechazada: 'Rejected', turnada: 'Referred',
-};
+        const result = await response.json();
 
-function fmt(d?: string): string {
-  if (!d) return '';
-  try { return new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return ''; }
-}
+        if (!result.success) {
+          throw new Error(result.error || 'Error fetching bills');
+        }
 
-async function getIniciativas(): Promise<Iniciativa[]> {
-  try {
-    const r = await fetch(`${BASE}/api/iniciativas`, { next: { revalidate: 300 } });
-    if (!r.ok) return [];
-    const d = await r.json();
-    return (d.data ?? d.iniciativas ?? []) as Iniciativa[];
-  } catch {
-    return [];
-  }
-}
+        console.log('[CLIENT] Bills fetched:', result.count);
+        setIniciativas(result.data);
+      } catch (e: any) {
+        console.error('[CLIENT] Error fetching bills:', e);
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-export default async function LegislacionPageEn() {
-  const iniciativas = await getIniciativas();
-  const sorted = [...iniciativas].sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''));
+    fetchIniciativas();
+  }, []);
 
-  return (
-    <main className="min-h-screen bg-white">
-      <section className="border-b border-gray-200 bg-gray-50 py-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200/50 rounded-full mb-4">
-            <Landmark className="w-3.5 h-3.5 text-blue-500" aria-hidden />
-            <span className="text-xs font-sans-tech text-blue-600 font-medium">Bills tracked</span>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute inset-0 border-2 border-blue-500/20 rounded-full"></div>
+            <div className="absolute inset-0 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
           </div>
-          <h1 className="font-serif-display text-4xl sm:text-5xl font-light text-gray-900 mb-3">
-            AI <span className="italic text-blue-500">legislation</span>
-          </h1>
-          <p className="text-gray-600 max-w-2xl mb-4">
-            {sorted.length} bills about artificial intelligence, filed in the federal Congress and state legislatures
-            across Mexico.
+          <h2 className="text-2xl font-serif-display font-light text-gray-900 mb-2">
+            Loading <span className="italic text-blue-500">bills</span>
+          </h2>
+          <p className="text-gray-600 font-sans-tech text-sm">
+            Fetching data from the server
           </p>
-          <a href="/legislacion" className="text-sm text-cyan-700 underline hover:text-cyan-800">Ver en español</a>
         </div>
-      </section>
+      </div>
+    );
+  }
 
-      <section className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sorted.map((it) => {
-            const t = traduccionIniciativa(it.id);
-            const titulo = t?.titulo ?? it.titulo;
-            const descripcion = t?.descripcion ?? it.descripcion;
-            const estatus = (it.estatus ?? it.status ?? '').toLowerCase();
-            return (
-              <Link
-                key={it.id}
-                href={`/en/legislacion/${it.id}`}
-                className="group bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all"
-              >
-                <div className="flex items-center gap-2 mb-2 text-[11px]">
-                  {it.camara && <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{it.camara}</span>}
-                  {estatus && <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{ESTATUS_EN[estatus] ?? it.estatus ?? it.status}</span>}
-                  {it.fecha && <span className="ml-auto font-mono text-gray-400">{fmt(it.fecha)}</span>}
-                </div>
-                <h3 className="font-sans-tech font-semibold text-gray-900 text-sm mb-1.5 line-clamp-2 group-hover:text-blue-700">{titulo}</h3>
-                {descripcion && <p className="text-xs text-gray-500 line-clamp-2 mb-2">{descripcion}</p>}
-                {it.proponente && <div className="text-xs text-gray-400">{it.proponente}{it.partido ? ` (${it.partido})` : ''}</div>}
-              </Link>
-            );
-          })}
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-serif-display font-light text-gray-900 mb-2">
+            Error loading bills
+          </h2>
+          <p className="text-gray-600 font-sans-tech mb-4">{error}</p>
+          <p className="text-sm text-gray-400 font-sans-tech">
+            Please contact the site administrator.
+          </p>
         </div>
-      </section>
-    </main>
-  );
+      </div>
+    );
+  }
+
+  return <LegislacionClientEn iniciativas={iniciativas} />;
 }

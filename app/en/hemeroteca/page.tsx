@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Archive, Building2, CheckCircle2, FileText, Landmark, MapPin, Search } from 'lucide-react';
 import { getFichasEn, toItemEn, statsDe, CANONICAL_BASE } from '@/lib/hemeroteca';
-import HemerotecaListEn from '@/components/HemerotecaListEn';
+import HemerotecaExplorerEn from '@/components/HemerotecaExplorerEn';
 
 export const revalidate = 120;
 
@@ -98,7 +98,7 @@ export default async function HemerotecaPageEn() {
             No records published yet.
           </div>
         ) : (
-          <HemerotecaListEn items={items} />
+          <HemerotecaExplorerEn items={items} />
         )}
 
         <p className="mt-10 border-t border-slate-200 pt-5 text-xs text-slate-400">

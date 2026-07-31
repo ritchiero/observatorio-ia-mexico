@@ -16,13 +16,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         return {
           title: caso.nombre,
           description: desc,
-          alternates: { canonical: path },
+          alternates: { canonical: path, languages: { es: path, en: `/en${path}` } },
           openGraph: { title: caso.nombre, description: desc, url: path, type: 'article' },
         };
       }
     }
   } catch { /* fallback abajo */ }
-  return { title: 'Caso judicial de IA', alternates: { canonical: path } };
+  return { title: 'Caso judicial de IA', alternates: { canonical: path, languages: { es: path, en: `/en${path}` } } };
 }
 
 export default function Layout({ children }: { children: ReactNode }) {

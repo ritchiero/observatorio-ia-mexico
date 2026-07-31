@@ -7,15 +7,17 @@ interface Props {
   folio?: string;
   size?: 'sm' | 'md';
   className?: string;
+  locale?: 'es' | 'en';
 }
 
-export default function FolioBadge({ folio, size = 'md', className = '' }: Props) {
+export default function FolioBadge({ folio, size = 'md', className = '', locale = 'es' }: Props) {
   if (!folio) return null;
   const pad = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]';
+  const title = locale === 'en' ? `Case file number: ${folio}` : `Folio de expediente: ${folio}`;
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-gray-50 font-mono font-medium tracking-tight text-gray-600 ${pad} ${className}`}
-      title={`Folio de expediente: ${folio}`}
+      title={title}
     >
       <svg
         width="11"

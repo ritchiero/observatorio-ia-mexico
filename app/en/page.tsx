@@ -1,227 +1,719 @@
-import type { Metadata } from 'next';
+'use client';
+
+// Twin en inglés de app/page.tsx (home ES) — misma estructura de secciones:
+// hero, metodología DAG, legislación enriquecida, casos de IA, barra de
+// estadísticas y grid de anuncios filtrable. Los datos se piden a las mismas
+// rutas /api/* (en español) y se traducen en cliente con fetchOverlayEn +
+// aplicarOverlay antes de renderizarse. El metadata (title/description/OG)
+// vive en ./layout.tsx porque este archivo es 'use client'.
+
+import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect } from 'react';
+import HeroSectionGlassEn from '@/components/HeroSectionGlassEn';
+import MetodologiaDAGEn from '@/components/MetodologiaDAGEn';
+import FolioBadge from '@/components/FolioBadge';
+import LegislacionEnrichedEn from '@/components/LegislacionEnrichedEn';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { CANONICAL_BASE } from '@/lib/hemeroteca';
 import { STATUS_ANUNCIO } from '@/lib/estados';
-import { traduccionAnuncio, traduccionCaso } from '@/lib/i18n/traducciones';
+import { fetchOverlayEn, aplicarOverlay } from '@/lib/i18n/client';
+import { STATUS_ANUNCIO_EN } from '@/lib/i18n/labels-en';
 
-export const revalidate = 300;
-
-export const metadata: Metadata = {
-  title: { absolute: 'Observatorio IA México — AI in the Mexican State' },
-  description: 'Comprehensive tracking of AI in the Mexican state. Official announcements, active legislation and judicial precedents in one place.',
-  alternates: { canonical: `${CANONICAL_BASE}/en`, languages: { es: CANONICAL_BASE, en: `${CANONICAL_BASE}/en` } },
-  openGraph: {
-    title: 'Observatorio IA México',
-    description: 'Comprehensive tracking of AI in the Mexican state. Official announcements, active legislation and judicial precedents.',
-    url: `${CANONICAL_BASE}/en`,
-    siteName: 'Observatorio IA México',
-    locale: 'en_US',
-    type: 'website',
-  },
-};
-
-interface Anuncio {
-  id: string; titulo: string; descripcion: string; status: string;
-  responsable: string; dependencia: string; fechaAnuncio: string; fechaPrometida?: string;
-}
-interface Iniciativa { id: string; status?: string; estadoVerificacion?: string; }
-interface Caso { id: string; nombre: string; resumen: string; estado?: string; criterio?: { tiene?: boolean }; criterios?: unknown[]; }
-
-async function getJson<T>(path: string): Promise<T | null> {
-  try {
-    const r = await fetch(`${CANONICAL_BASE}${path}`, { next: { revalidate: 300 } });
-    if (!r.ok) return null;
-    return (await r.json()) as T;
-  } catch {
-    return null;
-  }
+interface AnuncioData {
+  id: string;
+  folio?: string;
+  titulo: string;
+  descripcion: string;
+  fechaAnuncio: string;
+  fechaPrometida?: string;
+  responsable: string;
+  dependencia: string;
+  status: string;
+  imagen?: string;
 }
 
-const STATUS_LABEL_EN: Record<string, string> = {
-  operando: 'Operating', en_desarrollo: 'In development', prometido: 'Promised',
-  incumplido: 'Broken', concluido: 'Concluded', abandonado: 'Abandoned',
-};
+export default function HomeEn() {
+  const router = useRouter();
+  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [legStats, setLegStats] = useState({ total: 0, activas: 0, aprobadas: 0, verificadas: 0 });
+  const [iniciativasDestacadas, setIniciativasDestacadas] = useState<Array<{
+    id: string;
+    titulo: string;
+    status?: string;
+    proponente?: string;
+    fecha?: string;
+    estadoVerificacion?: string;
+  }>>([]);
+  const [anuncios, setAnuncios] = useState<AnuncioData[]>([]);
+  const [loadingAnuncios, setLoadingAnuncios] = useState(true);
+  const [errorAnuncios, setErrorAnuncios] = useState<string | null>(null);
+  const [loadingLegStats, setLoadingLegStats] = useState(true);
+  const [casosStats, setCasosStats] = useState({ total: 0, conCriterio: 0 });
+  const [loadingCasos, setLoadingCasos] = useState(true);
+  const [casosDestacados, setCasosDestacados] = useState<Array<{
+    id: string;
+    nombre: string;
+    temaIA: string;
+    resumen: string;
+    estado?: string;
+    criterio?: { tiene?: boolean; rubro?: string };
+    criterios?: Array<{ tiene?: boolean }>;
+  }>>([]);
 
-function traducirAnuncio(a: Anuncio): { titulo: string; descripcion: string } {
-  const t = traduccionAnuncio(a.id);
-  return { titulo: t?.titulo ?? a.titulo, descripcion: t?.descripcion ?? a.descripcion };
-}
+  // Cargar anuncios/promesas de IA (ES) + overlay de traducción EN
+  useEffect(() => {
+    async function fetchAnuncios() {
+      try {
+        const [response, overlay] = await Promise.all([
+          fetch('/api/anuncios'),
+          fetchOverlayEn('anuncios'),
+        ]);
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.anuncios) {
+          setAnuncios(aplicarOverlay(data.anuncios, overlay));
+        }
+      } catch (error) {
+        console.error('Error fetching anuncios:', error);
+        setErrorAnuncios('Could not load promises');
+      } finally {
+        setLoadingAnuncios(false);
+      }
+    }
+    fetchAnuncios();
+  }, []);
 
-export default async function HomeEn() {
-  const [anunciosData, iniciativasData, casosData] = await Promise.all([
-    getJson<{ anuncios?: Anuncio[]; data?: Anuncio[] }>('/api/anuncios'),
-    getJson<{ data?: Iniciativa[]; iniciativas?: Iniciativa[]; success?: boolean }>('/api/iniciativas'),
-    getJson<{ casos?: Caso[]; data?: Caso[] }>('/api/casos-ia'),
-  ]);
+  // Cargar estadísticas de legislación (ES) + overlay de traducción EN
+  useEffect(() => {
+    async function fetchLegislacion() {
+      try {
+        const [response, overlay] = await Promise.all([
+          fetch('/api/iniciativas'),
+          fetchOverlayEn('iniciativas'),
+        ]);
+        const data = await response.json();
+        if (data.success) {
+          const iniciativas = data.data;
 
-  const anuncios = anunciosData?.anuncios ?? anunciosData?.data ?? [];
-  const iniciativas = iniciativasData?.data ?? iniciativasData?.iniciativas ?? [];
-  const casos = casosData?.casos ?? casosData?.data ?? [];
+          // Calcular estadísticas
+          const normalizeStatus = (status: string) => {
+            const s = (status || '').toLowerCase();
+            if (s.includes('aprobad') || s.includes('publicad')) return 'aprobada';
+            if (s.includes('desechad') || s.includes('archivad')) return 'desechada';
+            return 'activa';
+          };
 
-  const conocidos: string[] = [...STATUS_ANUNCIO];
-  const stats = {
-    total: anuncios.length,
-    operando: anuncios.filter((a) => a.status === 'operando').length,
-    enDesarrollo: anuncios.filter((a) => a.status === 'en_desarrollo').length,
-    incumplido: anuncios.filter((a) => a.status === 'incumplido').length,
-    prometido: anuncios.filter((a) => a.status === 'prometido').length,
-    concluido: anuncios.filter((a) => a.status === 'concluido').length,
-    sinClasificar: anuncios.filter((a) => !conocidos.includes(a.status ?? '')).length,
+          setLegStats({
+            total: iniciativas.length,
+            activas: iniciativas.filter((i: { status?: string }) => normalizeStatus(i.status || '') === 'activa').length,
+            aprobadas: iniciativas.filter((i: { status?: string }) => normalizeStatus(i.status || '') === 'aprobada').length,
+            verificadas: iniciativas.filter((i: { estadoVerificacion?: string }) => i.estadoVerificacion === 'verificado').length,
+          });
+
+          // Obtener 3 iniciativas destacadas (verificadas y recientes), traducidas
+          const destacadas = iniciativas
+            .filter((i: { estadoVerificacion?: string }) => i.estadoVerificacion === 'verificado')
+            .slice(0, 3);
+          setIniciativasDestacadas(aplicarOverlay(destacadas, overlay));
+        }
+      } catch (error) {
+        console.error('Error fetching legislacion:', error);
+      } finally {
+        setLoadingLegStats(false);
+      }
+    }
+    fetchLegislacion();
+  }, []);
+
+  // Cargar estadísticas de casos judiciales (ES) + overlay de traducción EN
+  useEffect(() => {
+    async function fetchCasos() {
+      try {
+        const [response, overlay] = await Promise.all([
+          fetch('/api/casos-ia'),
+          fetchOverlayEn('casos'),
+        ]);
+        const data = await response.json();
+        if (data.casos) {
+          const casos = data.casos;
+          setCasosStats({
+            total: casos.length,
+            conCriterio: casos.filter((c: { criterio?: { tiene?: boolean }, criterios?: Array<{ tiene?: boolean }> }) =>
+              c.criterio?.tiene || (c.criterios && c.criterios.length > 0)
+            ).length,
+          });
+          // Guardar todos los casos (traducidos) para mostrar en home
+          setCasosDestacados(aplicarOverlay(casos, overlay));
+        }
+      } catch (error) {
+        console.error('Error fetching casos:', error);
+      } finally {
+        setLoadingCasos(false);
+      }
+    }
+    fetchCasos();
+  }, []);
+
+  // Función para calcular días vencidos (usando UTC)
+  const calcularDiasVencidos = (fechaPrometida: string): number => {
+    if (!fechaPrometida) return 0;
+    try {
+      const fecha = new Date(fechaPrometida);
+      const hoy = new Date();
+      // Comparar solo fechas sin hora
+      const fechaUTC = Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate());
+      const hoyUTC = Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+      const diffTime = hoyUTC - fechaUTC;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 0;
+    } catch {
+      return 0;
+    }
   };
-  const verificadas = iniciativas.filter((i) => i.estadoVerificacion === 'verificado').length;
-  const casosConCriterio = casos.filter((c) => c.criterio?.tiene || (c.criterios && c.criterios.length > 0)).length;
 
-  const anunciosDestacados = anuncios.slice(0, 6);
-  const casosDestacados = casos.slice(0, 3);
+  // Formatear fecha para mostrar mes (usando UTC para evitar problemas de timezone)
+  const formatearMes = (fechaStr: string): string => {
+    if (!fechaStr) return '';
+    try {
+      const fecha = new Date(fechaStr);
+      const meses = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return meses[fecha.getUTCMonth()];
+    } catch {
+      return '';
+    }
+  };
+
+  // Obtener año UTC
+  const getYearUTC = (fechaStr: string): number => {
+    if (!fechaStr) return new Date().getFullYear();
+    try {
+      return new Date(fechaStr).getUTCFullYear();
+    } catch {
+      return new Date().getFullYear();
+    }
+  };
+
+  // Formatear fecha prometida (usando UTC)
+  const formatearFechaPrometida = (fechaStr: string): string => {
+    if (!fechaStr) return '';
+    try {
+      const fecha = new Date(fechaStr);
+      const meses = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${meses[fecha.getUTCMonth()]} ${fecha.getUTCFullYear()}`;
+    } catch {
+      return '';
+    }
+  };
+
+  // Obtener label del status (diccionario compartido labels-en.ts)
+  const getStatusLabel = (status: string): string => {
+    return STATUS_ANUNCIO_EN[status] || status.toUpperCase();
+  };
+
+  // Filtrar anuncios
+  const anunciosFiltrados = useMemo(() => {
+    if (filtroStatus === 'todos') return anuncios;
+    return anuncios.filter(item => item.status === filtroStatus);
+  }, [filtroStatus, anuncios]);
+
+  // Calcular estadísticas
+  // Integridad (OIA-001): el total DEBE ser la suma de los estados mostrados.
+  // 'concluido' (eventos que ya ocurrieron) cuenta como estado de primera clase;
+  // cualquier estado fuera del catálogo cae en 'sinClasificar' y se muestra, no se oculta.
+  const stats = useMemo(() => {
+    const conocidos: string[] = [...STATUS_ANUNCIO];
+    return {
+      total: anuncios.length,
+      operando: anuncios.filter(a => a.status === 'operando').length,
+      enDesarrollo: anuncios.filter(a => a.status === 'en_desarrollo').length,
+      incumplido: anuncios.filter(a => a.status === 'incumplido').length,
+      prometido: anuncios.filter(a => a.status === 'prometido').length,
+      concluido: anuncios.filter(a => a.status === 'concluido').length,
+      sinClasificar: anuncios.filter(a => !conocidos.includes(a.status ?? '')).length,
+    };
+  }, [anuncios]);
+
+  const getStatusColor = (status: string) => {
+    const colors = {
+      incumplido: 'bg-red-900/20 text-red-400 border-red-800/30',
+      en_desarrollo: 'bg-blue-50 text-blue-400 border-blue-800/30',
+      prometido: 'bg-gray-800/40 text-gray-400 border-gray-700/30',
+      operando: 'bg-emerald-900/20 text-emerald-400 border-emerald-800/30',
+      concluido: 'bg-teal-900/20 text-teal-400 border-teal-800/30',
+      abandonado: 'bg-gray-800/40 text-gray-500 border-gray-700/30',
+    };
+    return colors[status as keyof typeof colors] || colors.prometido;
+  };
+
+  const getLogo = (responsable?: string) => {
+    if (!responsable) return '/logos/presidencia.jpg';
+    if (responsable.includes('Sheinbaum')) return '/logos/presidencia.jpg';
+    if (responsable.includes('Ebrard')) return '/logos/economia.png';
+    if (responsable.includes('Economía') || responsable.includes('SE')) return '/logos/economia.png';
+    if (responsable.includes('SEP')) return '/logos/sep.png';
+    if (responsable.includes('Senado')) return '/logos/senado.jpg';
+    if (responsable.includes('CCE')) return '/logos/cce.jpg';
+    if (responsable.includes('Infotec') || responsable.includes('ATDT') || responsable.includes('TecNM')) return '/logos/infotec.jpg';
+    if (responsable.includes('Saptiva')) return '/logos/economia.png';
+    return '/logos/presidencia.jpg'; // Default
+  };
+
+  const getStatusEmoji = (status: string) => {
+    const emojis = {
+      incumplido: '🔴',
+      en_desarrollo: '🟡',
+      prometido: '⚪',
+      operando: '🟢',
+      concluido: '✅',
+      abandonado: '⚫',
+    };
+    return emojis[status as keyof typeof emojis] || '⚪';
+  };
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-[#05070C] text-white">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div className="absolute -top-32 left-1/3 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-600/10 blur-3xl" />
-        </div>
-        <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-28">
-          <div className="flex items-center justify-between mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 text-xs font-mono uppercase tracking-widest text-white/60">
-              Citizen watchdog
-            </div>
-            <Link href="/" className="text-xs font-mono text-white/40 hover:text-white/80 border border-white/15 rounded-lg px-2.5 py-1 transition-colors">ES</Link>
-          </div>
-          <h1 className="font-serif-display text-5xl sm:text-6xl md:text-7xl font-light leading-[1.02] mb-6">
-            AI in Mexico,<br />
-            <span className="italic bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">on a living map.</span>
-          </h1>
-          <p className="max-w-2xl text-lg text-white/70 leading-relaxed mb-10">
-            Full-scope tracking of artificial intelligence in the Mexican state — every public promise, every bill in
-            Congress, every judicial precedent, verified against the official source.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/en/hemeroteca" className="inline-flex items-center gap-2 px-5 py-3 bg-white text-gray-900 font-medium rounded-lg hover:bg-white/90 transition-colors">
-              Browse the archive <ArrowRight size={16} />
-            </Link>
-            <Link href="/grafo" className="inline-flex items-center gap-2 px-5 py-3 border border-white/25 text-white font-medium rounded-lg hover:bg-white/10 transition-colors">
-              See the live map
-            </Link>
-            <Link href="/en/informe-2026" className="inline-flex items-center gap-2 px-5 py-3 border border-white/25 text-white font-medium rounded-lg hover:bg-white/10 transition-colors">
-              2026 Report
-            </Link>
-          </div>
-        </div>
+      {/* Hero Section */}
+      <HeroSectionGlassEn stats={stats} legStats={legStats} casosStats={casosStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} loadingCasos={loadingCasos} />
+
+      {/* Sección: Metodología — DAG Flow (light) */}
+      <section id="metodologia" className="scroll-mt-24 bg-gray-50 border-y border-gray-200/50">
+        <MetodologiaDAGEn anuncios={stats.total} iniciativas={legStats.total} casos={casosStats.total} />
       </section>
 
-      {/* Stats bar */}
-      <section className="bg-gray-50 border-b border-gray-200/50 py-10 px-4">
+      {/* Sección: Legislación en IA — Enriched + Status (l04) */}
+      <section className="bg-gray-50 border-t border-gray-200/50 py-12 sm:py-16 px-4">
+        <LegislacionEnrichedEn legStats={legStats} loading={loadingLegStats} iniciativas={iniciativasDestacadas} />
+      </section>
+
+      {/* Sección: Casos de IA */}
+      <section className="bg-gray-50 border-t border-gray-200/50 py-12 sm:py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <p className="font-serif-display text-lg sm:text-xl text-gray-800 leading-snug mb-6 max-w-3xl">
-            The Mexican state made <strong className="text-gray-900">{stats.total} public AI promises</strong>:{' '}
-            <span className="text-emerald-600 font-medium">{stats.operando} already operating</span>,{' '}
-            <span className="text-blue-600 font-medium">{stats.enDesarrollo} in development</span>,{' '}
-            <span className="text-gray-500 font-medium">{stats.prometido} promised</span>
-            {stats.concluido > 0 && <>, <span className="text-teal-600 font-medium">{stats.concluido} concluded</span></>}
-            {stats.incumplido > 0 && <> and <span className="text-red-600 font-semibold">{stats.incumplido} broken</span></>}
-            {stats.sinClasificar > 0 && <> ({stats.sinClasificar} unclassified)</>}.
-          </p>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 text-center">
-            <div className="bg-white rounded-lg py-3 px-2 border border-gray-200"><div className="text-xl font-bold text-gray-900">{stats.total}</div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Total</div></div>
-            <div className="bg-emerald-50 rounded-lg py-3 px-2 border border-emerald-200"><div className="text-xl font-bold text-emerald-600">{stats.operando}</div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Operating</div></div>
-            <div className="bg-blue-50 rounded-lg py-3 px-2 border border-blue-200"><div className="text-xl font-bold text-blue-600">{stats.enDesarrollo}</div><div className="text-[10px] text-gray-500 uppercase tracking-wide">In dev.</div></div>
-            <div className="bg-gray-100 rounded-lg py-3 px-2 border border-gray-200"><div className="text-xl font-bold text-gray-600">{stats.prometido}</div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Promised</div></div>
-            <div className="bg-red-50 rounded-lg py-3 px-2 border border-red-200"><div className="text-xl font-bold text-red-600">{stats.incumplido}</div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Broken</div></div>
-            <div className="bg-teal-50 rounded-lg py-3 px-2 border border-teal-200"><div className="text-xl font-bold text-teal-600">{stats.concluido}</div><div className="text-[10px] text-gray-500 uppercase tracking-wide">Concluded</div></div>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 border border-purple-200/50 rounded-full mb-4">
+                <svg className="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span className="text-xs font-sans-tech text-purple-600 font-medium">Judicial Precedents</span>
+              </div>
+              <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 mb-3">
+                AI <span className="italic text-purple-500">Cases</span>
+              </h2>
+              <p className="text-gray-600 font-sans-tech text-sm sm:text-base max-w-xl">
+                Judgments and rulings where AI is the subject of the litigation or a tool in the judicial process.
+              </p>
+            </div>
+
+            {/* Stats badge */}
+            <div className="flex items-center gap-4">
+              <div className="text-center px-4 py-2 bg-purple-100 rounded-xl">
+                <div className="font-serif-display text-2xl text-purple-700">{casosStats.total}</div>
+                <div className="text-[10px] font-sans-tech text-purple-600 uppercase tracking-wider">Cases</div>
+              </div>
+              <div className="text-center px-4 py-2 bg-purple-50 rounded-xl">
+                <div className="font-serif-display text-2xl text-purple-600">{casosStats.conCriterio}</div>
+                <div className="text-[10px] font-sans-tech text-purple-500 uppercase tracking-wider">Legal Standard</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Legislation + Cases summary */}
-      <section className="py-14 px-4 bg-white border-b border-gray-200/50">
-        <div className="max-w-6xl mx-auto grid sm:grid-cols-2 gap-6">
-          <Link href="/legislacion" className="group rounded-2xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-lg transition-all">
-            <h2 className="font-serif-display text-2xl text-gray-900 mb-2">Legislation</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              <strong className="text-gray-900">{iniciativas.length} bills</strong> tracked in Congress and state
-              legislatures, {verificadas} independently verified against the official gazette.
-            </p>
-            <span className="inline-flex items-center gap-1 text-sm text-blue-600 font-medium group-hover:gap-2 transition-all">
-              View tracker <ArrowRight size={14} />
-            </span>
-          </Link>
-          <Link href="/casos-ia" className="group rounded-2xl border border-gray-200 p-6 hover:border-purple-300 hover:shadow-lg transition-all">
-            <h2 className="font-serif-display text-2xl text-gray-900 mb-2">Judicial cases</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              <strong className="text-gray-900">{casos.length} cases</strong> where AI is the subject of litigation or
-              a tool in the judicial process, {casosConCriterio} with a settled legal standard.
-            </p>
-            <span className="inline-flex items-center gap-1 text-sm text-purple-600 font-medium group-hover:gap-2 transition-all">
-              View cases <ArrowRight size={14} />
-            </span>
-          </Link>
-        </div>
-      </section>
-
-      {/* Featured cases */}
-      {casosDestacados.length > 0 && (
-        <section className="bg-gray-50 border-b border-gray-200/50 py-14 px-4">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="font-serif-display text-3xl text-gray-900 mb-6">Featured cases</h2>
-            <div className="grid sm:grid-cols-3 gap-4">
-              {casosDestacados.map((c) => {
-                const t = traduccionCaso(c.id);
+          {/* Casos reales */}
+          {loadingCasos ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {[1, 2].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
+                  <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-100 rounded w-full"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {casosDestacados.map((caso) => {
+                const tieneCriterio = caso.criterio?.tiene || (caso.criterios && caso.criterios.length > 0);
+                const resuelto = caso.estado === 'resuelto';
+                const casoBadge = tieneCriterio
+                  ? { t: '📜 Legal Standard', c: 'bg-purple-100 text-purple-700' }
+                  : resuelto
+                  ? { t: '✅ Resolved', c: 'bg-green-100 text-green-700' }
+                  : { t: '📋 In progress', c: 'bg-gray-100 text-gray-600' };
                 return (
-                  <Link key={c.id} href={`/casos-ia/${c.id}`} className="bg-white border border-gray-200 rounded-xl p-5 hover:border-purple-300 hover:shadow-md transition-all">
-                    <h3 className="font-sans-tech font-medium text-gray-900 text-sm mb-2 line-clamp-2">{t?.nombre ?? c.nombre}</h3>
-                    <p className="text-xs text-gray-500 line-clamp-3">{t?.resumen ?? c.resumen}</p>
+                  <Link
+                    key={caso.id}
+                    href={`/en/casos-ia/${caso.id}`}
+                    className="bg-white border border-gray-200 rounded-xl p-5 hover:border-purple-300 hover:shadow-md transition-all group"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className={`px-2 py-0.5 text-[10px] font-sans-tech font-medium rounded-full ${casoBadge.c}`}>
+                        {casoBadge.t}
+                      </span>
+                    </div>
+                    <h3 className="font-sans-tech font-medium text-gray-900 text-sm mb-2 group-hover:text-purple-700 transition-colors line-clamp-1">
+                      {caso.nombre}
+                    </h3>
+                    <p className="text-xs text-gray-500 font-sans-tech line-clamp-2">
+                      {caso.resumen}
+                    </p>
+                    <div className="mt-3 flex items-center gap-1 text-xs text-purple-500 font-sans-tech font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                      View full case
+                      <ArrowRight size={12} />
+                    </div>
                   </Link>
                 );
               })}
             </div>
-          </div>
-        </section>
-      )}
+          )}
 
-      {/* Announcement cards */}
-      <section className="py-14 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="font-serif-display text-3xl sm:text-4xl text-gray-900 mb-8">Recent AI announcements</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {anunciosDestacados.map((item) => {
-              const tr = traducirAnuncio(item);
-              return (
-                <Link
-                  key={item.id}
-                  href={`/anuncio/${item.id}`}
-                  className="group rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                      {STATUS_LABEL_EN[item.status] ?? item.status}
-                    </span>
-                  </div>
-                  <h3 className="font-sans-tech font-semibold text-gray-900 text-sm mb-1.5 line-clamp-2 group-hover:text-blue-700">{tr.titulo}</h3>
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-3">{tr.descripcion}</p>
-                  <div className="text-xs text-gray-400">{item.responsable}</div>
-                </Link>
-              );
-            })}
-          </div>
-          <div className="mt-8 text-center">
-            <Link href="/" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600">
-              See full tracker in Spanish <ArrowRight size={14} />
+          {/* CTA */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/en/casos-ia"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              View all cases
+              <ArrowRight size={16} />
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="bg-gray-50 border-t border-gray-200/50 py-6 px-4 text-center text-xs text-gray-400">
-        Some content is machine-translated from the Spanish original; law, tribunal and agency names are kept in
-        Spanish with an English gloss. Open data (CSV):{' '}
-        <a href="/api/export?coleccion=anuncios" className="underline hover:text-blue-600">announcements</a>
-        {' · '}
-        <a href="/api/export?coleccion=iniciativas" className="underline hover:text-blue-600">bills</a>
-        {' · '}
-        <a href="/api/export?coleccion=casos" className="underline hover:text-blue-600">cases</a>
+      {/* Barra de estadísticas de anuncios */}
+      <section className="bg-white border-b border-gray-200/50 py-3 sm:py-4 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Vista móvil: grid compacto */}
+          <div className={`grid ${stats.concluido > 0 || stats.sinClasificar > 0 ? 'grid-cols-3' : 'grid-cols-5'} gap-2 text-center sm:hidden`}>
+            <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
+              <div className="text-lg font-bold text-gray-900">{stats.total}</div>
+              <div className="text-[10px] text-gray-900/40">Total</div>
+            </div>
+            <div className="bg-emerald-50 rounded-lg py-2 px-1 border border-emerald-200">
+              <div className="text-lg font-bold text-emerald-500">{stats.operando}</div>
+              <div className="text-[10px] text-gray-900/40">Operating</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg py-2 px-1 border border-blue-200">
+              <div className="text-lg font-bold text-blue-500">{stats.enDesarrollo}</div>
+              <div className="text-[10px] text-gray-900/40">In dev.</div>
+            </div>
+            <div className="bg-red-50 rounded-lg py-2 px-1 border border-red-200">
+              <div className="text-lg font-bold text-red-500">{stats.incumplido}</div>
+              <div className="text-[10px] text-gray-900/40">Broken</div>
+            </div>
+            <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
+              <div className="text-lg font-bold text-gray-900/60">{stats.prometido}</div>
+              <div className="text-[10px] text-gray-900/40">Promised</div>
+            </div>
+            {stats.concluido > 0 && (
+              <div className="bg-teal-50 rounded-lg py-2 px-1 border border-teal-200">
+                <div className="text-lg font-bold text-teal-600">{stats.concluido}</div>
+                <div className="text-[10px] text-gray-900/40">Concluded</div>
+              </div>
+            )}
+            {stats.sinClasificar > 0 && (
+              <div className="bg-amber-50 rounded-lg py-2 px-1 border border-amber-200">
+                <div className="text-lg font-bold text-amber-600">{stats.sinClasificar}</div>
+                <div className="text-[10px] text-gray-900/40">Unclassified</div>
+              </div>
+            )}
+          </div>
+
+          {/* Vista desktop: horizontal */}
+          <div className="hidden sm:flex flex-wrap items-center justify-between gap-4 text-sm font-sans-tech">
+            <div className="flex flex-wrap items-center gap-4 md:gap-6">
+              <div>
+                <span className="font-medium text-gray-900/50">Total:</span>{' '}
+                <span className="text-gray-900 font-semibold">{stats.total}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-200 hidden md:block" />
+              <div>
+                <span className="font-medium text-emerald-500">Operating:</span>{' '}
+                <span className="font-bold text-emerald-500">{stats.operando}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-200 hidden md:block" />
+              <div>
+                <span className="font-medium text-blue-500">In development:</span>{' '}
+                <span className="text-blue-500">{stats.enDesarrollo}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-200 hidden md:block" />
+              <div>
+                <span className="font-medium text-red-500">Broken:</span>{' '}
+                <span className="text-red-500">{stats.incumplido}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-200 hidden md:block" />
+              <div>
+                <span className="font-medium text-gray-900/50">Promised:</span>{' '}
+                <span className="text-gray-900/60">{stats.prometido}</span>
+              </div>
+              {stats.concluido > 0 && (
+                <>
+                  <div className="h-4 w-px bg-gray-200 hidden md:block" />
+                  <div>
+                    <span className="font-medium text-teal-600">Concluded:</span>{' '}
+                    <span className="text-teal-600">{stats.concluido}</span>
+                  </div>
+                </>
+              )}
+              {stats.sinClasificar > 0 && (
+                <>
+                  <div className="h-4 w-px bg-gray-200 hidden md:block" />
+                  <div>
+                    <span className="font-medium text-amber-600">Unclassified:</span>{' '}
+                    <span className="text-amber-600">{stats.sinClasificar}</span>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="text-xs text-gray-900/30 flex items-center gap-1.5 font-mono">
+              <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Updated monthly
+            </div>
+          </div>
+
+          {/* Fecha de actualización móvil */}
+          <div className="sm:hidden text-center mt-2">
+            <span className="text-[10px] text-gray-900/30 font-mono">Updated monthly</span>
+          </div>
+
+          {/* Datos abiertos (OIA-013): el público cita y reutiliza sin scrapear */}
+          <div className="mt-2 text-center sm:text-right text-[11px] font-mono text-gray-900/40">
+            Open data (CSV):{' '}
+            <a href="/api/export?coleccion=anuncios" className="underline hover:text-blue-600">announcements</a>
+            {' · '}
+            <a href="/api/export?coleccion=iniciativas" className="underline hover:text-blue-600">bills</a>
+            {' · '}
+            <a href="/api/export?coleccion=casos" className="underline hover:text-blue-600">cases</a>
+          </div>
+        </div>
+      </section>
+
+      {/* Tabla de anuncios */}
+      <section id="tracker" className="py-8 sm:py-12 md:py-16 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+            <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 flex items-center gap-3">
+              AI <span className="italic text-blue-500">Announcements</span> in {new Date().getFullYear()}
+            </h2>
+
+            {/* Filtro por status */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium font-sans-tech text-gray-900/50 hidden sm:inline">Filter:</label>
+              <select
+                value={filtroStatus}
+                onChange={(e) => setFiltroStatus(e.target.value)}
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100 text-gray-900 font-sans-tech backdrop-blur-sm"
+              >
+                <option value="todos" className="bg-gray-50">All ({stats.total})</option>
+                <option value="incumplido" className="bg-gray-50">🔴 {STATUS_ANUNCIO_EN.incumplido} ({stats.incumplido})</option>
+                <option value="en_desarrollo" className="bg-gray-50">🟡 {STATUS_ANUNCIO_EN.en_desarrollo} ({stats.enDesarrollo})</option>
+                <option value="prometido" className="bg-gray-50">⚪ {STATUS_ANUNCIO_EN.prometido} ({stats.prometido})</option>
+                <option value="operando" className="bg-gray-50">🟢 {STATUS_ANUNCIO_EN.operando} ({stats.operando})</option>
+                {stats.concluido > 0 && (
+                  <option value="concluido" className="bg-gray-50">✅ {STATUS_ANUNCIO_EN.concluido} ({stats.concluido})</option>
+                )}
+              </select>
+            </div>
+          </div>
+
+          {/* Brief + scorecard de rendición de cuentas */}
+          {!loadingAnuncios && !errorAnuncios && stats.total > 0 && (
+            <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50/70 p-5 sm:p-6">
+              <p className="font-serif-display text-lg sm:text-xl text-gray-800 leading-snug mb-4">
+                The Mexican state made <strong className="text-gray-900">{stats.total} public AI promises</strong>:{' '}
+                <span className="text-emerald-600 font-medium">{stats.operando} already operating</span>,{' '}
+                <span className="text-blue-600 font-medium">{stats.enDesarrollo} in development</span>,{' '}
+                <span className="text-gray-500 font-medium">{stats.prometido} promised</span>
+                {stats.concluido > 0 && <>, <span className="text-teal-600 font-medium">{stats.concluido} concluded</span></>}
+                {stats.incumplido > 0 && <> and <span className="text-red-600 font-semibold">{stats.incumplido} broken</span></>}
+                {stats.sinClasificar > 0 && <> ({stats.sinClasificar} unclassified)</>}.
+              </p>
+              {/* Barra de distribución */}
+              <div className="flex h-2.5 rounded-full overflow-hidden border border-gray-200 bg-white">
+                <div className="bg-emerald-500 h-full" style={{ width: `${(stats.operando / stats.total) * 100}%` }} title={`Operating · ${stats.operando}`} />
+                <div className="bg-blue-500 h-full" style={{ width: `${(stats.enDesarrollo / stats.total) * 100}%` }} title={`In development · ${stats.enDesarrollo}`} />
+                <div className="bg-slate-400 h-full" style={{ width: `${(stats.prometido / stats.total) * 100}%` }} title={`Promised · ${stats.prometido}`} />
+                <div className="bg-teal-500 h-full" style={{ width: `${(stats.concluido / stats.total) * 100}%` }} title={`Concluded · ${stats.concluido}`} />
+                <div className="bg-red-500 h-full" style={{ width: `${(stats.incumplido / stats.total) * 100}%` }} title={`Broken · ${stats.incumplido}`} />
+              </div>
+              {/* Leyenda + métrica */}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 font-mono text-[11px] text-gray-600">
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-emerald-500" />Operating <b className="text-gray-900">{stats.operando}</b></span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-blue-500" />In development <b className="text-gray-900">{stats.enDesarrollo}</b></span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-slate-400" />Promised <b className="text-gray-900">{stats.prometido}</b></span>
+                {stats.concluido > 0 && (
+                  <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-teal-500" />Concluded <b className="text-gray-900">{stats.concluido}</b></span>
+                )}
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-red-500" />Broken <b className="text-gray-900">{stats.incumplido}</b></span>
+                <span className="ml-auto text-gray-500">
+                  <b className="text-emerald-600 text-sm">{Math.round((stats.operando / stats.total) * 100)}%</b> operating
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Grid de Cards Premium con Imagen */}
+          {loadingAnuncios ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden animate-pulse">
+                  <div className="h-48 bg-gray-200" />
+                  <div className="p-6 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-100 rounded w-1/2" />
+                    <div className="h-3 bg-gray-100 rounded w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : errorAnuncios ? (
+            <div className="text-center py-12">
+              <div className="text-red-400 mb-2">⚠️ {errorAnuncios}</div>
+              <button
+                onClick={() => window.location.reload()}
+                className="text-sm text-blue-500 hover:underline"
+              >
+                Retry
+              </button>
+            </div>
+          ) : anunciosFiltrados.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              {filtroStatus === 'todos' ? 'No promises registered yet' : `No promises with status "${getStatusLabel(filtroStatus)}"`}
+            </div>
+          ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {anunciosFiltrados.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => router.push(`/en/anuncio/${item.id}`)}
+                className="group relative bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10 cursor-pointer transition-all duration-500"
+              >
+                {/* Imagen del evento — imagen real o fallback de marca (nunca gris) */}
+                <div className={`relative h-44 overflow-hidden bg-gradient-to-br ${
+                  item.status === 'incumplido' ? 'from-red-600 to-rose-900' :
+                  item.status === 'en_desarrollo' ? 'from-blue-600 to-indigo-900' :
+                  item.status === 'operando' ? 'from-emerald-600 to-teal-900' :
+                  'from-slate-600 to-slate-900'
+                }`}>
+                  {/* Fallback de marca (se ve cuando no hay foto): glow + marca iris del Observatorio + logo dependencia */}
+                  <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 80% 22%, rgba(255,255,255,0.18), transparent 55%)' }} aria-hidden="true" />
+                  <svg viewBox="0 0 100 100" className="absolute -right-2 top-1/2 -translate-y-1/2 w-36 h-36 opacity-[0.14]" fill="none" aria-hidden="true">
+                    <path d="M6 50 Q50 22 94 50 Q50 78 6 50 Z" stroke="white" strokeWidth="3" />
+                    <circle cx="50" cy="50" r="23" stroke="white" strokeWidth="3" strokeDasharray="9 7" />
+                    <circle cx="50" cy="50" r="13" stroke="white" strokeWidth="2.5" strokeDasharray="5 6" />
+                    <circle cx="50" cy="50" r="7" fill="white" />
+                  </svg>
+                  {/* Imagen real encima; si falla, se oculta y queda el fallback de marca */}
+                  {item.imagen ? (
+                    <img
+                      src={item.imagen}
+                      alt={item.titulo}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : null}
+
+                  {/* Overlay para contraste del texto */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
+
+                  {/* Badge de estado */}
+                  <div className={`absolute top-3.5 right-3.5 px-3 py-1.5 rounded-full text-[10px] font-sans-tech font-bold uppercase tracking-wider backdrop-blur-sm ${
+                    item.status === 'incumplido' ? 'bg-red-500 text-white' :
+                    item.status === 'en_desarrollo' ? 'bg-blue-500 text-white' :
+                    item.status === 'operando' ? 'bg-emerald-500 text-white' :
+                    'bg-white/90 text-gray-800'
+                  }`}>
+                    {item.status === 'incumplido' && '⚠️ '}{getStatusLabel(item.status)}
+                  </div>
+
+                  {/* Fecha */}
+                  <div className="absolute top-3.5 left-3.5 px-3 py-1.5 bg-black/45 backdrop-blur-sm rounded-full">
+                    <span className="font-mono text-[10px] text-white uppercase tracking-wider">
+                      {formatearMes(item.fechaAnuncio)} {getYearUTC(item.fechaAnuncio)}
+                    </span>
+                  </div>
+
+                  {/* Título */}
+                  <div className="absolute bottom-3.5 left-4 right-4">
+                    <h3 className="font-sans-tech font-bold text-white text-lg leading-tight drop-shadow-lg line-clamp-2">
+                      {item.titulo}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Contenido debajo de la imagen */}
+                <div className="p-5">
+                  <FolioBadge folio={item.folio} size="sm" className="mb-3" locale="en" />
+                  {/* Responsable */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <img
+                      src={getLogo(item.responsable)}
+                      alt=""
+                      className="w-10 h-10 object-contain rounded-lg border border-gray-100 bg-white p-1"
+                    />
+                    <div>
+                      <div className="font-sans-tech text-sm font-medium text-gray-900">
+                        {item.responsable}
+                      </div>
+                      <div className="font-sans-tech text-xs text-gray-400">
+                        {item.dependencia || 'Responsible party'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detalle */}
+                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 font-sans-tech mb-4">
+                    {item.descripcion}
+                  </p>
+
+                  {/* Footer del card */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    {item.fechaPrometida && item.status === 'incumplido' ? (
+                      <div className="flex items-center gap-2 text-red-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-xs font-mono font-bold">
+                          {calcularDiasVencidos(item.fechaPrometida)} days overdue
+                        </span>
+                      </div>
+                    ) : item.fechaPrometida ? (
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-xs font-mono">
+                          Target: {formatearFechaPrometida(item.fechaPrometida)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-300 font-mono">
+                        No deadline
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1 text-sm text-blue-500 font-sans-tech font-medium group-hover:gap-2 transition-all">
+                      View more
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          )}
+
+
+        </div>
       </section>
     </div>
   );

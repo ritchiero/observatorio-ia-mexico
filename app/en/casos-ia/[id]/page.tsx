@@ -1,131 +1,821 @@
-import type { Metadata } from 'next';
+'use client';
+
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { Scale, Building, Calendar, ExternalLink, FileText } from 'lucide-react';
-import { traduccionCaso } from '@/lib/i18n/traducciones';
+import { ArrowLeft, FileText, ExternalLink, Calendar, Building, Scale, AlertCircle, Gavel, ChevronRight, Users, BookOpen } from 'lucide-react';
+import { CasoIA, TemaIA, Criterio } from '@/types/casos-ia';
+import { TEMAS_IA_EN, MATERIAS_EN, getTipoCriterioEn } from '@/lib/i18n/labels-en';
+import { fetchOverlayEn } from '@/lib/i18n/client';
+import NivelConfianzaBadgeEn from '@/components/NivelConfianzaBadgeEn';
+import FolioBadge from '@/components/FolioBadge';
 
-const BASE = 'https://www.observatorio-ia-mexico.com';
+// Twin en inglés de app/casos-ia/[id]/page.tsx — misma estructura JSX,
+// mismos hooks, mismas clases Tailwind; solo cambia el texto visible y las
+// fuentes de datos/labels (overlays de traducción en vez de catálogos ES).
 
-interface Documento { url: string; titulo?: string; tipo?: string }
-interface Caso {
-  id: string; nombre: string; folio?: string; estado?: string; temaIA?: string; materia?: string;
-  subtema?: string; tribunalActual?: string; expedienteActual?: string;
-  hechos?: string; elementoIA?: string; resumen?: string; fechaCreacion?: string;
-  partes?: { actor?: string; demandado?: string; ponente?: string };
-  documentos?: Documento[];
-}
-
-async function getCaso(id: string): Promise<Caso | null> {
-  try {
-    const r = await fetch(`${BASE}/api/casos-ia/${id}`, { next: { revalidate: 300 } });
-    if (!r.ok) return null;
-    const d = await r.json();
-    return (d.caso ?? d.data ?? null) as Caso | null;
-  } catch {
-    return null;
-  }
-}
-
-const ESTADO_EN: Record<string, string> = {
-  resuelto: 'Resolved', en_proceso: 'In progress', pendiente: 'Pending', turnado: 'Referred',
+// Catálogo pequeño y cerrado para Documento.tipo (sentencia/demanda/tesis/
+// amparo/otro + variantes vistas en datos reales: articulo/engrose/
+// publicacion). Para cualquier valor fuera de catálogo cae al mismo
+// comportamiento que el original (reemplaza guion bajo por espacio, sin
+// traducir) — igual que el fallback de getTipoCriterio en types/casos-ia.ts.
+const TIPO_DOCUMENTO_EN: Record<string, string> = {
+  sentencia: 'Ruling',
+  demanda: 'Complaint',
+  tesis: 'Tesis (thesis)',
+  amparo: 'Amparo (constitutional relief)',
+  articulo: 'Article',
+  engrose: 'Engrose (full judgment text)',
+  publicacion: 'Publication',
+  otro: 'Other',
 };
 
-function urlValida(u?: string): boolean {
-  if (!u) return false;
-  try { const p = new URL(u); return p.protocol === 'http:' || p.protocol === 'https:'; } catch { return false; }
+function getTipoDocumentoEn(tipo: string): string {
+  return TIPO_DOCUMENTO_EN[tipo] ?? tipo.replace(/_/g, ' ');
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
-  const c = await getCaso(id);
-  if (!c) return { title: 'Case not found' };
-  const t = traduccionCaso(id);
+// Shape del overlay de traducción para un caso. nombre/resumen/hechos/
+// elementoIA viven en la colección básica 'casos'. Los campos anidados
+// (subtema, partes, trayectoria[].tipo/sentido/resumen, criterio.rubro/
+// texto) se intentan primero desde 'casos' y, si no están ahí, desde el
+// overlay extendido 'casos-ext' -- ambas colecciones se sirven con la
+// misma forma Record<id, OverlayCasoEn> vía /api/i18n/[coleccion], así que
+// fetchOverlayEn('casos-ext') es válido y ya no depende de un import()
+// dinámico del JSON (que además rompería el build si el archivo no
+// existiera todavía -- fetchOverlayEn ya trae su propio try/catch).
+//
+// documentos[].titulo NO se traduce aquí a propósito: 'casos-ext' expone
+// una lista plana de títulos que, verificado contra /api/casos-ia en vivo,
+// NO corresponde 1:1 por índice con caso.documentos (conteos distintos en
+// al menos un caso real -- 8 documentos ES contra 6 títulos EN, un
+// subconjunto curado en otro orden). Traducir por posición habría puesto
+// el título equivocado en un enlace real. Se deja el valor ES -- el
+// fallback que las instrucciones autorizan explícitamente -- hasta que el
+// overlay extendido traiga una correspondencia explícita (por URL, por
+// ejemplo).
+type OverlayCasoEn = {
+  nombre?: string;
+  resumen?: string;
+  hechos?: string;
+  elementoIA?: string;
+  subtema?: string;
+  partes?: { actor?: string; demandado?: string; terceros?: string };
+  trayectoria?: Array<{ tipo?: string; sentido?: string; resumen?: string }>;
+  criterio?: { rubro?: string; texto?: string };
+  criterios?: Array<{ rubro?: string; texto?: string }>;
+};
+
+function traducirRubroTexto(
+  criterio: Criterio,
+  basico?: { rubro?: string; texto?: string },
+  ext?: { rubro?: string; texto?: string }
+): Criterio {
   return {
-    title: t?.nombre ?? c.nombre,
-    description: (t?.resumen ?? c.resumen ?? '').slice(0, 155),
-    alternates: { canonical: `/en/casos-ia/${id}`, languages: { es: `/casos-ia/${id}`, en: `/en/casos-ia/${id}` } },
+    ...criterio,
+    rubro: basico?.rubro ?? ext?.rubro ?? criterio.rubro,
+    texto: basico?.texto ?? ext?.texto ?? criterio.texto,
   };
 }
 
-export default async function CasoPageEn({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const c = await getCaso(id);
-  if (!c) notFound();
+function aplicarTraduccionCaso(caso: CasoIA, basico: OverlayCasoEn, ext: OverlayCasoEn): CasoIA {
+  return {
+    ...caso,
+    nombre: basico.nombre ?? caso.nombre,
+    resumen: basico.resumen ?? caso.resumen,
+    hechos: basico.hechos ?? caso.hechos,
+    elementoIA: basico.elementoIA ?? caso.elementoIA,
+    subtema: basico.subtema ?? ext.subtema ?? caso.subtema,
+    partes: {
+      actor: basico.partes?.actor ?? ext.partes?.actor ?? caso.partes.actor,
+      demandado: basico.partes?.demandado ?? ext.partes?.demandado ?? caso.partes.demandado,
+      terceros: basico.partes?.terceros ?? ext.partes?.terceros ?? caso.partes.terceros,
+    },
+    trayectoria: (caso.trayectoria ?? []).map((inst, idx) => {
+      const b = basico.trayectoria?.[idx];
+      const e = ext.trayectoria?.[idx];
+      return {
+        ...inst,
+        tipo: b?.tipo ?? e?.tipo ?? inst.tipo,
+        sentido: b?.sentido ?? e?.sentido ?? inst.sentido,
+        resumen: b?.resumen ?? e?.resumen ?? inst.resumen,
+      };
+    }),
+    criterio: caso.criterio ? traducirRubroTexto(caso.criterio, basico.criterio, ext.criterio) : caso.criterio,
+    criterios: caso.criterios?.map((c, idx) =>
+      traducirRubroTexto(c, basico.criterios?.[idx], ext.criterios?.[idx])
+    ),
+  };
+}
 
-  const t = traduccionCaso(id);
-  const nombre = t?.nombre ?? c.nombre;
-  const resumen = t?.resumen ?? c.resumen;
-  const hechos = t?.hechos ?? c.hechos;
-  const elementoIA = t?.elementoIA ?? c.elementoIA;
+export default function CasoDetallePageEn({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [caso, setCaso] = useState<CasoIA | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchCaso() {
+      try {
+        const response = await fetch(`/api/casos-ia/${id}`);
+        if (!response.ok) {
+          throw new Error('Case not found');
+        }
+        const data = await response.json();
+        const casoBase: CasoIA = data.caso;
+
+        const [overlayCasos, overlayCasosExt] = await Promise.all([
+          fetchOverlayEn('casos'),
+          fetchOverlayEn('casos-ext'),
+        ]);
+        const basico = (overlayCasos[id] ?? {}) as unknown as OverlayCasoEn;
+        const ext = (overlayCasosExt[id] ?? {}) as unknown as OverlayCasoEn;
+
+        setCaso(aplicarTraduccionCaso(casoBase, basico, ext));
+      } catch (err) {
+        console.error('Error fetching case:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCaso();
+  }, [id]);
+
+  const formatFecha = (fecha: string) => {
+    if (!fecha) return 'N/A';
+    return new Date(fecha).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const getEstadoBadge = (estado: string) => {
+    return estado === 'resuelto'
+      ? { text: 'Resolved', color: 'bg-green-100 text-green-700 border-green-200' }
+      : { text: 'In progress', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
+  };
+
+  const getTemaInfo = (tema: TemaIA) => {
+    return TEMAS_IA_EN[tema] || TEMAS_IA_EN.otro;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (error || !caso) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+        <AlertCircle className="w-16 h-16 text-red-300" />
+        <h2 className="text-xl font-sans-tech text-gray-900">{error || 'Case not found'}</h2>
+        <Link
+          href="/en/casos-ia"
+          className="text-purple-600 hover:text-purple-800 font-sans-tech flex items-center gap-2"
+        >
+          <ArrowLeft size={16} />
+          Back to cases
+        </Link>
+      </div>
+    );
+  }
+
+  const estadoBadge = getEstadoBadge(caso.estado);
+  const temaInfo = getTemaInfo(caso.temaIA);
+
+  // Support multiple criterios (legal standards) or a single one
+  const criteriosArray = caso.criterios && caso.criterios.length > 0
+    ? caso.criterios
+    : (caso.criterio?.tiene ? [caso.criterio] : []);
+  const tieneCriterio = criteriosArray.length > 0;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-10">
-      <nav aria-label="breadcrumb" className="text-sm text-gray-500 mb-6">
-        <ol className="flex flex-wrap items-center gap-1.5">
-          <li><Link href="/en" className="hover:text-cyan-700 transition-colors">Home</Link></li>
-          <li aria-hidden className="text-gray-300">/</li>
-          <li><Link href="/en/casos-ia" className="hover:text-cyan-700 transition-colors">Cases</Link></li>
-          <li aria-hidden className="text-gray-300">/</li>
-          <li aria-current="page" className="text-gray-700 truncate max-w-[55%]">{nombre}</li>
-        </ol>
-      </nav>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <div className="relative bg-white border-b border-gray-200/50 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] bg-purple-50 rounded-full blur-[100px]"></div>
+          <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-indigo-50/50 rounded-full blur-[80px]"></div>
+        </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-4">
-        {c.folio && <span className="px-2 py-0.5 rounded bg-gray-100 font-mono">{c.folio}</span>}
-        {c.estado && <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700">{ESTADO_EN[c.estado] ?? c.estado}</span>}
-        {c.tribunalActual && <span className="inline-flex items-center gap-1"><Building className="w-3 h-3" />{c.tribunalActual}</span>}
-      </div>
-
-      <h1 className="font-serif-display text-3xl sm:text-4xl font-light text-gray-900 mb-6 leading-tight">{nombre}</h1>
-
-      {resumen && (
-        <section className="mb-8">
-          <p className="text-gray-700 leading-relaxed">{resumen}</p>
-        </section>
-      )}
-
-      {hechos && (
-        <section className="mb-8">
-          <h2 className="text-lg font-serif-display text-gray-900 mb-2 flex items-center gap-2"><Scale className="w-4 h-4 text-purple-500" />Facts</h2>
-          <p className="text-gray-700 leading-relaxed text-sm">{hechos}</p>
-        </section>
-      )}
-
-      {elementoIA && (
-        <section className="mb-8 bg-purple-50 border border-purple-200 rounded-xl p-5">
-          <h2 className="text-sm uppercase tracking-wider text-purple-700 font-semibold mb-2">Role of AI in this case</h2>
-          <p className="text-gray-800 leading-relaxed text-sm">{elementoIA}</p>
-        </section>
-      )}
-
-      {c.partes && (c.partes.actor || c.partes.demandado || c.partes.ponente) && (
-        <section className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-          {c.partes.actor && <div className="rounded-lg border border-gray-200 p-3"><div className="text-xs text-gray-400 mb-1">Plaintiff</div><div className="text-gray-800">{c.partes.actor}</div></div>}
-          {c.partes.demandado && <div className="rounded-lg border border-gray-200 p-3"><div className="text-xs text-gray-400 mb-1">Defendant</div><div className="text-gray-800">{c.partes.demandado}</div></div>}
-          {c.partes.ponente && <div className="rounded-lg border border-gray-200 p-3"><div className="text-xs text-gray-400 mb-1">Reporting judge</div><div className="text-gray-800">{c.partes.ponente}</div></div>}
-        </section>
-      )}
-
-      <section>
-        <h2 className="text-lg font-serif-display text-gray-900 mb-3 flex items-center gap-2"><FileText className="w-4 h-4 text-purple-500" />Documents</h2>
-        {c.documentos?.length ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {c.documentos.filter((d) => urlValida(d.url)).map((d, idx) => (
-              <a key={idx} href={d.url} target="_blank" rel="noopener" className="flex items-center gap-2 rounded-lg border border-gray-200 p-3 text-sm text-gray-700 hover:border-purple-300 hover:shadow-sm transition-all">
-                <ExternalLink className="w-4 h-4 text-purple-500 shrink-0" />
-                <span className="line-clamp-1">{d.titulo || 'Document'}</span>
-              </a>
-            ))}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-12 lg:px-24 py-8 md:py-12">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-xs font-sans-tech text-gray-400 mb-6">
+            <Link href="/en/casos-ia" className="hover:text-purple-500 transition-colors flex items-center gap-1">
+              <ArrowLeft size={14} />
+              AI Cases
+            </Link>
+            <ChevronRight size={14} />
+            <span className="text-gray-600 truncate max-w-[200px] md:max-w-none">{caso.nombre}</span>
           </div>
-        ) : (
-          <p className="text-sm text-gray-400">Document unavailable</p>
-        )}
-      </section>
 
-      <div className="mt-10 flex items-center gap-1 text-xs text-gray-400 border-t border-gray-200 pt-6">
-        <Calendar className="w-3.5 h-3.5" />
-        <a href={`/casos-ia/${id}`} className="underline hover:text-cyan-700">Ver en español</a>
+          {/* Badges */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold font-sans-tech border ${estadoBadge.color}`}>
+              {estadoBadge.text}
+            </span>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold font-sans-tech bg-${temaInfo.color}-100 text-${temaInfo.color}-700`}>
+              {temaInfo.emoji} {temaInfo.label}
+            </span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-sans-tech bg-gray-100 text-gray-600">
+              {MATERIAS_EN[caso.materia] || caso.materia}
+            </span>
+            {tieneCriterio && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold font-sans-tech bg-purple-100 text-purple-700 border border-purple-200">
+                📜 {criteriosArray.length} Legal Standard{criteriosArray.length > 1 ? 's' : ''}
+              </span>
+            )}
+            <NivelConfianzaBadgeEn item={caso} size="md" />
+            <FolioBadge folio={caso.folio} locale="en" />
+          </div>
+
+          {/* Título */}
+          <h1 className="font-serif-display text-3xl md:text-4xl lg:text-5xl font-light leading-tight mb-6 text-gray-900">
+            {caso.nombre}
+          </h1>
+
+          {/* Meta info */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-sans-tech text-gray-500">
+            <span className="flex items-center gap-2">
+              <Building size={16} />
+              {caso.tribunalActual}
+            </span>
+            <span className="flex items-center gap-2">
+              <FileText size={16} />
+              <span className="font-mono">{caso.expedienteActual}</span>
+            </span>
+            {caso.trayectoria && caso.trayectoria.length > 0 && caso.trayectoria[0].fechaIngreso && (
+              <span className="flex items-center gap-2">
+                <Calendar size={16} />
+                {formatFecha(caso.trayectoria[0].fechaIngreso)}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
-    </main>
+
+      {/* Contenido principal */}
+      <div className="max-w-6xl mx-auto px-4 md:px-12 lg:px-24 py-8 md:py-12">
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Columna principal (2/3) */}
+          <div className="lg:col-span-2 space-y-8">
+
+            {/* ===== CRITERIOS (Lo más importante) ===== */}
+            {tieneCriterio && criteriosArray.map((criterio, criterioIdx) => (
+              <section key={criterioIdx} className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-6 md:p-8">
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <h2 className="font-serif-display text-2xl font-light text-purple-900">
+                    <Scale className="inline-block mr-2 text-purple-500" size={24} />
+                    {criteriosArray.length > 1 ? `Legal Standard ${criterioIdx + 1}` : 'Legal Standard'}
+                  </h2>
+                  {criterio.clave && (
+                    <span className="text-xs font-mono px-2 py-1 bg-purple-200 text-purple-700 rounded-lg font-semibold">
+                      {criterio.clave}
+                    </span>
+                  )}
+                  {criterio.registro && criterio.registro !== 'No aplica' && (
+                    <span className="text-xs font-mono px-2 py-1 bg-purple-100 text-purple-600 rounded-lg">
+                      Record No. {criterio.registro}
+                    </span>
+                  )}
+                </div>
+
+                {/* Tipo, época y datos */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold font-sans-tech bg-purple-100 text-purple-700 border border-purple-200">
+                    {getTipoCriterioEn(criterio.tipo).emoji} {getTipoCriterioEn(criterio.tipo).label}
+                  </span>
+                  {criterio.epoca && (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-sans-tech bg-white/50 text-purple-700">
+                      {criterio.epoca}
+                    </span>
+                  )}
+                  {criterio.materia && (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-sans-tech bg-white/50 text-purple-700">
+                      {criterio.materia}
+                    </span>
+                  )}
+                  {criterio.votacion && (
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-sans-tech bg-green-100 text-green-700">
+                      ✓ {criterio.votacion}
+                    </span>
+                  )}
+                </div>
+
+                {/* Rubro */}
+                <h3 className="font-sans-tech font-bold text-purple-900 text-xl md:text-2xl mb-4 uppercase tracking-wide leading-snug">
+                  {criterio.rubro}
+                </h3>
+
+                {/* Texto */}
+                <div className="bg-white/60 rounded-xl p-5 mb-6">
+                  <p className="text-purple-900/90 font-serif-display text-lg leading-relaxed italic">
+                    "{criterio.texto}"
+                  </p>
+                </div>
+
+                {/* Fundamentos Legales */}
+                {criterio.fundamentosLegales && criterio.fundamentosLegales.length > 0 && (
+                  <div className="bg-white rounded-xl p-5 mb-6 border border-purple-100">
+                    <h4 className="text-sm font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-3">
+                      📖 Legal Grounds
+                    </h4>
+                    <div className="space-y-2">
+                      {criterio.fundamentosLegales.map((fund, idx) => (
+                        <div key={idx} className="text-sm">
+                          <span className="font-semibold text-purple-800">Art. {fund.articulo}</span>
+                          <span className="text-purple-600"> - {fund.ley}</span>
+                          <p className="text-purple-700 mt-1">{fund.contenido}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Razonamiento jurídico */}
+                {criterio.razonamientoJuridico && (
+                  <div className="bg-indigo-50 rounded-xl p-5 mb-6 border border-indigo-100">
+                    <h4 className="text-sm font-sans-tech font-semibold text-indigo-700 uppercase tracking-wider mb-3">
+                      ⚖️ Legal Reasoning
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-semibold text-indigo-800">Major Premise:</span> <span className="text-indigo-700">{criterio.razonamientoJuridico.premisaMayor}</span></p>
+                      <p><span className="font-semibold text-indigo-800">Minor Premise:</span> <span className="text-indigo-700">{criterio.razonamientoJuridico.premisaMenor}</span></p>
+                      <p className="pt-2 border-t border-indigo-200"><span className="font-semibold text-indigo-900">∴ Conclusion:</span> <span className="text-indigo-800 font-medium">{criterio.razonamientoJuridico.conclusion}</span></p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Qué establece */}
+                {criterio.reglasPrincipales && criterio.reglasPrincipales.length > 0 && (
+                  <div className="bg-white rounded-xl p-5 mb-6 border border-purple-100">
+                    <h4 className="text-sm font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <BookOpen size={16} />
+                      What It Establishes
+                    </h4>
+                    <ul className="space-y-2">
+                      {criterio.reglasPrincipales.map((regla, idx) => (
+                        <li key={idx} className="text-purple-900 font-sans-tech flex items-start gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-xs text-purple-600 font-bold mt-0.5">
+                            {idx + 1}
+                          </span>
+                          <span className="leading-relaxed">{regla}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Alcance */}
+                {criterio.alcance && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-sans-tech font-medium text-purple-600 mb-2">Scope</h4>
+                    <p className="text-purple-800 font-sans-tech leading-relaxed">{criterio.alcance}</p>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Relevancia */}
+                  {criterio.relevancia && (
+                    <div className="bg-white/60 rounded-lg p-4">
+                      <h4 className="text-xs font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-2">
+                        ⚡ Relevance
+                      </h4>
+                      <p className="text-purple-800 font-sans-tech text-sm leading-relaxed">
+                        {criterio.relevancia}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Casos aplicables */}
+                  {criterio.casosAplicables && (
+                    <div className="bg-white/60 rounded-lg p-4">
+                      <h4 className="text-xs font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-2">
+                        📋 Applicable Cases
+                      </h4>
+                      {Array.isArray(criterio.casosAplicables) ? (
+                        <ul className="text-purple-800 font-sans-tech text-sm space-y-1">
+                          {criterio.casosAplicables.map((c, i) => (
+                            <li key={i} className="flex items-start gap-1">
+                              <span className="text-purple-400">•</span> {c}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-purple-800 font-sans-tech text-sm leading-relaxed">
+                          {criterio.casosAplicables}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Implicaciones */}
+                {criterio.implicaciones && (
+                  <div className="mt-4 bg-purple-100/50 rounded-lg p-4 border border-purple-200/50">
+                    <h4 className="text-xs font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-2">
+                      🔮 Implications
+                    </h4>
+                    {typeof criterio.implicaciones === 'string' ? (
+                      <p className="text-purple-800 font-sans-tech text-sm leading-relaxed">
+                        {criterio.implicaciones}
+                      </p>
+                    ) : (
+                      <div className="space-y-3 text-sm">
+                        {criterio.implicaciones.juridicas && (
+                          <div>
+                            <span className="font-semibold text-purple-700">Legal:</span>
+                            <ul className="mt-1 space-y-1">
+                              {criterio.implicaciones.juridicas.map((imp, i) => (
+                                <li key={i} className="text-purple-800 flex items-start gap-1">
+                                  <span className="text-purple-400">•</span> {imp}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {criterio.implicaciones.practicas && (
+                          <div>
+                            <span className="font-semibold text-purple-700">Practical:</span>
+                            <ul className="mt-1 space-y-1">
+                              {criterio.implicaciones.practicas.map((imp, i) => (
+                                <li key={i} className="text-purple-800 flex items-start gap-1">
+                                  <span className="text-purple-400">•</span> {imp}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {criterio.implicaciones.futuras && (
+                          <div>
+                            <span className="font-semibold text-purple-700">Future:</span>
+                            <ul className="mt-1 space-y-1">
+                              {criterio.implicaciones.futuras.map((imp, i) => (
+                                <li key={i} className="text-purple-800 flex items-start gap-1">
+                                  <span className="text-purple-400">•</span> {imp}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Confirmación posterior */}
+                {criterio.confirmacionPosterior && (
+                  <div className="mt-4 bg-green-50 rounded-lg p-4 border border-green-200">
+                    <h4 className="text-xs font-sans-tech font-semibold text-green-700 uppercase tracking-wider mb-2">
+                      ✓ Subsequently Confirmed
+                    </h4>
+                    <p className="text-green-800 font-sans-tech text-sm">
+                      <span className="font-semibold">{criterio.confirmacionPosterior.tribunal}</span>
+                      <span className="text-green-600"> · {criterio.confirmacionPosterior.expediente}</span>
+                    </p>
+                    <p className="text-green-700 text-sm mt-1">{criterio.confirmacionPosterior.sentido}</p>
+                  </div>
+                )}
+
+                {/* Datos de publicación y emisor */}
+                <div className="mt-6 pt-4 border-t border-purple-200/50 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-purple-600 font-sans-tech">
+                  <span className="flex items-center gap-1">
+                    <Building size={14} />
+                    {criterio.instanciaEmisora}
+                  </span>
+                  {criterio.magistradoPonente && (
+                    <span>· Reporting judge: {criterio.magistradoPonente}</span>
+                  )}
+                  {criterio.publicacion && (
+                    <span className="text-xs text-purple-500">· {criterio.publicacion}</span>
+                  )}
+                </div>
+              </section>
+            ))}
+
+            {/* ===== RESUMEN ===== */}
+            <section>
+              <h2 className="font-serif-display text-2xl font-light text-gray-900 mb-4">
+                Case Summary
+              </h2>
+              <p className="text-gray-700 font-sans-tech text-lg leading-relaxed">
+                {caso.resumen}
+              </p>
+            </section>
+
+            {/* ===== ELEMENTO IA ===== */}
+            <section className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-xl p-6">
+              <h2 className="font-sans-tech text-sm font-semibold text-blue-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                🤖 Role of AI in This Case
+              </h2>
+              <p className="text-blue-900 font-sans-tech text-lg leading-relaxed">
+                {caso.elementoIA}
+              </p>
+            </section>
+
+            {/* ===== HECHOS ===== */}
+            {caso.hechos && (
+              <section>
+                <h2 className="font-serif-display text-2xl font-light text-gray-900 mb-4">
+                  Facts
+                </h2>
+                <p className="text-gray-600 font-sans-tech leading-relaxed whitespace-pre-line">
+                  {caso.hechos}
+                </p>
+              </section>
+            )}
+
+            {/* ===== TRAYECTORIA PROCESAL ===== */}
+            {caso.trayectoria && caso.trayectoria.length > 0 && (
+              <section>
+                <h2 className="font-serif-display text-2xl font-light text-gray-900 mb-6">
+                  Procedural History
+                </h2>
+                <div className="relative">
+                  {/* Línea vertical */}
+                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-500 via-indigo-400 to-blue-300"></div>
+
+                  <div className="space-y-6">
+                    {caso.trayectoria.map((inst, idx) => (
+                      <div key={idx} className="relative pl-12">
+                        {/* Punto en la línea */}
+                        <div className={`absolute left-[11px] top-4 w-6 h-6 rounded-full border-4 border-white shadow-md ${
+                          inst.estado === 'resuelto' ? 'bg-green-500' : 'bg-yellow-500'
+                        }`}>
+                          {inst.generoCriterio && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border-2 border-white"></div>
+                          )}
+                        </div>
+
+                        <div className={`bg-white border rounded-xl p-5 ${
+                          inst.generoCriterio ? 'border-purple-300 shadow-md shadow-purple-500/10' : 'border-gray-200'
+                        }`}>
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div>
+                              <h3 className="font-sans-tech font-semibold text-gray-900 text-lg">{inst.tribunal}</h3>
+                              <p className="text-xs text-gray-500">{inst.ubicacion}</p>
+                            </div>
+                            <span className={`text-sm px-3 py-1 rounded-full font-medium ${
+                              inst.estado === 'resuelto'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {inst.estado === 'resuelto' ? inst.sentido : 'In progress'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-xs font-mono text-gray-600">
+                              <FileText size={12} />
+                              {inst.expediente}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
+                              {inst.tipo}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                            <span className="flex items-center gap-1">
+                              <Calendar size={14} />
+                              {formatFecha(inst.fechaIngreso)}
+                            </span>
+                            {inst.fechaResolucion && (
+                              <>
+                                <span>→</span>
+                                <span>{formatFecha(inst.fechaResolucion)}</span>
+                              </>
+                            )}
+                          </div>
+
+                          {inst.ministroPonente && (
+                            <p className="text-sm text-gray-600 mb-2">
+                              <strong>Reporting Justice:</strong> {inst.ministroPonente}
+                            </p>
+                          )}
+
+                          {inst.resumen && (
+                            <p className="text-gray-600 font-sans-tech text-sm leading-relaxed mt-3">
+                              {inst.resumen}
+                            </p>
+                          )}
+
+                          {inst.votoParticular && (
+                            <div className="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                              <p className="text-xs font-sans-tech font-semibold text-amber-700 uppercase tracking-wider mb-1">
+                                Dissenting opinion
+                              </p>
+                              <p className="text-amber-800 text-sm">{inst.votoParticular}</p>
+                            </div>
+                          )}
+
+                          {inst.generoCriterio && (
+                            <div className="mt-3 flex items-center gap-2 text-purple-600 font-medium text-sm bg-purple-50 rounded-lg px-3 py-2">
+                              <Scale size={16} />
+                              This instance produced the legal standard
+                            </div>
+                          )}
+
+                          {/* Documentos de la instancia */}
+                          {inst.documentos && inst.documentos.length > 0 && (
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {inst.documentos.map((doc, dIdx) => {
+                                const urlValida = typeof doc.url === 'string' && /^https?:\/\//i.test(doc.url);
+                                return urlValida ? (
+                                  <a
+                                    key={dIdx}
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600 hover:border-purple-300 hover:text-purple-600 transition-colors"
+                                  >
+                                    <FileText size={12} />
+                                    {doc.titulo}
+                                    <ExternalLink size={10} />
+                                  </a>
+                                ) : (
+                                  <span
+                                    key={dIdx}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-dashed border-gray-200 rounded-lg text-xs text-gray-400"
+                                  >
+                                    <FileText size={12} />
+                                    {doc.titulo} · not available
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* ===== SIDEBAR (1/3) ===== */}
+          <div className="space-y-6">
+            {/* Partes */}
+            <div className="bg-gray-50 border border-gray-200/50 rounded-xl p-5">
+              <h3 className="font-sans-tech text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Users size={16} />
+                Parties
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <span className="text-xs text-gray-400 uppercase">Plaintiff</span>
+                  <p className="font-sans-tech text-gray-900 font-medium">{caso.partes.actor}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-400 uppercase">Defendant</span>
+                  <p className="font-sans-tech text-gray-900 font-medium">{caso.partes.demandado}</p>
+                </div>
+                {caso.partes.terceros && (
+                  <div>
+                    <span className="text-xs text-gray-400 uppercase">Interested third parties</span>
+                    <p className="font-sans-tech text-gray-700 text-sm">{caso.partes.terceros}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Info del caso */}
+            <div className="bg-gray-50 border border-gray-200/50 rounded-xl p-5">
+              <h3 className="font-sans-tech text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+                Information
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Status</span>
+                  <span className={`font-medium ${caso.estado === 'resuelto' ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {caso.estado === 'resuelto' ? 'Resolved' : 'In progress'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Area of Law</span>
+                  <span className="text-gray-900">{MATERIAS_EN[caso.materia] || caso.materia}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">AI Topic</span>
+                  <span className="text-gray-900">{getTemaInfo(caso.temaIA).emoji} {getTemaInfo(caso.temaIA).label}</span>
+                </div>
+                {caso.subtema && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Subtopic</span>
+                    <span className="text-gray-900">{caso.subtema}</span>
+                  </div>
+                )}
+                <div className="pt-3 border-t border-gray-200/50">
+                  <span className="text-gray-500">Current docket number</span>
+                  <p className="font-mono text-gray-900 mt-1">{caso.expedienteActual}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Current court</span>
+                  <p className="text-gray-900 mt-1">{caso.tribunalActual}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Documentos generales */}
+            {caso.documentos && caso.documentos.length > 0 && (
+              <div className="bg-gray-50 border border-gray-200/50 rounded-xl p-5">
+                <h3 className="font-sans-tech text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <FileText size={16} />
+                  Documents
+                </h3>
+                <div className="space-y-2">
+                  {caso.documentos.map((doc, idx) => {
+                    // OIA-008: without a real URL we don't render a broken link — mark as unavailable
+                    const urlValida = typeof doc.url === 'string' && /^https?:\/\//i.test(doc.url);
+                    return urlValida ? (
+                      <a
+                        key={idx}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50/50 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText size={16} className="text-gray-400 group-hover:text-purple-500" />
+                          <div>
+                            <p className="text-sm text-gray-900 group-hover:text-purple-700">{doc.titulo}</p>
+                            <p className="text-xs text-gray-400">{getTipoDocumentoEn(doc.tipo)}</p>
+                          </div>
+                        </div>
+                        <ExternalLink size={14} className="text-gray-300 group-hover:text-purple-500" />
+                      </a>
+                    ) : (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 bg-gray-50 border border-dashed border-gray-200 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText size={16} className="text-gray-300" />
+                          <div>
+                            <p className="text-sm text-gray-500">{doc.titulo}</p>
+                            <p className="text-xs text-gray-400">{getTipoDocumentoEn(doc.tipo)} · Document unavailable</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Fuentes */}
+            {caso.fuentes && caso.fuentes.length > 0 && (
+              <div className="bg-gray-50 border border-gray-200/50 rounded-xl p-5">
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <h3 className="font-sans-tech text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    Sources
+                  </h3>
+                  <NivelConfianzaBadgeEn item={caso} size="sm" />
+                </div>
+                <div className="space-y-3">
+                  {caso.fuentes.map((fuente, idx) => (
+                    <a
+                      key={idx}
+                      href={fuente.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block p-3 bg-white border border-gray-200 rounded-lg hover:border-purple-300 transition-colors group"
+                    >
+                      <p className="text-sm text-gray-900 group-hover:text-purple-700 line-clamp-2">{fuente.titulo}</p>
+                      {fuente.medio && (
+                        <p className="text-xs text-gray-400 mt-1">{fuente.medio}</p>
+                      )}
+                      {fuente.fecha && (
+                        <p className="text-xs text-gray-400 mt-0.5">{formatFecha(fuente.fecha)}</p>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 pt-8 border-t border-gray-200/50">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <Link
+              href="/en/casos-ia"
+              className="flex items-center gap-2 text-gray-500 hover:text-purple-600 transition-colors font-sans-tech"
+            >
+              <ArrowLeft size={16} />
+              Back to all cases
+            </Link>
+            <div className="text-xs font-sans-tech text-gray-400 flex items-center gap-2">
+              <span>Confidence level:</span>
+              <NivelConfianzaBadgeEn item={caso} size="sm" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
