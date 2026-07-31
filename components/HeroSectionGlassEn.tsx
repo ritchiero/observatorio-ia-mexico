@@ -195,6 +195,11 @@ export default function HeroSectionGlassEn({ stats, legStats, casosStats, loadin
         </nav>
 
         <div className="flex items-center gap-2.5 shrink-0">
+          {/* Language switcher: plain <a> (no prefetch) — ?hl= sets the cookie in proxy.ts */}
+          <a href="/?hl=es" title="Ver en español" className="flex items-center justify-center font-mono font-semibold transition-colors hover:text-white"
+            style={{ fontSize: 11, letterSpacing: '0.08em', color: T.body, width: 40, height: 40, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+            ES
+          </a>
           <button onClick={() => setShowModal(true)} className="hidden sm:flex font-sans-tech uppercase items-center gap-2.5 cursor-pointer transition-transform hover:scale-[1.04]"
             style={{ fontSize: 12, letterSpacing: '0.1em', fontWeight: 600, color: T.void, padding: '10px 18px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)`, boxShadow: `0 8px 32px ${T.cyan}40, inset 0 1px 0 rgba(255,255,255,0.4)` }}>
             Subscribe
@@ -226,6 +231,9 @@ export default function HeroSectionGlassEn({ stats, legStats, casosStats, loadin
               </Link>
             );
           })}
+          <a href="/?hl=es" className="font-sans-tech px-4 py-3 rounded-2xl transition-colors" style={{ fontSize: 15, fontWeight: 500, color: T.body }}>
+            🇲🇽 Español
+          </a>
           <button onClick={() => { setMenuOpen(false); setShowModal(true); }} className="mt-1 font-sans-tech uppercase flex items-center justify-center gap-2.5 cursor-pointer"
             style={{ fontSize: 13, letterSpacing: '0.1em', fontWeight: 600, color: T.void, padding: '13px 18px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)` }}>
             Subscribe
