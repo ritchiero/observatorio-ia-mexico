@@ -1,5 +1,6 @@
 // Hemeroteca: capa de datos + render de los artículos MD (server-side, indexable).
 // Los artículos viven en Firestore (campo `articuloMD`) y se exponen vía /api/iniciativas.
+import { traduccionIniciativa, traduccionArticulo } from './i18n/traducciones';
 
 // Fuente de datos: SIEMPRE el API público de producción. Es contenido publicado,
 // y así el render en build-time funciona (la URL propia del deployment no está
@@ -81,6 +82,31 @@ export async function getFichas(): Promise<FichaHemeroteca[]> {
 
 export async function getFicha(slug: string): Promise<FichaHemeroteca | null> {
   const fichas = await getFichas();
+  return fichas.find((f) => f.slug === slug) ?? null;
+}
+
+// --- Overlay EN: mismas fichas, título/resumen/artículo traducidos cuando existen ---
+
+function aplicarTraduccionEn(f: FichaHemeroteca): FichaHemeroteca {
+  const tIniciativa = traduccionIniciativa(f.id);
+  const tArticulo = traduccionArticulo(f.id);
+  if (!tIniciativa && !tArticulo) return f;
+  return {
+    ...f,
+    titulo: tIniciativa?.titulo ?? f.titulo,
+    resumen: tArticulo?.articuloResumen ?? f.resumen,
+    md: tArticulo?.articuloMD ?? f.md,
+  };
+}
+
+/** Mismo catálogo que getFichas(), con overlay de traducción EN cuando exista. */
+export async function getFichasEn(): Promise<FichaHemeroteca[]> {
+  const fichas = await getFichas();
+  return fichas.map(aplicarTraduccionEn);
+}
+
+export async function getFichaEn(slug: string): Promise<FichaHemeroteca | null> {
+  const fichas = await getFichasEn();
   return fichas.find((f) => f.slug === slug) ?? null;
 }
 
@@ -238,6 +264,66 @@ export function jsonLdGraph(f: FichaHemeroteca): string {
     ],
   };
   return JSON.stringify({ '@context': 'https://schema.org', '@graph': [article, legislation, breadcrumb] });
+}
+
+/** Versión EN de buildTitle: mismo recorte a 60 chars, sufijo en inglés. */
+export function buildTitleEn(f: FichaHemeroteca): string {
+  const y = anio(f.fecha);
+  const sufijo = ` · ${f.camara ? f.camara + ' ' : ''}Bill${y ? ' ' + y : ''}`;
+  return recorta(f.titulo, Math.max(24, 60 - sufijo.length)) + sufijo;
+}
+
+/** Versión EN de buildDescription: mismo recorte a 155 chars. */
+export function buildDescriptionEn(f: FichaHemeroteca): string {
+  const CTA = ' Official text and PDF.';
+  const who = f.proponente ? ` Sponsored by ${f.proponente}${f.partido ? ` (${f.partido})` : ''}.` : '';
+  const base = clean(f.resumen);
+  const conAutor = clean(base + who);
+  if ((conAutor + CTA).length <= 155) return conAutor + CTA;
+  const room = 155 - CTA.length;
+  if (base.length <= room) return base + CTA;
+  return recorta(base, room - 1) + '…' + CTA;
+}
+
+/** Versión EN de jsonLdGraph: mismo @graph, inLanguage en-US, breadcrumb en inglés. */
+export function jsonLdGraphEn(f: FichaHemeroteca): string {
+  const url = `${CANONICAL_BASE}/en/hemeroteca/${f.slug}`;
+  const img = `${CANONICAL_BASE}/og-image.png`;
+  const org = { '@type': 'Organization', name: 'Observatorio IA México', url: CANONICAL_BASE };
+  const temas = (f.tematicas ?? []).map((t) => t.replace(/_/g, ' '));
+  const article = {
+    '@type': 'Article',
+    '@id': `${url}#article`,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    url,
+    headline: recorta(f.titulo, 110),
+    name: f.titulo,
+    description: clean(f.resumen),
+    inLanguage: 'en-US',
+    isAccessibleForFree: true,
+    datePublished: f.fecha,
+    dateModified: f.fecha,
+    image: [img],
+    author: org,
+    publisher: { ...org, logo: { '@type': 'ImageObject', url: img } },
+    isBasedOn: f.urlGaceta || undefined,
+    citation: f.urlGaceta || undefined,
+    about: [{ '@type': 'Thing', name: 'Artificial intelligence' }, ...temas.map((t) => ({ '@type': 'Thing', name: t }))],
+    keywords: temas.join(', ') || undefined,
+    creativeWorkStatus: f.estatus,
+    associatedMedia: f.copiaRespaldo
+      ? { '@type': 'MediaObject', encodingFormat: 'application/pdf', contentUrl: f.copiaRespaldo }
+      : undefined,
+  };
+  const breadcrumb = {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${CANONICAL_BASE}/en` },
+      { '@type': 'ListItem', position: 2, name: 'Archive', item: `${CANONICAL_BASE}/en/hemeroteca` },
+      { '@type': 'ListItem', position: 3, name: f.titulo },
+    ],
+  };
+  return JSON.stringify({ '@context': 'https://schema.org', '@graph': [article, breadcrumb] });
 }
 
 // --- Clasificador: materia, cámara, estatus, año (para filtros y facetas) ---
@@ -459,6 +545,87 @@ export function toItem(f: FichaHemeroteca): ItemHemeroteca {
     tags: temas.slice(0, 3), tagsExtra: Math.max(0, temas.length - 3),
     urlGaceta: f.urlGaceta, copiaRespaldo: f.copiaRespaldo,
     texto: _norm([f.titulo, f.resumen, f.proponente, f.camara, temas.join(' ')].filter(Boolean).join(' ')),
+  };
+}
+
+// --- Labels EN de presentación (misma clasificación por regex, texto en inglés) ---
+
+const ORGANO_EN: Record<string, string> = {
+  'Cámara de Diputados': 'Chamber of Deputies',
+  'Cámara de Senadores': 'Senate',
+  'Poder Judicial': 'Judiciary',
+  'Poder Ejecutivo': 'Executive Branch',
+  'Legislativo': 'Legislature',
+  'Congreso del Estado de México': 'Congress of the State of Mexico',
+  'Congreso del Estado de Oaxaca': 'Congress of the State of Oaxaca',
+  'Congreso de la Ciudad de México': 'Mexico City Congress',
+};
+const VIGENCIA_EN: Record<string, string> = {
+  Vigente: 'In force',
+  Derogado: 'Repealed',
+  Histórico: 'Historical',
+  'Sin actualización reciente': 'No recent update',
+  'En seguimiento': 'Under review',
+};
+const TIPO_EN: Record<string, string> = {
+  'Punto de acuerdo': 'Resolution',
+  'Reforma constitucional': 'Constitutional reform',
+  Ley: 'Law',
+  Reforma: 'Amendment',
+  'Iniciativa de ley': 'Bill',
+  Iniciativa: 'Bill',
+};
+const MATERIA_EN: Record<string, string> = {
+  'Deepfakes y violencia digital': 'Deepfakes & digital violence',
+  'Justicia y proceso': 'Courts & due process',
+  'Datos y ciberseguridad': 'Data & cybersecurity',
+  'Propiedad intelectual': 'Intellectual property',
+  'Educación': 'Education',
+  Salud: 'Health',
+  Trabajo: 'Labor',
+  Neuroderechos: 'Neurorights',
+  'Regulación general': 'General regulation',
+  Otros: 'Other',
+};
+const CAMARA_GRUPO_EN: Record<string, string> = {
+  Diputados: 'Chamber of Deputies',
+  Senado: 'Senate',
+  'Congresos locales': 'State congresses',
+  Otro: 'Other',
+};
+const ESTATUS_EN: Record<string, string> = {
+  Aprobada: 'Approved',
+  Archivada: 'Archived',
+  'Desechada por término': 'Discarded (term expired)',
+  'En comisiones': 'In committee',
+  'En discusión': 'Under debate',
+  'En elaboración': 'Drafting',
+  'En proceso': 'In progress',
+  Presentada: 'Introduced',
+  Presentado: 'Introduced',
+  Publicada: 'Published',
+  Recibida: 'Received',
+  Rechazada: 'Rejected',
+  Turnada: 'Referred',
+};
+
+function fechaLegibleEn(fecha?: string): string {
+  if (!fecha) return '';
+  try { return new Date(fecha).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return ''; }
+}
+
+/** Igual que toItem(), reutilizando la clasificación por regex, pero con labels en inglés. */
+export function toItemEn(f: FichaHemeroteca): ItemHemeroteca {
+  const base = toItem(f);
+  return {
+    ...base,
+    materia: MATERIA_EN[base.materia] ?? base.materia,
+    camaraGrupo: CAMARA_GRUPO_EN[base.camaraGrupo] ?? base.camaraGrupo,
+    organoLabel: ORGANO_EN[base.organoLabel] ?? base.organoLabel,
+    tipoLabel: TIPO_EN[base.tipoLabel] ?? base.tipoLabel,
+    vigenciaLabel: VIGENCIA_EN[base.vigenciaLabel] ?? base.vigenciaLabel,
+    estatusFuenteLabel: base.estatusFuenteLabel ? (ESTATUS_EN[base.estatusFuenteLabel] ?? base.estatusFuenteLabel) : base.estatusFuenteLabel,
+    fechaLegible: fechaLegibleEn(f.fecha),
   };
 }
 

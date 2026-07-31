@@ -55,6 +55,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/recap`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/actividad`, lastModified: now, changeFrequency: 'daily', priority: 0.6 },
     { url: `${BASE}/proceso-legislativo`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    // Edición en inglés (backfill IA + andamiaje /en)
+    { url: `${BASE}/en`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/en/hemeroteca`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
+    { url: `${BASE}/en/informe-2026`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
   ];
 
   const fichas: MetadataRoute.Sitemap = [
@@ -68,6 +72,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: fechaDe(f.fecha),
       changeFrequency: (f.estatus === 'turnada' ? 'weekly' : 'monthly') as 'weekly' | 'monthly',
       priority: 0.7,
+    })),
+    ...hemeroteca.map((f) => ({
+      url: `${BASE}/en/hemeroteca/${f.slug}`,
+      lastModified: fechaDe(f.fecha),
+      changeFrequency: (f.estatus === 'turnada' ? 'weekly' : 'monthly') as 'weekly' | 'monthly',
+      priority: 0.6,
     })),
   ];
 

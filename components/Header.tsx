@@ -3,13 +3,19 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { dict } from '@/lib/i18n/dictionary';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const isEn = pathname.startsWith('/en');
+  const t = dict(isEn ? 'en' : 'es').nav;
+  const p = (es: string) => (isEn ? `/en${es}` : es);
+  // Ruta espejo en el otro idioma: /en/hemeroteca/x <-> /hemeroteca/x
+  const otherLocaleHref = isEn ? pathname.replace(/^\/en/, '') || '/' : `/en${pathname}`;
 
   // La home usa su propio header glass (hero inmersivo); ocultamos el global ahí.
-  if (pathname === '/') return null;
+  if (pathname === '/' || pathname === '/en') return null;
 
   return (
     <header className="border-b border-gray-200 bg-white">
@@ -42,13 +48,20 @@ export default function Header() {
           </Link>
 
           <nav className="hidden sm:flex items-center gap-1">
-            <Link href="/" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Tracker</Link>
-            <Link href="/legislacion" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Legislación</Link>
-            <Link href="/casos-ia" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Casos</Link>
-            <Link href="/hemeroteca" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Hemeroteca</Link>
-            <Link href="/recap" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Recap</Link>
-            <Link href="/actividad" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">Actividad</Link>
-            <Link href="/informe-2026" className="px-3 py-1.5 text-sm font-semibold text-cyan-700 hover:text-cyan-800 hover:bg-cyan-50 rounded-lg transition-all">Informe 2026</Link>
+            <Link href={p('/')} className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">{t.tracker}</Link>
+            <Link href={p('/legislacion')} className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">{t.legislacion}</Link>
+            <Link href={p('/casos-ia')} className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">{t.casos}</Link>
+            <Link href={p('/hemeroteca')} className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">{t.hemeroteca}</Link>
+            {!isEn && <Link href="/recap" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">{t.recap}</Link>}
+            {!isEn && <Link href="/actividad" className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">{t.actividad}</Link>}
+            <Link href={p('/informe-2026')} className="px-3 py-1.5 text-sm font-semibold text-cyan-700 hover:text-cyan-800 hover:bg-cyan-50 rounded-lg transition-all">{t.informe}</Link>
+            <Link
+              href={otherLocaleHref}
+              className="ml-2 px-2.5 py-1 text-xs font-mono font-semibold text-gray-400 hover:text-cyan-700 border border-gray-200 hover:border-cyan-300 rounded-lg transition-all"
+              title={isEn ? 'Ver en español' : 'View in English'}
+            >
+              {isEn ? 'ES' : 'EN'}
+            </Link>
           </nav>
 
           <button
@@ -68,13 +81,16 @@ export default function Header() {
 
         {menuOpen && (
           <nav className="sm:hidden border-t border-gray-200 py-3 space-y-1">
-            <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Tracker</Link>
-            <Link href="/legislacion" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Legislación</Link>
-            <Link href="/casos-ia" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Casos IA</Link>
-            <Link href="/hemeroteca" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Hemeroteca</Link>
-            <Link href="/recap" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Recap Mensual</Link>
-            <Link href="/actividad" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">Actividad</Link>
-            <Link href="/informe-2026" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50 rounded-lg transition-colors">Informe 2026</Link>
+            <Link href={p('/')} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">{t.tracker}</Link>
+            <Link href={p('/legislacion')} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">{t.legislacion}</Link>
+            <Link href={p('/casos-ia')} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">{t.casos}</Link>
+            <Link href={p('/hemeroteca')} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">{t.hemeroteca}</Link>
+            {!isEn && <Link href="/recap" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">{t.recap}</Link>}
+            {!isEn && <Link href="/actividad" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">{t.actividad}</Link>}
+            <Link href={p('/informe-2026')} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50 rounded-lg transition-colors">{t.informe}</Link>
+            <Link href={otherLocaleHref} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-mono font-semibold text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+              {isEn ? '🇲🇽 Español' : '🇬🇧 English'}
+            </Link>
           </nav>
         )}
       </div>
