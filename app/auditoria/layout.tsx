@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Auditoría — inventario del Observatorio',
   description: 'Inventario completo (anuncios, iniciativas, casos judiciales) del Observatorio IA México para revisión, renderizado en servidor.',
   robots: { index: false, follow: false },
-  alternates: { canonical: '/auditoria' },
+  alternates: { canonical: '/auditoria', languages: { es: '/auditoria', en: '/en/auditoria' } },
 };
 
 export default function Layout({ children }: { children: ReactNode }) {

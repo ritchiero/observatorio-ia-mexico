@@ -109,6 +109,77 @@ export type NodoLite = {
   estado?: string; nuevo?: boolean; desc?: string; communityLabel?: string; anio?: number | null;
 };
 
+// Strings de UI del panel/tooltip/controles. Solo texto — la lógica de fuerzas,
+// clasificación y layout es idioma-neutral y no cambia con `locale`.
+const L = {
+  es: {
+    construyendo: 'construyendo el grafo…',
+    ayudaZoom: 'Ctrl + rueda = zoom · rueda = seguir bajando',
+    cerrar: 'Cerrar',
+    nuevo: ' · nuevo',
+    region: '🏝 región · ',
+    historia: (anio: number) =>
+      `🕰 Estás viendo el mapa como era en ${anio}. La memoria y el estado describen la actualidad, por eso se ocultan aquí.`,
+    memoria: 'Memoria',
+    sinResumen: 'Sin resumen registrado para este nodo; sus conexiones (abajo) cuentan la historia.',
+    ultimoMovimiento: 'Último movimiento: ',
+    pesoMapa: 'Peso en el mapa: ',
+    conexion: (n: number) => `${n} conexión${n === 1 ? '' : 'es'}`,
+    nodoCentral: ' · nodo central',
+    relevante: ' · relevante',
+    conexiones: 'Conexiones',
+    enfocarIsla: 'Enfocar su isla',
+    abrirFicha: 'Abrir ficha completa →',
+    escCerrar: 'Esc para cerrar · clic en el vacío deselecciona',
+    clicApunte: 'clic para leer el apunte →',
+    acercar: 'Acercar',
+    alejar: 'Alejar',
+    encuadrar: 'Encuadrar',
+    estado: { vigente: 'vigente', tramite: 'trámite', inactivo: 'inactivo' } as Record<string, string>,
+    activoVigente: 'Activo / vigente',
+    inactivoDesc: 'Inactivo — desechado o abandonado',
+    enTramite: 'En trámite',
+    movimientoReciente: ' · movimiento reciente',
+    meses: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+  },
+  en: {
+    construyendo: 'building the map…',
+    ayudaZoom: 'Ctrl + scroll = zoom · scroll = keep scrolling down',
+    cerrar: 'Close',
+    nuevo: ' · new',
+    region: '🏝 region · ',
+    historia: (anio: number) =>
+      `🕰 You're viewing the map as it was in ${anio}. Memory and status describe the present, so they're hidden here.`,
+    memoria: 'Memory',
+    sinResumen: 'No summary on file for this node; its connections (below) tell the story.',
+    ultimoMovimiento: 'Last activity: ',
+    pesoMapa: 'Weight in the map: ',
+    conexion: (n: number) => `${n} connection${n === 1 ? '' : 's'}`,
+    nodoCentral: ' · central node',
+    relevante: ' · relevant',
+    conexiones: 'Connections',
+    enfocarIsla: 'Focus its island',
+    abrirFicha: 'Open full record →',
+    escCerrar: 'Esc to close · click empty space to deselect',
+    clicApunte: 'click to read the note →',
+    acercar: 'Zoom in',
+    alejar: 'Zoom out',
+    encuadrar: 'Fit to view',
+    estado: { vigente: 'active', tramite: 'in progress', inactivo: 'inactive' } as Record<string, string>,
+    activoVigente: 'Active / in force',
+    inactivoDesc: 'Inactive — discarded or abandoned',
+    enTramite: 'In progress',
+    movimientoReciente: ' · recent activity',
+    meses: ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dic'],
+  },
+} as const;
+
+function localizarHref(href: string | undefined, locale: 'es' | 'en'): string | undefined {
+  if (!href || locale !== 'en') return href;
+  if (href.startsWith('/en/') || href.startsWith('http')) return href;
+  return href.startsWith('/') ? `/en${href}` : href;
+}
+
 export default function GrafoEcosistema({
   onStats,
   onNodes,
@@ -121,6 +192,7 @@ export default function GrafoEcosistema({
   chrome = true,
   anio = null,
   anioActual = 2026,
+  locale = 'es',
 }: {
   onStats?: (s: NonNullable<GData['stats']>) => void;
   /** entrega el catálogo lite de nodos (para buscadores externos) */
@@ -140,7 +212,10 @@ export default function GrafoEcosistema({
   /** modo Historia: año de corte acumulativo (null = actualidad, sin corte) */
   anio?: number | null;
   anioActual?: number;
+  /** idioma de las strings de UI (panel/tooltip/controles); no afecta datos ni layout */
+  locale?: 'es' | 'en';
 }) {
+  const t = L[locale];
   const fgRef = useRef<ForceGraphMethods<GNodeData, GLinkData> | null>(null);
   const [fgReady, setFgReady] = useState(false);
   const bindFg = useCallback((inst: ForceGraphMethods<GNodeData, GLinkData> | null) => {
@@ -672,18 +747,18 @@ export default function GrafoEcosistema({
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-mono">
-          construyendo el grafo…
+          {t.construyendo}
         </div>
       )}
 
       {/* Controles de zoom (móvil: columna flotante a media altura, lejos del dock y del sheet) */}
       {chrome && (
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 sm:right-auto sm:top-auto sm:translate-y-0 sm:bottom-4 sm:left-4">
-        <ZBtn label="+" testid="zoom-in" onClick={() => zoomBy(1.5)} />
-        <ZBtn label="−" testid="zoom-out" onClick={() => zoomBy(1 / 1.5)} />
-        <ZBtn label="⤢" testid="zoom-fit" onClick={() => fgRef.current?.zoomToFit(500, 50)} />
+        <ZBtn label="+" testid="zoom-in" onClick={() => zoomBy(1.5)} locale={locale} />
+        <ZBtn label="−" testid="zoom-out" onClick={() => zoomBy(1 / 1.5)} locale={locale} />
+        <ZBtn label="⤢" testid="zoom-fit" onClick={() => fgRef.current?.zoomToFit(500, 50)} locale={locale} />
         <span className="mt-1 hidden sm:block max-w-[9rem] font-mono text-[9px] leading-snug text-slate-500">
-          Ctrl + rueda = zoom · rueda = seguir bajando
+          {t.ayudaZoom}
         </span>
       </div>
       )}
@@ -694,12 +769,12 @@ export default function GrafoEcosistema({
           <div className="flex items-start justify-between gap-2">
             <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: COLOR[selected.type] }}>
               {selected.type}
-              {!enPasado && selected.nuevo ? ' · nuevo' : ''}
-              {!enPasado && selected.estado && ITEM_TYPES.has(selected.type) ? ` · ${selected.estado}` : ''}
+              {!enPasado && selected.nuevo ? t.nuevo : ''}
+              {!enPasado && selected.estado && ITEM_TYPES.has(selected.type) ? ` · ${t.estado[selected.estado] ?? selected.estado}` : ''}
             </div>
             <button
               onClick={() => setSelected(null)}
-              aria-label="Cerrar"
+              aria-label={t.cerrar}
               className="rounded px-1.5 text-slate-400 hover:text-slate-100"
             >
               ✕
@@ -716,29 +791,29 @@ export default function GrafoEcosistema({
           )}
           <h3 className="mt-1 text-sm font-semibold leading-snug text-slate-50">{selected.label}</h3>
           {selected.communityLabel && (
-            <div className="mt-1 text-[11px] text-cyan-200/70">🏝 región · {selected.communityLabel}</div>
+            <div className="mt-1 text-[11px] text-cyan-200/70">{t.region}{selected.communityLabel}</div>
           )}
 
           {anio !== null && anio < anioActual && (
             <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-200/90">
-              🕰 Estás viendo el mapa como era en {anio}. La memoria y el estado describen la actualidad, por eso se ocultan aquí.
+              {t.historia(anio)}
             </div>
           )}
 
           {/* Memoria: qué pasa con el tema, no solo bullets */}
           {(anio === null || anio >= anioActual) && (<>
-          <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">Memoria</div>
+          <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">{t.memoria}</div>
           {selected.desc ? (
             <p className="mt-1.5 text-xs leading-relaxed text-slate-300">{selected.desc}</p>
           ) : (
             <p className="mt-1.5 text-xs leading-relaxed text-slate-500 italic">
-              Sin resumen registrado para este nodo; sus conexiones (abajo) cuentan la historia.
+              {t.sinResumen}
             </p>
           )}
           <div className="mt-2 space-y-1 text-[11px]">
             {(() => {
-              const act = lecturaActividad(selected.estado, selected.nuevo);
-              const f = fmtFecha(selected.fecha);
+              const act = lecturaActividad(selected.estado, selected.nuevo, locale);
+              const f = fmtFecha(selected.fecha, locale);
               const nCon = neigh.get(String(selected.id))?.size ?? 0;
               return (
                 <>
@@ -746,10 +821,10 @@ export default function GrafoEcosistema({
                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: act.c }} />
                     <span style={{ color: act.c }}>{act.t}</span>
                   </div>
-                  {f && <div className="text-slate-400">Último movimiento: <span className="text-slate-200">{f}</span></div>}
+                  {f && <div className="text-slate-400">{t.ultimoMovimiento}<span className="text-slate-200">{f}</span></div>}
                   <div className="text-slate-400">
-                    Peso en el mapa: <span className="text-slate-200">{nCon} conexión{nCon === 1 ? '' : 'es'}</span>
-                    {nCon >= 8 ? ' · nodo central' : nCon >= 4 ? ' · relevante' : ''}
+                    {t.pesoMapa}<span className="text-slate-200">{t.conexion(nCon)}</span>
+                    {nCon >= 8 ? t.nodoCentral : nCon >= 4 ? t.relevante : ''}
                   </div>
                 </>
               );
@@ -758,7 +833,7 @@ export default function GrafoEcosistema({
           </>)}
 
           {/* Conexiones (vecinos clicables: saltan en el mapa) */}
-          <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">Conexiones</div>
+          <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">{t.conexiones}</div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {[...(neigh.get(String(selected.id)) ?? [])]
               .map((nid) => byId.get(nid))
@@ -785,19 +860,19 @@ export default function GrafoEcosistema({
                 data-testid="focus-isla"
                 className="rounded-lg border border-slate-700/70 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-100 hover:border-cyan-500/50"
               >
-                Enfocar su isla
+                {t.enfocarIsla}
               </button>
             )}
             {selected.href && (
               <a
-                href={selected.href}
+                href={localizarHref(selected.href, locale)}
                 className="rounded-lg bg-cyan-600/90 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-cyan-500"
               >
-                Abrir ficha completa →
+                {t.abrirFicha}
               </a>
             )}
           </div>
-          <div className="mt-3 text-[10px] text-slate-500">Esc para cerrar · clic en el vacío deselecciona</div>
+          <div className="mt-3 text-[10px] text-slate-500">{t.escCerrar}</div>
         </div>
       )}
 
@@ -806,42 +881,43 @@ export default function GrafoEcosistema({
         <div className="pointer-events-none absolute left-16 bottom-4 hidden max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur sm:block">
           <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR[hover.type] }}>
             {hover.type}
-            {!enPasado && hover.nuevo ? ' · nuevo' : ''}
-            {!enPasado && hover.estado && ITEM_TYPES.has(hover.type) ? ` · ${hover.estado}` : ''}
+            {!enPasado && hover.nuevo ? t.nuevo : ''}
+            {!enPasado && hover.estado && ITEM_TYPES.has(hover.type) ? ` · ${t.estado[hover.estado] ?? hover.estado}` : ''}
           </div>
           <div className="text-sm text-slate-100 leading-snug">{hover.label}</div>
           {hover.communityLabel && hover.communityLabel !== hover.label && (
-            <div className="text-[10px] text-cyan-200/60 mt-0.5">región · {hover.communityLabel}</div>
+            <div className="text-[10px] text-cyan-200/60 mt-0.5">{t.region}{hover.communityLabel}</div>
           )}
-          <div className="text-[10px] text-slate-400 mt-0.5">clic para leer el apunte →</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">{t.clicApunte}</div>
         </div>
       )}
     </div>
   );
 }
 
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-function fmtFecha(iso?: string) {
+function fmtFecha(iso: string | undefined, locale: 'es' | 'en') {
   if (!iso) return null;
   const d = new Date(iso);
   if (isNaN(d.getTime())) return null;
-  return `${d.getUTCDate()} ${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  return `${d.getUTCDate()} ${L[locale].meses[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
-function lecturaActividad(estado?: string, nuevo?: boolean) {
+function lecturaActividad(estado: string | undefined, nuevo: boolean | undefined, locale: 'es' | 'en') {
+  const t = L[locale];
   const base =
-    estado === 'vigente' ? { t: 'Activo / vigente', c: '#34E59C' } :
-    estado === 'inactivo' ? { t: 'Inactivo — desechado o abandonado', c: '#94a3b8' } :
-    { t: 'En trámite', c: '#7ea2ff' };
-  return nuevo ? { ...base, t: base.t + ' · movimiento reciente' } : base;
+    estado === 'vigente' ? { t: t.activoVigente, c: '#34E59C' } :
+    estado === 'inactivo' ? { t: t.inactivoDesc, c: '#94a3b8' } :
+    { t: t.enTramite, c: '#7ea2ff' };
+  return nuevo ? { ...base, t: base.t + t.movimientoReciente } : base;
 }
 
-function ZBtn({ label, onClick, testid }: { label: string; onClick: () => void; testid: string }) {
+function ZBtn({ label, onClick, testid, locale = 'es' }: { label: string; onClick: () => void; testid: string; locale?: 'es' | 'en' }) {
+  const t = L[locale];
   return (
     <button
       data-testid={testid}
       onClick={onClick}
       className="h-9 w-9 rounded-lg border border-slate-700/70 bg-slate-900/80 text-slate-200 text-lg leading-none backdrop-blur hover:border-cyan-500/60 hover:text-cyan-300 transition-colors"
-      aria-label={label === '+' ? 'Acercar' : label === '−' ? 'Alejar' : 'Encuadrar'}
+      aria-label={label === '+' ? t.acercar : label === '−' ? t.alejar : t.encuadrar}
     >
       {label}
     </button>

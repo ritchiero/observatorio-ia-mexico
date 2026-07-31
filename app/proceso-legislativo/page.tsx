@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, ExternalLink, Play, Tv, Radio, Clock, Users, Alert
 export const metadata = {
   title: 'Iniciativa de Ley General de IA — seguimiento (en proceso) | Observatorio IA México',
   description: 'Seguimiento de la propuesta de Ley General de Inteligencia Artificial en México. IMPORTANTE: es una iniciativa en proceso legislativo, NO una ley vigente. Contenido de la propuesta, línea de tiempo y recursos.',
+  alternates: { canonical: '/proceso-legislativo', languages: { es: '/proceso-legislativo', en: '/en/proceso-legislativo' } },
 };
 
 export default function ProcesoLegislativoPage() {

@@ -1,6 +1,7 @@
 // Hemeroteca: capa de datos + render de los artículos MD (server-side, indexable).
 // Los artículos viven en Firestore (campo `articuloMD`) y se exponen vía /api/iniciativas.
 import { traduccionIniciativa, traduccionArticulo } from './i18n/traducciones';
+import { tematicaEn } from './i18n/labels-en';
 
 // Fuente de datos: SIEMPRE el API público de producción. Es contenido publicado,
 // y así el render en build-time funciona (la URL propia del deployment no está
@@ -617,6 +618,7 @@ function fechaLegibleEn(fecha?: string): string {
 /** Igual que toItem(), reutilizando la clasificación por regex, pero con labels en inglés. */
 export function toItemEn(f: FichaHemeroteca): ItemHemeroteca {
   const base = toItem(f);
+  const temasEn = (f.tematicas ?? []).map(tematicaEn);
   return {
     ...base,
     materia: MATERIA_EN[base.materia] ?? base.materia,
@@ -626,6 +628,7 @@ export function toItemEn(f: FichaHemeroteca): ItemHemeroteca {
     vigenciaLabel: VIGENCIA_EN[base.vigenciaLabel] ?? base.vigenciaLabel,
     estatusFuenteLabel: base.estatusFuenteLabel ? (ESTATUS_EN[base.estatusFuenteLabel] ?? base.estatusFuenteLabel) : base.estatusFuenteLabel,
     fechaLegible: fechaLegibleEn(f.fecha),
+    tags: temasEn.slice(0, 3), tagsExtra: Math.max(0, temasEn.length - 3),
   };
 }
 

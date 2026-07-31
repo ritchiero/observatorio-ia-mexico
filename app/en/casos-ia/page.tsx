@@ -1,88 +1,503 @@
-import type { Metadata } from 'next';
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Scale } from 'lucide-react';
-import { traduccionCaso } from '@/lib/i18n/traducciones';
+import { Scale, Gavel, ChevronDown, ChevronUp, FileText, AlertCircle, Building, Calendar, ArrowRight } from 'lucide-react';
+import { CasoIA, TemaIA } from '@/types/casos-ia';
+import { TEMAS_IA_EN, MATERIAS_EN, getTipoCriterioEn } from '@/lib/i18n/labels-en';
+import { fetchOverlayEn, aplicarOverlay } from '@/lib/i18n/client';
+import FolioBadge from '@/components/FolioBadge';
 
-const BASE = 'https://www.observatorio-ia-mexico.com';
+export default function CasosIAPageEn() {
+  const [casos, setCasos] = useState<CasoIA[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [filtroTema, setFiltroTema] = useState<string>('todos');
+  const [filtroTipoCriterio, setFiltroTipoCriterio] = useState<string>('todos');
+  const [filtroCriterio, setFiltroCriterio] = useState<string>('todos'); // todos, con_criterio, sin_criterio
 
-export const revalidate = 300;
+  useEffect(() => {
+    async function fetchCasos() {
+      try {
+        const [response, overlay] = await Promise.all([
+          fetch('/api/casos-ia'),
+          fetchOverlayEn('casos'),
+        ]);
+        const data = await response.json();
+        if (data.casos) {
+          setCasos(aplicarOverlay<CasoIA>(data.casos, overlay));
+        }
+      } catch (error) {
+        console.error('Error fetching casos:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCasos();
+  }, []);
 
-export const metadata: Metadata = {
-  title: 'AI Judicial Cases — Mexican precedents',
-  description: 'Precedents and rulings from the Mexican judiciary where artificial intelligence is the subject of litigation or a tool in the judicial process: Supreme Court, appellate courts and administrative tribunals.',
-  alternates: { canonical: '/en/casos-ia', languages: { es: '/casos-ia', en: '/en/casos-ia' } },
-};
+  const casosFiltrados = casos.filter(caso => {
+    if (filtroTema !== 'todos' && caso.temaIA !== filtroTema) return false;
+    if (filtroCriterio === 'con_criterio' && !caso.criterio?.tiene) return false;
+    if (filtroCriterio === 'sin_criterio' && caso.criterio?.tiene) return false;
+    if (filtroTipoCriterio !== 'todos' && caso.criterio?.tipo !== filtroTipoCriterio) return false;
+    return true;
+  });
 
-interface Caso {
-  id: string; nombre: string; resumen?: string; estado?: string; temaIA?: string; materia?: string;
-  tribunalActual?: string; fechaCreacion?: string; criterio?: { tiene?: boolean }; criterios?: unknown[];
-}
+  // Sort: cases with an established criterio (precedent) come first
+  const casosOrdenados = [...casosFiltrados].sort((a, b) => {
+    if (a.criterio?.tiene && !b.criterio?.tiene) return -1;
+    if (!a.criterio?.tiene && b.criterio?.tiene) return 1;
+    return 0;
+  });
 
-const ESTADO_EN: Record<string, string> = {
-  resuelto: 'Resolved', en_proceso: 'In progress', pendiente: 'Pending', turnado: 'Referred',
-};
+  const stats = {
+    total: casos.length,
+    conCriterio: casos.filter(c => c.criterio?.tiene).length,
+    jurisprudencias: casos.filter(c => c.criterio?.tipo === 'jurisprudencia').length,
+    tesisAisladas: casos.filter(c => c.criterio?.tipo === 'tesis_aislada').length,
+    enProceso: casos.filter(c => c.estado === 'en_proceso').length,
+  };
 
-async function getCasos(): Promise<Caso[]> {
-  try {
-    const r = await fetch(`${BASE}/api/casos-ia`, { next: { revalidate: 300 } });
-    if (!r.ok) return [];
-    const d = await r.json();
-    return (d.casos ?? d.data ?? []) as Caso[];
-  } catch {
-    return [];
-  }
-}
+  const getEstadoBadge = (estado: string) => {
+    return estado === 'resuelto'
+      ? { text: 'Resolved', color: 'bg-green-100 text-green-700 border-green-200' }
+      : { text: 'In progress', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' };
+  };
 
-export default async function CasosPageEn() {
-  const casos = await getCasos();
-  const sorted = [...casos].sort((a, b) => (b.fechaCreacion ?? '').localeCompare(a.fechaCreacion ?? ''));
+  const getTemaInfo = (tema: TemaIA) => {
+    return TEMAS_IA_EN[tema] || TEMAS_IA_EN.otro;
+  };
+
+  const formatFecha = (fecha: string) => {
+    if (!fecha) return 'N/A';
+    return new Date(fecha).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   return (
-    <main className="min-h-screen bg-white">
-      <section className="border-b border-gray-200 bg-gray-50 py-12 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 border border-purple-200/50 rounded-full mb-4">
-            <Scale className="w-3.5 h-3.5 text-purple-500" aria-hidden />
-            <span className="text-xs font-sans-tech text-purple-600 font-medium">Judicial precedents</span>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <div className="relative bg-white border-b border-gray-200/50 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] bg-purple-50 rounded-full blur-[100px]"></div>
+          <div className="absolute bottom-[-20%] left-[-10%] w-[300px] h-[300px] bg-blue-50/50 rounded-full blur-[80px]"></div>
+        </div>
+
+        {/* Nav: provided by the global Header (layout). Inline nav removed to avoid duplication. */}
+
+        <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-12 lg:px-24 py-12 md:py-16">
+          {/* Badge */}
+          <div className="w-fit mb-6">
+            <div className="flex items-center gap-3 px-4 py-1.5 bg-gray-100 border border-gray-300/10 rounded-full">
+              <div className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+              </div>
+              <span className="font-sans-tech text-xs uppercase tracking-widest text-gray-600/80">
+                Judicial Criteria · {stats.conCriterio} Precedents
+              </span>
+            </div>
           </div>
-          <h1 className="font-serif-display text-4xl sm:text-5xl font-light text-gray-900 mb-3">
-            Judicial cases of <span className="italic text-purple-500">AI</span>
+
+          {/* Title */}
+          <h1 className="font-serif-display text-4xl md:text-6xl lg:text-7xl font-light leading-[0.95] tracking-tight mb-6">
+            <span className="text-gray-900/90">Criteria for</span>{' '}
+            <span className="italic text-purple-500">AI</span>
           </h1>
-          <p className="text-gray-600 max-w-2xl mb-4">
-            {sorted.length} rulings where artificial intelligence is the subject of litigation or a tool used in the
-            judicial process.
+
+          <p className="font-sans-tech text-lg md:text-xl text-gray-900/60 max-w-2xl leading-relaxed border-l border-purple-500/30 pl-6">
+            Jurisprudencia (binding precedent) and tesis aisladas (isolated theses) that set precedents on artificial intelligence in the Mexican judicial system.
           </p>
-          <a href="/casos-ia" className="text-sm text-cyan-700 underline hover:text-cyan-800">Ver en español</a>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+            <div className="group bg-gray-100 border border-gray-300/10 rounded-xl p-4 hover:border-purple-500/30 transition-all cursor-default">
+              <div className={`font-serif-display text-3xl md:text-4xl text-gray-900 group-hover:text-purple-500 transition-colors ${loading ? 'animate-pulse' : ''}`}>
+                {loading ? '—' : stats.total}
+              </div>
+              <div className="font-sans-tech text-xs text-gray-900/40 uppercase tracking-widest mt-1">Cases</div>
+            </div>
+            <div className="group bg-purple-50 border border-purple-200/30 rounded-xl p-4 hover:border-purple-500/50 transition-all cursor-default">
+              <div className={`font-serif-display text-3xl md:text-4xl text-purple-600 group-hover:text-purple-700 transition-colors ${loading ? 'animate-pulse' : ''}`}>
+                {loading ? '—' : stats.conCriterio}
+              </div>
+              <div className="font-sans-tech text-xs text-purple-600/60 uppercase tracking-widest mt-1">With Precedent</div>
+            </div>
+            <div className="group bg-indigo-50 border border-indigo-200/30 rounded-xl p-4 hover:border-indigo-500/50 transition-all cursor-default">
+              <div className={`font-serif-display text-3xl md:text-4xl text-indigo-600 group-hover:text-indigo-700 transition-colors ${loading ? 'animate-pulse' : ''}`}>
+                {loading ? '—' : stats.jurisprudencias}
+              </div>
+              <div className="font-sans-tech text-xs text-indigo-600/60 uppercase tracking-widest mt-1">Jurisprudencias</div>
+            </div>
+            <div className="group bg-gray-100 border border-gray-300/10 rounded-xl p-4 hover:border-gray-400/30 transition-all cursor-default">
+              <div className={`font-serif-display text-3xl md:text-4xl text-gray-600 group-hover:text-gray-700 transition-colors ${loading ? 'animate-pulse' : ''}`}>
+                {loading ? '—' : stats.tesisAisladas}
+              </div>
+              <div className="font-sans-tech text-xs text-gray-900/40 uppercase tracking-widest mt-1">Tesis Aisladas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <section className="bg-gray-50 border-b border-gray-200/50 py-4 md:py-6">
+        <div className="max-w-6xl mx-auto px-4 md:px-12 lg:px-24">
+          <div className="flex flex-wrap gap-3">
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">AI Topic</label>
+              <select
+                value={filtroTema}
+                onChange={(e) => setFiltroTema(e.target.value)}
+                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">All</option>
+                {Object.entries(TEMAS_IA_EN).map(([key, { label, emoji }]) => (
+                  <option key={key} value={key}>{emoji} {label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Precedent</label>
+              <select
+                value={filtroCriterio}
+                onChange={(e) => setFiltroCriterio(e.target.value)}
+                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">All</option>
+                <option value="con_criterio">⚖️ With precedent</option>
+                <option value="sin_criterio">📋 No precedent yet</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Type</label>
+              <select
+                value={filtroTipoCriterio}
+                onChange={(e) => setFiltroTipoCriterio(e.target.value)}
+                className="px-3 py-2 border border-gray-300/20 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-sans-tech"
+              >
+                <option value="todos">All</option>
+                <option value="jurisprudencia">⚖️ Jurisprudencia</option>
+                <option value="tesis_aislada">📜 Tesis Aislada</option>
+              </select>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sorted.map((c) => {
-            const t = traduccionCaso(c.id);
-            const nombre = t?.nombre ?? c.nombre;
-            const resumen = t?.resumen ?? c.resumen;
-            const tieneCriterio = c.criterio?.tiene || (c.criterios && c.criterios.length > 0);
-            return (
-              <Link
-                key={c.id}
-                href={`/en/casos-ia/${c.id}`}
-                className="group bg-white border border-gray-200 rounded-xl p-5 hover:border-purple-300 hover:shadow-md transition-all"
-              >
-                <div className="flex items-center gap-2 mb-2 text-[11px]">
-                  <span className={`px-2 py-0.5 rounded-full font-medium ${tieneCriterio ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
-                    {tieneCriterio ? 'Settled precedent' : 'In progress'}
-                  </span>
-                  {c.estado && <span className="px-2 py-0.5 rounded-full bg-gray-50 text-gray-500">{ESTADO_EN[c.estado] ?? c.estado}</span>}
+      {/* Cases / Criteria List */}
+      <section className="py-8 md:py-12 bg-white">
+        <div className="max-w-6xl mx-auto px-4 md:px-12 lg:px-24">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-serif-display text-2xl md:text-3xl font-light text-gray-900">
+              Criteria and <span className="italic text-purple-500">precedents</span>
+            </h2>
+            <span className="text-xs font-mono text-gray-400">
+              {casosOrdenados.length} of {casos.length}
+            </span>
+          </div>
+
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded-xl p-6 animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-3" />
+                  <div className="h-4 bg-gray-100 rounded w-1/2 mb-2" />
+                  <div className="h-4 bg-gray-100 rounded w-full" />
                 </div>
-                <h3 className="font-sans-tech font-semibold text-gray-900 text-sm mb-1.5 line-clamp-2 group-hover:text-purple-700">{nombre}</h3>
-                {resumen && <p className="text-xs text-gray-500 line-clamp-3">{resumen}</p>}
-                {c.tribunalActual && <div className="mt-2 text-xs text-gray-400">{c.tribunalActual}</div>}
-              </Link>
-            );
-          })}
+              ))}
+            </div>
+          ) : casosOrdenados.length === 0 ? (
+            <div className="text-center py-16">
+              <Gavel className="w-16 h-16 text-purple-200 mx-auto mb-4" />
+              <h3 className="font-serif-display text-xl text-gray-900 mb-2">
+                {casos.length === 0 ? 'Coming soon' : 'No results'}
+              </h3>
+              <p className="text-gray-500 font-sans-tech max-w-md mx-auto">
+                {casos.length === 0
+                  ? "We're documenting the first AI-related judicial criteria in Mexico's court system."
+                  : 'No cases match the selected filters.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {casosOrdenados.map((caso) => {
+                const estadoBadge = getEstadoBadge(caso.estado);
+                const temaInfo = getTemaInfo(caso.temaIA);
+                const isExpanded = expandedId === caso.id;
+                const tieneCriterio = caso.criterio?.tiene;
+
+                return (
+                  <div
+                    key={caso.id}
+                    className={`bg-white border rounded-xl overflow-hidden transition-all ${
+                      tieneCriterio
+                        ? 'border-purple-200 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/10'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                    }`}
+                  >
+                    {/* If the case has a criterio (precedent), show it first */}
+                    {tieneCriterio && caso.criterio && (
+                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100 p-5 md:p-6">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold font-sans-tech bg-purple-100 text-purple-700 border border-purple-200">
+                            {getTipoCriterioEn(caso.criterio.tipo).emoji} {getTipoCriterioEn(caso.criterio.tipo).label}
+                          </span>
+                          {caso.criterio.registro && (
+                            <span className="text-xs font-mono text-purple-600">
+                              Record: {caso.criterio.registro}
+                            </span>
+                          )}
+                          {caso.criterio.epoca && (
+                            <span className="text-xs text-purple-500">
+                              · {caso.criterio.epoca}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="font-sans-tech font-bold text-purple-900 text-lg md:text-xl mb-3 uppercase tracking-wide">
+                          {caso.criterio.rubro}
+                        </h3>
+
+                        <p className="text-purple-800/80 font-sans-tech text-sm leading-relaxed mb-4 line-clamp-3">
+                          "{caso.criterio.texto}"
+                        </p>
+
+                        {/* What it establishes */}
+                        {caso.criterio.reglasPrincipales && caso.criterio.reglasPrincipales.length > 0 && (
+                          <div className="bg-white/60 rounded-lg p-4 mb-3">
+                            <h4 className="text-xs font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-2">
+                              💡 What it establishes
+                            </h4>
+                            <ul className="space-y-1">
+                              {caso.criterio.reglasPrincipales.slice(0, 3).map((regla, idx) => (
+                                <li key={idx} className="text-sm text-purple-900 font-sans-tech flex items-start gap-2">
+                                  <span className="text-purple-400 mt-1">•</span>
+                                  {regla}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <div className="text-xs text-purple-600 font-sans-tech">
+                          <Building size={12} className="inline mr-1" />
+                          {caso.criterio.instanciaEmisora}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Case info */}
+                    <div
+                      className="p-5 md:p-6 cursor-pointer"
+                      onClick={() => setExpandedId(isExpanded ? null : caso.id)}
+                    >
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <FolioBadge folio={caso.folio} size="sm" locale="en" />
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans-tech border ${estadoBadge.color}`}>
+                            {estadoBadge.text}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-sans-tech bg-${temaInfo.color}-100 text-${temaInfo.color}-700`}>
+                            {temaInfo.emoji} {temaInfo.label}
+                          </span>
+                          {!tieneCriterio && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-sans-tech bg-gray-100 text-gray-500">
+                              No precedent yet
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <span className="text-xs font-mono">{caso.tribunalActual}</span>
+                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        </div>
+                      </div>
+
+                      <h3 className="font-sans-tech font-semibold text-gray-900 text-lg mb-2">
+                        {caso.nombre}
+                      </h3>
+
+                      <p className="text-gray-600 font-sans-tech text-sm leading-relaxed line-clamp-2 mb-3">
+                        {caso.resumen}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 font-sans-tech">
+                        <span className="flex items-center gap-1">
+                          <FileText size={12} />
+                          {caso.expedienteActual}
+                        </span>
+                        <span>·</span>
+                        <span>{MATERIAS_EN[caso.materia] || caso.materia}</span>
+                        {caso.trayectoria && caso.trayectoria.length > 0 && (
+                          <>
+                            <span>·</span>
+                            <span>{caso.trayectoria.length} instance{caso.trayectoria.length > 1 ? 's' : ''}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expanded content */}
+                    {isExpanded && (
+                      <div className="border-t border-gray-100 bg-gray-50/50 p-5 md:p-6">
+                        {/* AI element */}
+                        <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                          <h4 className="text-xs font-sans-tech font-semibold text-blue-700 uppercase tracking-wider mb-2">
+                            🤖 Role of AI in this case
+                          </h4>
+                          <p className="text-blue-900 font-sans-tech text-sm leading-relaxed">
+                            {caso.elementoIA}
+                          </p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6 mb-6">
+                          {/* Parties */}
+                          <div>
+                            <h4 className="text-xs font-sans-tech font-medium text-gray-400 uppercase tracking-wider mb-2">Parties</h4>
+                            <div className="space-y-1 text-sm">
+                              <p><span className="text-gray-500">Plaintiff:</span> <span className="text-gray-900">{caso.partes.actor}</span></p>
+                              <p><span className="text-gray-500">Defendant:</span> <span className="text-gray-900">{caso.partes.demandado}</span></p>
+                              {caso.partes.terceros && (
+                                <p><span className="text-gray-500">Third parties:</span> <span className="text-gray-900">{caso.partes.terceros}</span></p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Info */}
+                          <div>
+                            <h4 className="text-xs font-sans-tech font-medium text-gray-400 uppercase tracking-wider mb-2">Details</h4>
+                            <div className="space-y-1 text-sm">
+                              <p><span className="text-gray-500">Case file:</span> <span className="text-gray-900 font-mono">{caso.expedienteActual}</span></p>
+                              <p><span className="text-gray-500">Current court:</span> <span className="text-gray-900">{caso.tribunalActual}</span></p>
+                              <p><span className="text-gray-500">Subject matter:</span> <span className="text-gray-900">{MATERIAS_EN[caso.materia]}</span></p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Facts */}
+                        {caso.hechos && (
+                          <div className="mb-6">
+                            <h4 className="text-xs font-sans-tech font-medium text-gray-400 uppercase tracking-wider mb-2">Facts</h4>
+                            <p className="text-gray-600 font-sans-tech text-sm leading-relaxed">
+                              {caso.hechos}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Procedural history */}
+                        {caso.trayectoria && caso.trayectoria.length > 0 && (
+                          <div className="mb-6">
+                            <h4 className="text-xs font-sans-tech font-medium text-gray-400 uppercase tracking-wider mb-3">
+                              Procedural history
+                            </h4>
+                            <div className="space-y-3">
+                              {caso.trayectoria.map((inst, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`relative pl-6 pb-3 ${idx < caso.trayectoria.length - 1 ? 'border-l-2 border-gray-200' : ''}`}
+                                >
+                                  <div className={`absolute left-[-5px] top-1 w-3 h-3 rounded-full ${
+                                    inst.estado === 'resuelto' ? 'bg-green-500' : 'bg-yellow-500'
+                                  }`}></div>
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-sans-tech font-medium text-gray-900 text-sm">{inst.tribunal}</span>
+                                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                        inst.estado === 'resuelto'
+                                          ? 'bg-green-100 text-green-700'
+                                          : 'bg-yellow-100 text-yellow-700'
+                                      }`}>
+                                        {inst.estado === 'resuelto' ? inst.sentido : 'In progress'}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-500 font-mono mb-1">
+                                      {inst.tipo} · {inst.expediente}
+                                    </div>
+                                    <div className="text-xs text-gray-400">
+                                      {formatFecha(inst.fechaIngreso)}
+                                      {inst.fechaResolucion && ` → ${formatFecha(inst.fechaResolucion)}`}
+                                    </div>
+                                    {inst.resumen && (
+                                      <p className="text-xs text-gray-600 mt-2">{inst.resumen}</p>
+                                    )}
+                                    {inst.generoCriterio && (
+                                      <div className="mt-2 text-xs text-purple-600 font-medium">
+                                        📜 This instance generated a precedent
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Relevance (if there is a criterio) */}
+                        {tieneCriterio && caso.criterio?.relevancia && (
+                          <div className="mb-6 p-4 bg-purple-50 border border-purple-100 rounded-lg">
+                            <h4 className="text-xs font-sans-tech font-semibold text-purple-700 uppercase tracking-wider mb-2">
+                              ⚡ Why it matters
+                            </h4>
+                            <p className="text-purple-900 font-sans-tech text-sm leading-relaxed">
+                              {caso.criterio.relevancia}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Documents */}
+                        {caso.documentos && caso.documentos.length > 0 && (
+                          <div className="mb-6">
+                            <h4 className="text-xs font-sans-tech font-medium text-gray-400 uppercase tracking-wider mb-2">Documents</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {caso.documentos.map((doc, idx) => (
+                                <a
+                                  key={idx}
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-purple-300 hover:text-purple-600 transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <FileText size={14} />
+                                  {doc.titulo}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* CTA */}
+                        <div className="pt-4 border-t border-gray-200/50">
+                          <Link
+                            href={`/en/casos-ia/${caso.id}`}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-sans-tech text-sm uppercase tracking-wider hover:bg-purple-700 transition-colors rounded-lg"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View full case
+                            <ArrowRight size={16} />
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Footer info */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mt-8 pt-6 border-t border-gray-200/50 text-xs font-sans-tech text-gray-400">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <span>Precedents documented and verified against official sources</span>
+            </div>
+            <span className="font-mono text-purple-500/50">Powered by Citizen Agents</span>
+          </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

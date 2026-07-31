@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export const metadata: Metadata = {
   title: 'Recap mensual — IA en el Estado mexicano',
   description: 'Resumen mensual del estado de la inteligencia artificial en el aparato estatal mexicano: anuncios, legislación, casos y veredicto del mes.',
-  alternates: { canonical: '/recap' },
+  alternates: { canonical: '/recap', languages: { es: '/recap', en: '/en/recap' } },
 };
 
 export default function Layout({ children }: { children: ReactNode }) {

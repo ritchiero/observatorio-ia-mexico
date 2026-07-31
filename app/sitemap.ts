@@ -55,16 +55,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/recap`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/actividad`, lastModified: now, changeFrequency: 'daily', priority: 0.6 },
     { url: `${BASE}/proceso-legislativo`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    // Edición en inglés (backfill IA + andamiaje /en)
+    // Edición en inglés (backfill IA + andamiaje /en) — espejo completo
     { url: `${BASE}/en`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/en/legislacion`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${BASE}/en/casos-ia`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE}/en/hemeroteca`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE}/en/informe-2026`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${BASE}/en/recap`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${BASE}/en/grafo/tabla`, lastModified: now, changeFrequency: 'daily', priority: 0.5 },
+    { url: `${BASE}/en/proceso-legislativo`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
   ];
 
   const fichas: MetadataRoute.Sitemap = [
     ...anuncios.map((id) => ({ url: `${BASE}/anuncio/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
+    ...anuncios.map((id) => ({ url: `${BASE}/en/anuncio/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.5 })),
     ...iniciativas.map((id) => ({ url: `${BASE}/legislacion/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
+    ...iniciativas.map((id) => ({ url: `${BASE}/en/legislacion/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.5 })),
     ...casos.map((id) => ({ url: `${BASE}/casos-ia/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 })),
+    ...casos.map((id) => ({ url: `${BASE}/en/casos-ia/${id}`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.5 })),
     // Fichas de hemeroteca: contenido server-rendered → alta prioridad de indexación.
     // lastModified real (no `now`) para no mentirle a Google sobre la frescura.
     ...hemeroteca.map((f) => ({

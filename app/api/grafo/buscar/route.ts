@@ -26,16 +26,16 @@ type GNode = {
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 type ItemAut = { gid: string; tipo: 'anuncio' | 'iniciativa' | 'caso'; label: string; status: string; fecha: string };
 
-const ESTADO_QUERIES: Array<{ re: RegExp; match: (it: ItemAut) => boolean; label: string }> = [
-  { re: /incumplid/, match: (it) => norm(it.status).includes('incumplid'), label: 'incumplidos' },
-  { re: /\boperando\b/, match: (it) => norm(it.status) === 'operando', label: 'operando' },
-  { re: /en desarrollo/, match: (it) => norm(it.status) === 'en_desarrollo', label: 'en desarrollo' },
-  { re: /prometid/, match: (it) => norm(it.status) === 'prometido', label: 'prometidos' },
-  { re: /concluid/, match: (it) => norm(it.status) === 'concluido', label: 'concluidos' },
-  { re: /abandonad/, match: (it) => norm(it.status).includes('abandonad'), label: 'abandonados' },
-  { re: /vigente/, match: (it) => bucketDe(it.status) === 'vigente', label: 'vigentes' },
-  { re: /inactiv/, match: (it) => bucketDe(it.status) === 'inactivo', label: 'inactivos' },
-  { re: /en tramite|tramite/, match: (it) => bucketDe(it.status) === 'tramite', label: 'en trámite' },
+const ESTADO_QUERIES: Array<{ re: RegExp; reEn: RegExp; match: (it: ItemAut) => boolean; label: string; labelEn: string }> = [
+  { re: /incumplid/, reEn: /\bbroken\b|not (?:kept|met)|unfulfilled/, match: (it) => norm(it.status).includes('incumplid'), label: 'incumplidos', labelEn: 'broken' },
+  { re: /\boperando\b/, reEn: /\boperating\b|\blive\b/, match: (it) => norm(it.status) === 'operando', label: 'operando', labelEn: 'operating' },
+  { re: /en desarrollo/, reEn: /in development/, match: (it) => norm(it.status) === 'en_desarrollo', label: 'en desarrollo', labelEn: 'in development' },
+  { re: /prometid/, reEn: /\bpromised\b/, match: (it) => norm(it.status) === 'prometido', label: 'prometidos', labelEn: 'promised' },
+  { re: /concluid/, reEn: /\bconcluded\b|\bcompleted\b/, match: (it) => norm(it.status) === 'concluido', label: 'concluidos', labelEn: 'concluded' },
+  { re: /abandonad/, reEn: /\babandoned\b/, match: (it) => norm(it.status).includes('abandonad'), label: 'abandonados', labelEn: 'abandoned' },
+  { re: /vigente/, reEn: /\bactive\b|in force/, match: (it) => bucketDe(it.status) === 'vigente', label: 'vigentes', labelEn: 'active' },
+  { re: /inactiv/, reEn: /\binactive\b/, match: (it) => bucketDe(it.status) === 'inactivo', label: 'inactivos', labelEn: 'inactive' },
+  { re: /en tramite|tramite/, reEn: /in progress|pending/, match: (it) => bucketDe(it.status) === 'tramite', label: 'en trámite', labelEn: 'in progress' },
 ];
 
 async function catalogoAutoritativo(base: string): Promise<ItemAut[]> {
@@ -66,12 +66,20 @@ async function catalogoAutoritativo(base: string): Promise<ItemAut[]> {
   ];
 }
 
+const TIPO_EN: Record<'anuncio' | 'iniciativa' | 'caso', string> = { anuncio: 'announcement', iniciativa: 'bill', caso: 'case' };
+const TIPO_QUERY_EN: Record<'anuncio' | 'iniciativa' | 'caso', RegExp> = {
+  anuncio: /announcement|promise/,
+  iniciativa: /\bbill\b|legislat|initiative/,
+  caso: /\bcase\b|judicial/,
+};
+
 async function fastPathEstados(
   pregunta: string,
   base: string,
+  lang: 'es' | 'en',
 ): Promise<{ respuesta: string; nodos: GNode[] } | null> {
   const q = norm(pregunta);
-  const query = ESTADO_QUERIES.find((e) => e.re.test(q));
+  const query = ESTADO_QUERIES.find((e) => (lang === 'en' ? e.reEn : e.re).test(q));
   if (!query) return null;
   const items = await catalogoAutoritativo(base);
   // el grafo SÓLO se usa para iluminar nodos; si falla, el conteo sale igual
@@ -80,11 +88,31 @@ async function fastPathEstados(
     const g = await fetch(`${base}/api/grafo`, { cache: 'no-store' }).then((r) => r.json());
     byId = new Map(((g?.nodes ?? []) as GNode[]).map((n) => [n.id, n]));
   } catch { /* sin mapa no hay iluminación, pero la cifra es la misma */ }
-  // alcance opcional por tipo ("anuncios incumplidos" vs "iniciativas vigentes")
-  const tipos = (['anuncio', 'iniciativa', 'caso'] as const).filter((t) => q.includes(t));
+  // alcance opcional por tipo ("anuncios incumplidos" vs "iniciativas vigentes" / "broken bills")
+  const tipos = (['anuncio', 'iniciativa', 'caso'] as const).filter((t) =>
+    lang === 'en' ? TIPO_QUERY_EN[t].test(q) : q.includes(t),
+  );
   const hits = items
     .filter((it) => (tipos.length === 0 || tipos.includes(it.tipo)) && query.match(it))
     .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  if (lang === 'en') {
+    const alcanceEn = tipos.length === 1 ? `${TIPO_EN[tipos[0]]}s` : 'records';
+    if (!hits.length) {
+      return { respuesta: `There are no ${query.labelEn} ${alcanceEn} (direct count from the database, not an estimate).`, nodos: [] };
+    }
+    const lista = hits.slice(0, MAX_NODOS).map((it) => `«${it.label.slice(0, 65)}»`).join(' · ');
+    const extraCount = hits.length > MAX_NODOS ? ` …and ${hits.length - MAX_NODOS} more.` : '';
+    const enMapa = hits.filter((it) => byId.has(it.gid)).slice(0, MAX_NODOS).map((it) => byId.get(it.gid)!);
+    const notaMapa = enMapa.length < Math.min(hits.length, MAX_NODOS)
+      ? ` (${enMapa.length} of ${hits.length} are drawn on the map; the rest don't have enough connections to appear as a node).`
+      : '';
+    return {
+      respuesta: `There are ${hits.length} ${query.labelEn} ${alcanceEn} — direct count from the database. ${lista}${extraCount}${notaMapa}`,
+      nodos: enMapa,
+    };
+  }
+
   const alcance = tipos.length === 1 ? `${tipos[0]}s` : 'registros';
   if (!hits.length) {
     return { respuesta: `No hay ${alcance} ${query.label} (conteo directo de la base, no estimación).`, nodos: [] };
@@ -105,10 +133,11 @@ async function fastPathEstados(
 
 export async function POST(request: NextRequest) {
   try {
-    const { q } = await request.json();
+    const { q, lang: langRaw } = await request.json();
     const pregunta = String(q ?? '').trim().slice(0, 300);
+    const lang: 'es' | 'en' = langRaw === 'en' ? 'en' : 'es';
     if (pregunta.length < 3) {
-      return NextResponse.json({ error: 'Pregunta demasiado corta' }, { status: 400 });
+      return NextResponse.json({ error: lang === 'en' ? 'Question is too short' : 'Pregunta demasiado corta' }, { status: 400 });
     }
 
     const base =
@@ -118,7 +147,7 @@ export async function POST(request: NextRequest) {
     // 1) conteos/estados: determinista desde las colecciones — ANTES de exigir la
     //    llave del modelo y sin depender del grafo (OIA-009: si falla OpenRouter o
     //    el grafo, el conteo sale igual).
-    const fp = await fastPathEstados(pregunta, base);
+    const fp = await fastPathEstados(pregunta, base, lang);
     if (fp) {
       return NextResponse.json({
         respuesta: fp.respuesta,
@@ -131,14 +160,14 @@ export async function POST(request: NextRequest) {
     const key = process.env.OPENROUTER_API_KEY;
     if (!key) {
       return NextResponse.json(
-        { error: 'Buscador IA no configurado (falta OPENROUTER_API_KEY en el entorno)' },
+        { error: lang === 'en' ? 'AI search is not configured (missing OPENROUTER_API_KEY)' : 'Buscador IA no configurado (falta OPENROUTER_API_KEY en el entorno)' },
         { status: 503 },
       );
     }
     const g = await fetch(`${base}/api/grafo`, { cache: 'no-store' }).then((r) => r.json());
     const nodes: GNode[] = g?.nodes ?? [];
     if (!nodes.length) {
-      return NextResponse.json({ error: 'El grafo no tiene datos' }, { status: 502 });
+      return NextResponse.json({ error: lang === 'en' ? 'The map has no data' : 'El grafo no tiene datos' }, { status: 502 });
     }
     const byId = new Map(nodes.map((n) => [n.id, n]));
 
@@ -155,7 +184,18 @@ export async function POST(request: NextRequest) {
       )
       .join('\n');
 
-    const system = `Eres el buscador del Observatorio IA México: un mapa (grafo) de cómo el Estado mexicano usa la inteligencia artificial. Recibes el catálogo completo de nodos (formato: id|tipo|estado|fecha_ultimo_movimiento|título|memoria) y una consulta del usuario en lenguaje natural.
+    const system = lang === 'en'
+      ? `You are the search assistant for Observatorio IA México: a map (graph) of how the Mexican state uses artificial intelligence. You receive the full catalog of nodes (format: id|type|status|last_movement_date|title|memory, all in Spanish — the underlying data is Spanish-language) and a user query in English.
+Respond ONLY with valid JSON, no markdown, no extra text, in exactly this shape:
+{"respuesta":"1 to 3 sentences in ENGLISH answering the query based ONLY on the catalog","nodos":["id1","id2"]}
+Rules:
+1. PRIORITIZE THE CURRENT STATE: answer first what is happening TODAY — what's active/operating and in progress, with its last movement and date. Mention historical or inactive items (discarded, archived, abandoned) only at the end, briefly, as context.
+2. Order "nodos" the same way: active/in-progress first (most recent first), relevant inactive ones last.
+3. Maximum ${MAX_NODOS} nodes; use only ids that exist in the catalog.
+4. If nothing is relevant, return nodos:[] and say so honestly.
+5. Never invent facts not in the catalog; cite dates when available.
+6. Official names of laws, courts, and agencies stay in Spanish, with a brief English gloss in parentheses the first time. Mexican legal/procedural terms (amparo, tesis, jurisprudencia, SCJN...) stay in Spanish with a brief gloss too. Everything else: clear, natural English.`
+      : `Eres el buscador del Observatorio IA México: un mapa (grafo) de cómo el Estado mexicano usa la inteligencia artificial. Recibes el catálogo completo de nodos (formato: id|tipo|estado|fecha_ultimo_movimiento|título|memoria) y una consulta del usuario en lenguaje natural.
 Responde ÚNICAMENTE con JSON válido, sin markdown ni texto extra, con esta forma exacta:
 {"respuesta":"1 a 3 frases en español que respondan la consulta con base SOLO en el catálogo","nodos":["id1","id2"]}
 Reglas:
@@ -186,7 +226,7 @@ Reglas:
     if (!or.ok) {
       const detail = await or.text().catch(() => '');
       console.error('[buscar] OpenRouter', or.status, detail.slice(0, 300));
-      return NextResponse.json({ error: `El modelo no respondió (HTTP ${or.status})` }, { status: 502 });
+      return NextResponse.json({ error: lang === 'en' ? `The model did not respond (HTTP ${or.status})` : `El modelo no respondió (HTTP ${or.status})` }, { status: 502 });
     }
     const data = await or.json();
     const raw: string = data?.choices?.[0]?.message?.content ?? '';
@@ -199,7 +239,7 @@ Reglas:
       if (m) { try { parsed = JSON.parse(m[0]); } catch { /* cae al error de abajo */ } }
     }
     if (typeof parsed.respuesta !== 'string') {
-      return NextResponse.json({ error: 'Respuesta ilegible del modelo' }, { status: 502 });
+      return NextResponse.json({ error: lang === 'en' ? 'Unreadable response from the model' : 'Respuesta ilegible del modelo' }, { status: 502 });
     }
 
     const nodos = (parsed.nodos ?? [])

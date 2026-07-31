@@ -11,7 +11,10 @@ export const metadata: Metadata = {
   title: 'Mapa en tabla — vista accesible',
   description:
     'Todos los registros del mapa del Observatorio IA México en una tabla accesible: anuncios, iniciativas y casos, con estado, fecha y enlace.',
-  alternates: { canonical: 'https://www.observatorio-ia-mexico.com/grafo/tabla' },
+  alternates: {
+    canonical: 'https://www.observatorio-ia-mexico.com/grafo/tabla',
+    languages: { es: 'https://www.observatorio-ia-mexico.com/grafo/tabla', en: 'https://www.observatorio-ia-mexico.com/en/grafo/tabla' },
+  },
 };
 
 const BASE = 'https://www.observatorio-ia-mexico.com';

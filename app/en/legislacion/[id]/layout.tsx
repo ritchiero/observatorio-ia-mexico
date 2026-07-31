@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { traduccionIniciativa } from '@/lib/i18n/traducciones';
 
-// SEO server-side de la ficha de INICIATIVA. Igual que anuncios: título/descripción
-// ya existían, pero faltaba imagen OG, twitter card y JSON-LD. La página es client;
-// este layout server provee la metadata + los datos estructurados (schema Legislation).
 const BASE = 'https://www.observatorio-ia-mexico.com';
 const OG = `${BASE}/og-image.png`;
 
@@ -23,40 +21,42 @@ const clip = (v: unknown, n: number): string => str(v).replace(/\s+/g, ' ').trim
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const path = `/legislacion/${id}`;
+  const path = `/en/legislacion/${id}`;
   const i = await getIniciativa(id);
-  if (!i?.titulo) return { title: 'Iniciativa legislativa de IA', alternates: { canonical: path, languages: { es: path, en: `/en${path}` } } };
-  const title = str(i.titulo);
+  const t = traduccionIniciativa(id);
+  if (!i?.titulo) return { title: 'AI Legislative Bill', alternates: { canonical: path, languages: { es: `/legislacion/${id}`, en: path } } };
+  const title = t?.titulo ?? str(i.titulo);
   const description =
-    clip(i.descripcion, 155) || 'Iniciativa de ley sobre inteligencia artificial en México.';
+    clip(t?.descripcion ?? i.descripcion, 155) || 'Bill about artificial intelligence in Mexico.';
   return {
     title,
     description,
-    alternates: { canonical: path, languages: { es: path, en: `/en${path}` } },
-    openGraph: { title, description, url: path, type: 'article', siteName: 'Observatorio IA México', locale: 'es_MX', images: [OG], publishedTime: str(i.fecha) || undefined },
+    alternates: { canonical: path, languages: { es: `/legislacion/${id}`, en: path } },
+    openGraph: { title, description, url: path, type: 'article', siteName: 'Observatorio IA México', locale: 'en_US', images: [OG], publishedTime: str(i.fecha) || undefined },
     twitter: { card: 'summary_large_image', title, description, images: [OG] },
   };
 }
 
-export default async function Layout({ children, params }: { children: ReactNode; params: Promise<{ id: string }> }) {
+export default async function LayoutEn({ children, params }: { children: ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
   const i = await getIniciativa(id);
+  const t = traduccionIniciativa(id);
   const jsonLd =
     i?.titulo &&
     JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Legislation',
-      name: clip(i.titulo, 160),
-      description: clip(i.descripcion, 300),
+      name: clip(t?.titulo ?? i.titulo, 160),
+      description: clip(t?.descripcion ?? i.descripcion, 300),
       legislationDate: str(i.fecha) || undefined,
-      legislationJurisdiction: 'México',
+      legislationJurisdiction: 'Mexico',
       legislationType: 'Proposed',
       creativeWorkStatus: str(i.estatus) || str(i.status) || undefined,
-      inLanguage: 'es-MX',
+      inLanguage: 'en-US',
       sponsor: str(i.proponente) ? { '@type': 'Person', name: str(i.proponente) } : undefined,
       publisher: { '@type': 'Organization', name: 'Observatorio IA México', url: BASE },
       isBasedOn: str(i.urlGaceta) || undefined,
-      mainEntityOfPage: `${BASE}/legislacion/${id}`,
+      mainEntityOfPage: `${BASE}/en/legislacion/${id}`,
     });
   return (
     <>
