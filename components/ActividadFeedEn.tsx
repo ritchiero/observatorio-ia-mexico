@@ -197,7 +197,7 @@ function traducirDescripcion(descripcion: string): string {
 }
 
 function formatDateEn(date: Date | null): string {
-  if (!date) return 'Not specified';
+  if (!date || isNaN(date.getTime())) return 'Not specified';
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'long',

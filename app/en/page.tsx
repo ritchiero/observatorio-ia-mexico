@@ -247,7 +247,8 @@ export default function HomeEn() {
     return colors[status as keyof typeof colors] || colors.prometido;
   };
 
-  const getLogo = (responsable: string) => {
+  const getLogo = (responsable?: string) => {
+    if (!responsable) return '/logos/presidencia.jpg';
     if (responsable.includes('Sheinbaum')) return '/logos/presidencia.jpg';
     if (responsable.includes('Ebrard')) return '/logos/economia.png';
     if (responsable.includes('Economía') || responsable.includes('SE')) return '/logos/economia.png';
@@ -583,7 +584,7 @@ export default function HomeEn() {
             </div>
           ) : anunciosFiltrados.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
-              {filtroStatus === 'todos' ? 'No promises registered yet' : `No promises with status "${filtroStatus}"`}
+              {filtroStatus === 'todos' ? 'No promises registered yet' : `No promises with status "${getStatusLabel(filtroStatus)}"`}
             </div>
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

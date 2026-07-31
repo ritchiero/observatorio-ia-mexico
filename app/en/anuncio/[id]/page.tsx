@@ -727,7 +727,7 @@ function EventoCompacto({ evento }: { evento: EventoTimeline }) {
     negativo: { icon: <TrendingDown size={14} />, color: 'text-red-600', bg: 'bg-red-100' }
   };
 
-  const config = impactoConfig[evento.impacto];
+  const config = impactoConfig[evento.impacto as keyof typeof impactoConfig] ?? impactoConfig.neutral;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

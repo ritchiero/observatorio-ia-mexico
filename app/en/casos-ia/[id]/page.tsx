@@ -30,7 +30,7 @@ const TIPO_DOCUMENTO_EN: Record<string, string> = {
 };
 
 function getTipoDocumentoEn(tipo: string): string {
-  return TIPO_DOCUMENTO_EN[tipo] ?? tipo.replace('_', ' ');
+  return TIPO_DOCUMENTO_EN[tipo] ?? tipo.replace(/_/g, ' ');
 }
 
 // Shape del overlay de traducción para un caso. nombre/resumen/hechos/
@@ -221,7 +221,7 @@ export default function CasoDetallePageEn({ params }: { params: Promise<{ id: st
               {temaInfo.emoji} {temaInfo.label}
             </span>
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-sans-tech bg-gray-100 text-gray-600">
-              {MATERIAS_EN[caso.materia]}
+              {MATERIAS_EN[caso.materia] || caso.materia}
             </span>
             {tieneCriterio && (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold font-sans-tech bg-purple-100 text-purple-700 border border-purple-200">
@@ -696,7 +696,7 @@ export default function CasoDetallePageEn({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Area of Law</span>
-                  <span className="text-gray-900">{MATERIAS_EN[caso.materia]}</span>
+                  <span className="text-gray-900">{MATERIAS_EN[caso.materia] || caso.materia}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">AI Topic</span>
@@ -742,7 +742,7 @@ export default function CasoDetallePageEn({ params }: { params: Promise<{ id: st
                           <FileText size={16} className="text-gray-400 group-hover:text-purple-500" />
                           <div>
                             <p className="text-sm text-gray-900 group-hover:text-purple-700">{doc.titulo}</p>
-                            <p className="text-xs text-gray-400 capitalize">{getTipoDocumentoEn(doc.tipo)}</p>
+                            <p className="text-xs text-gray-400">{getTipoDocumentoEn(doc.tipo)}</p>
                           </div>
                         </div>
                         <ExternalLink size={14} className="text-gray-300 group-hover:text-purple-500" />
@@ -756,7 +756,7 @@ export default function CasoDetallePageEn({ params }: { params: Promise<{ id: st
                           <FileText size={16} className="text-gray-300" />
                           <div>
                             <p className="text-sm text-gray-500">{doc.titulo}</p>
-                            <p className="text-xs text-gray-400 capitalize">{getTipoDocumentoEn(doc.tipo)} · Document unavailable</p>
+                            <p className="text-xs text-gray-400">{getTipoDocumentoEn(doc.tipo)} · Document unavailable</p>
                           </div>
                         </div>
                       </div>

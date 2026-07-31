@@ -62,6 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/en/hemeroteca`, lastModified: now, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE}/en/informe-2026`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${BASE}/en/recap`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${BASE}/en/actividad`, lastModified: now, changeFrequency: 'daily', priority: 0.5 },
     { url: `${BASE}/en/grafo/tabla`, lastModified: now, changeFrequency: 'daily', priority: 0.5 },
     { url: `${BASE}/en/proceso-legislativo`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
   ];

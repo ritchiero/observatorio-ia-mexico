@@ -40,11 +40,10 @@ function iniciales(nombre?: string): string {
 
 function fechaMes(iso?: string): string {
   if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    const meses = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-    return `${meses[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-  } catch { return ''; }
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const meses = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  return `${meses[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 export default function LegislacionEnrichedEn({ legStats, loading, iniciativas }: Props) {

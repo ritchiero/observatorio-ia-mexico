@@ -69,8 +69,8 @@ async function catalogoAutoritativo(base: string): Promise<ItemAut[]> {
 const TIPO_EN: Record<'anuncio' | 'iniciativa' | 'caso', string> = { anuncio: 'announcement', iniciativa: 'bill', caso: 'case' };
 const TIPO_QUERY_EN: Record<'anuncio' | 'iniciativa' | 'caso', RegExp> = {
   anuncio: /announcement|promise/,
-  iniciativa: /\bbill\b|legislat|initiative/,
-  caso: /\bcase\b|judicial/,
+  iniciativa: /\bbills?\b|legislat|initiative/,
+  caso: /\bcases?\b|judicial/,
 };
 
 async function fastPathEstados(

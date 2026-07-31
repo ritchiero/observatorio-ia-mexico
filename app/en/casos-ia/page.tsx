@@ -372,7 +372,7 @@ export default function CasosIAPageEn() {
                             <div className="space-y-1 text-sm">
                               <p><span className="text-gray-500">Case file:</span> <span className="text-gray-900 font-mono">{caso.expedienteActual}</span></p>
                               <p><span className="text-gray-500">Current court:</span> <span className="text-gray-900">{caso.tribunalActual}</span></p>
-                              <p><span className="text-gray-500">Subject matter:</span> <span className="text-gray-900">{MATERIAS_EN[caso.materia]}</span></p>
+                              <p><span className="text-gray-500">Subject matter:</span> <span className="text-gray-900">{MATERIAS_EN[caso.materia] || caso.materia}</span></p>
                             </div>
                           </div>
                         </div>

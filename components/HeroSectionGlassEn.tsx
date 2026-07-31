@@ -105,7 +105,7 @@ export default function HeroSectionGlassEn({ stats, legStats, casosStats, loadin
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  const navItems: [string, string][] = [[navT.tracker, '/en'], [navT.legislacion, '/en/legislacion'], [navT.casos, '/en/casos-ia'], [navT.hemeroteca, '/en/hemeroteca'], [navT.recap, '/recap'], [navT.actividad, '/actividad']];
+  const navItems: [string, string][] = [[navT.tracker, '/en'], [navT.legislacion, '/en/legislacion'], [navT.casos, '/en/casos-ia'], [navT.hemeroteca, '/en/hemeroteca'], [navT.recap, '/en/recap'], [navT.actividad, '/en/actividad']];
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
