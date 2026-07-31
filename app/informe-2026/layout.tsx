@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export const metadata: Metadata = {
   title: 'Índice de IA en el Estado Mexicano 2026',
   description: 'Informe anual del Observatorio: cumplimiento de promesas del Ejecutivo, legislación, jurisprudencia y federalismo de la inteligencia artificial en el Estado mexicano, con fuentes oficiales verificables.',
-  alternates: { canonical: '/informe-2026' },
+  alternates: { canonical: '/informe-2026', languages: { es: '/informe-2026', en: '/en/informe-2026' } },
   openGraph: {
     title: 'Índice de IA en el Estado Mexicano 2026 · Observatorio',
     description: 'Qué prometió, legisló y resolvió el Estado mexicano sobre IA — datos en vivo y verificados.',

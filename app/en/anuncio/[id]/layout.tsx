@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { traduccionAnuncio } from '@/lib/i18n/traducciones';
 
-// SEO server-side de la ficha de ANUNCIO. Un observatorio vive de ser citado, así
-// que cada liga compartida debe traer imagen y datos estructurados propios: antes
-// tenía título/descripción pero NO imagen OG ni JSON-LD (Next reemplaza el objeto
-// openGraph, y sin `images` la ficha se compartía sin imagen). La página es client;
-// este layout server provee la metadata + el JSON-LD.
 const BASE = 'https://www.observatorio-ia-mexico.com';
 const OG = `${BASE}/og-image.png`;
 
@@ -25,38 +21,40 @@ const clip = (v: unknown, n: number): string => str(v).replace(/\s+/g, ' ').trim
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const path = `/anuncio/${id}`;
+  const path = `/en/anuncio/${id}`;
   const a = await getAnuncio(id);
-  if (!a?.titulo) return { title: 'Anuncio de IA del Estado', alternates: { canonical: path } };
-  const title = str(a.titulo);
+  if (!a?.titulo) return { title: 'AI announcement — Mexican state', alternates: { canonical: path } };
+  const t = traduccionAnuncio(id);
+  const title = t?.titulo ?? str(a.titulo);
   const description =
-    clip(a.descripcion, 155) || clip(a.resumenAgente, 155) || 'Anuncio gubernamental sobre inteligencia artificial en México.';
+    clip(t?.descripcion ?? a.descripcion, 155) || clip(t?.resumenAgente ?? a.resumenAgente, 155) || 'Government announcement about artificial intelligence in Mexico.';
   return {
     title,
     description,
-    alternates: { canonical: path, languages: { es: path, en: `/en${path}` } },
-    openGraph: { title, description, url: path, type: 'article', siteName: 'Observatorio IA México', locale: 'es_MX', images: [OG], publishedTime: str(a.fechaAnuncio) || undefined },
+    alternates: { canonical: path, languages: { es: `/anuncio/${id}`, en: path } },
+    openGraph: { title, description, url: path, type: 'article', siteName: 'Observatorio IA México', locale: 'en_US', images: [OG], publishedTime: str(a.fechaAnuncio) || undefined },
     twitter: { card: 'summary_large_image', title, description, images: [OG] },
   };
 }
 
-export default async function Layout({ children, params }: { children: ReactNode; params: Promise<{ id: string }> }) {
+export default async function LayoutEn({ children, params }: { children: ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
   const a = await getAnuncio(id);
+  const t = traduccionAnuncio(id);
   const jsonLd =
     a?.titulo &&
     JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'NewsArticle',
-      headline: clip(a.titulo, 110),
-      description: clip(a.descripcion, 300) || clip(a.resumenAgente, 300),
+      headline: clip(t?.titulo ?? a.titulo, 110),
+      description: clip(t?.descripcion ?? a.descripcion, 300) || clip(t?.resumenAgente ?? a.resumenAgente, 300),
       datePublished: str(a.fechaAnuncio) || undefined,
       dateModified: str(a.updatedAt) || str(a.fechaAnuncio) || undefined,
-      inLanguage: 'es-MX',
-      author: { '@type': 'GovernmentOrganization', name: str(a.dependencia) || 'Gobierno de México' },
+      inLanguage: 'en-US',
+      author: { '@type': 'GovernmentOrganization', name: str(a.dependencia) || 'Government of Mexico' },
       publisher: { '@type': 'Organization', name: 'Observatorio IA México', url: BASE },
       isBasedOn: str(a.fuenteOriginal) || undefined,
-      mainEntityOfPage: `${BASE}/anuncio/${id}`,
+      mainEntityOfPage: `${BASE}/en/anuncio/${id}`,
     });
   return (
     <>

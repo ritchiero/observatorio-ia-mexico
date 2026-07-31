@@ -1,40 +1,39 @@
 import type { Metadata } from 'next';
 import { Archive, Building2, CheckCircle2, FileText, Landmark, MapPin, Search } from 'lucide-react';
-import { getFichas, toItem, statsDe, CANONICAL_BASE } from '@/lib/hemeroteca';
-import HemerotecaExplorer from '@/components/HemerotecaExplorer';
+import { getFichasEn, toItemEn, statsDe, CANONICAL_BASE } from '@/lib/hemeroteca';
+import HemerotecaListEn from '@/components/HemerotecaListEn';
 
-// Server-rendered con ISR: las tarjetas van en el HTML inicial (SSR del client
-// component) → indexables. El explorador filtra/ordena/busca tras la hidratación.
 export const revalidate = 120;
 
 export const metadata: Metadata = {
-  title: 'Hemeroteca — Observatorio IA México',
+  title: 'Archive — Observatorio IA México',
   description:
-    'Archivo verificado de documentos del Poder Legislativo, Judicial y Ejecutivo relacionados con inteligencia artificial en México. Búsqueda con IA y filtros por materia, órgano, seguimiento y año.',
+    'Verified archive of Legislative, Judicial and Executive branch documents related to artificial intelligence in Mexico. Filterable by topic, branch, status and year.',
   alternates: {
-    canonical: `${CANONICAL_BASE}/hemeroteca`,
+    canonical: `${CANONICAL_BASE}/en/hemeroteca`,
     languages: { es: `${CANONICAL_BASE}/hemeroteca`, en: `${CANONICAL_BASE}/en/hemeroteca` },
   },
   openGraph: {
-    title: 'Hemeroteca de la IA en el Estado mexicano',
-    description: 'Archivo verificado de documentos sobre inteligencia artificial en el Estado mexicano, con búsqueda por IA y filtros.',
-    url: `${CANONICAL_BASE}/hemeroteca`,
+    title: 'Archive of AI in the Mexican state',
+    description: 'Verified archive of documents about artificial intelligence in the Mexican state, with AI-assisted search and filters.',
+    url: `${CANONICAL_BASE}/en/hemeroteca`,
     type: 'website',
+    locale: 'en_US',
   },
 };
 
-export default async function HemerotecaPage() {
-  const fichas = await getFichas();
-  const items = fichas.map(toItem);
+export default async function HemerotecaPageEn() {
+  const fichas = await getFichasEn();
+  const items = fichas.map(toItemEn);
   const s = statsDe(fichas);
   const materias = new Set(items.map((item) => item.materia)).size;
   const conPdf = items.filter((item) => item.copiaRespaldo).length;
 
   const stats = [
-    { n: s.total, label: 'Fichas indexables', detail: 'con síntesis y fuente', Icon: Archive },
-    { n: s.diputados + s.senado, label: 'Federales', detail: 'Cámara y Senado', Icon: Landmark },
-    { n: s.locales, label: 'Locales', detail: 'congresos estatales', Icon: MapPin },
-    { n: conPdf, label: 'PDFs respaldados', detail: `${materias} materias`, Icon: FileText },
+    { n: s.total, label: 'Indexed records', detail: 'with summary and source', Icon: Archive },
+    { n: s.diputados + s.senado, label: 'Federal', detail: 'Chamber and Senate', Icon: Landmark },
+    { n: s.locales, label: 'State-level', detail: 'state congresses', Icon: MapPin },
+    { n: conPdf, label: 'Backed by PDF', detail: `${materias} topics`, Icon: FileText },
   ];
 
   return (
@@ -51,16 +50,16 @@ export default async function HemerotecaPage() {
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm shadow-slate-200/40">
                 <Search className="h-3.5 w-3.5 text-cyan-700" aria-hidden />
-                Hemeroteca pública
+                Public archive
               </div>
               <h1 className="max-w-4xl font-serif-display text-5xl leading-[0.96] text-slate-950 sm:text-6xl lg:text-7xl" style={{ fontWeight: 500, letterSpacing: '-0.035em' }}>
-                Archivo vivo de IA en el Estado mexicano.
+                A living archive of AI in the Mexican state.
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-                Documentos oficiales, iniciativas, precedentes y anuncios públicos ordenados para investigar la regulación de inteligencia artificial en México sin perder la trazabilidad.
+                Official documents, bills, precedents and public announcements about artificial-intelligence regulation in Mexico — organized without losing the paper trail.
               </p>
               <div className="mt-7 flex flex-wrap gap-2 text-sm text-slate-600">
-                {['Legislativo', 'Judicial', 'Ejecutivo', 'Fuentes oficiales', 'PDFs'].map((label) => (
+                {['Legislature', 'Judiciary', 'Executive', 'Official sources', 'PDFs'].map((label) => (
                   <span key={label} className="rounded-lg border border-slate-200 bg-white/75 px-3 py-1.5">{label}</span>
                 ))}
               </div>
@@ -69,8 +68,8 @@ export default async function HemerotecaPage() {
             <div className="rounded-lg border border-slate-200 bg-white/82 p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Cobertura</p>
-                  <p className="mt-1 text-sm text-slate-600">Base documental verificada</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Coverage</p>
+                  <p className="mt-1 text-sm text-slate-600">Verified documentary base</p>
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden />
               </div>
@@ -86,7 +85,7 @@ export default async function HemerotecaPage() {
               </div>
               <div className="mt-4 flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm text-white">
                 <Building2 className="h-4 w-4 text-cyan-300" aria-hidden />
-                Actualiza cada 120 segundos desde fuentes publicadas.
+                Updates every 120 seconds from published sources.
               </div>
             </div>
           </div>
@@ -96,14 +95,16 @@ export default async function HemerotecaPage() {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {fichas.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-            Aún no hay fichas publicadas.
+            No records published yet.
           </div>
         ) : (
-          <HemerotecaExplorer items={items} />
+          <HemerotecaListEn items={items} />
         )}
 
         <p className="mt-10 border-t border-slate-200 pt-5 text-xs text-slate-400">
-          Síntesis del Observatorio IA México, verificadas contra la fuente oficial.
+          Summaries by Observatorio IA México, verified against the official source. Content is translated from the
+          original Spanish; official names of laws, courts and agencies are kept in Spanish with an English gloss.
+          <a href="/hemeroteca" className="ml-1 underline hover:text-cyan-700">Ver en español</a>
         </p>
       </section>
     </main>

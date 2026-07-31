@@ -5,6 +5,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Analytics } from '@vercel/analytics/react';
+import { getLocale } from '@/lib/i18n/locale';
 
 const GTM_ID = 'GTM-KCCM2HNW';
 
@@ -38,13 +39,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
   return (
-    <html lang="es">
+    <html lang={locale}>
       <head>
         <Script
           id="gtm-script"
