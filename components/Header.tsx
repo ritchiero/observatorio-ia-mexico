@@ -11,8 +11,12 @@ export default function Header() {
   const isEn = pathname.startsWith('/en');
   const t = dict(isEn ? 'en' : 'es').nav;
   const p = (es: string) => (isEn ? `/en${es}` : es);
-  // Ruta espejo en el otro idioma: /en/hemeroteca/x <-> /hemeroteca/x
-  const otherLocaleHref = isEn ? pathname.replace(/^\/en/, '') || '/' : `/en${pathname}`;
+  // Ruta espejo en el otro idioma: /en/hemeroteca/x <-> /hemeroteca/x.
+  // ?hl= persiste la elección en cookie (proxy.ts) para la detección automática
+  // de idioma en la portada; por eso el switcher es <a> plano, sin prefetch.
+  const otherLocaleHref = isEn
+    ? `${pathname.replace(/^\/en/, '') || '/'}?hl=es`
+    : `/en${pathname}?hl=en`;
 
   // La home usa su propio header glass (hero inmersivo); ocultamos el global ahí.
   if (pathname === '/' || pathname === '/en') return null;
@@ -55,13 +59,13 @@ export default function Header() {
             <Link href={p('/recap')} className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">{t.recap}</Link>
             <Link href={p('/actividad')} className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">{t.actividad}</Link>
             <Link href={p('/informe-2026')} className="px-3 py-1.5 text-sm font-semibold text-cyan-700 hover:text-cyan-800 hover:bg-cyan-50 rounded-lg transition-all">{t.informe}</Link>
-            <Link
+            <a
               href={otherLocaleHref}
               className="ml-2 px-2.5 py-1 text-xs font-mono font-semibold text-gray-400 hover:text-cyan-700 border border-gray-200 hover:border-cyan-300 rounded-lg transition-all"
               title={isEn ? 'Ver en español' : 'View in English'}
             >
               {isEn ? 'ES' : 'EN'}
-            </Link>
+            </a>
           </nav>
 
           <button
@@ -88,9 +92,9 @@ export default function Header() {
             <Link href={p('/recap')} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">{t.recap}</Link>
             <Link href={p('/actividad')} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors">{t.actividad}</Link>
             <Link href={p('/informe-2026')} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50 rounded-lg transition-colors">{t.informe}</Link>
-            <Link href={otherLocaleHref} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-mono font-semibold text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+            <a href={otherLocaleHref} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm font-mono font-semibold text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
               {isEn ? '🇲🇽 Español' : '🇬🇧 English'}
-            </Link>
+            </a>
           </nav>
         )}
       </div>
