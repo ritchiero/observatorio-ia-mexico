@@ -74,7 +74,7 @@ export default async function MapaVivoPage() {
       </div>
 
       {/* Cifras inferiores */}
-      <div className="absolute bottom-5 md:bottom-8 left-5 md:left-10 z-10 flex flex-wrap items-end gap-x-8 gap-y-2 pointer-events-none max-w-[52vw] md:max-w-none">
+      <div className="absolute bottom-5 md:bottom-8 left-5 md:left-10 z-10 grid grid-cols-2 gap-x-6 gap-y-2 md:flex md:flex-wrap md:items-end md:gap-x-8 pointer-events-none max-w-[58vw] md:max-w-none">
         {[[d.stats.anuncios, 'anuncios oficiales'], [d.stats.iniciativas, 'iniciativas de ley'], [d.stats.casos, 'casos judiciales'], [d.stats.fuentes, 'fuentes y documentos citados'], [d.stats.eventos, 'eventos de monitoreo']].map(([n, l]) => (
           <div key={String(l)}>
             <div className="font-serif-display text-3xl md:text-4xl" style={{

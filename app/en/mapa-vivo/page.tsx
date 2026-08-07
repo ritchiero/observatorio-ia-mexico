@@ -66,7 +66,7 @@ export default async function LivingMapPage() {
         <div><strong className="text-[#E7ECF7]">5</strong> branches of state and society</div>
       </div>
 
-      <div className="absolute bottom-5 md:bottom-8 left-5 md:left-10 z-10 flex flex-wrap items-end gap-x-8 gap-y-2 pointer-events-none max-w-[52vw] md:max-w-none">
+      <div className="absolute bottom-5 md:bottom-8 left-5 md:left-10 z-10 grid grid-cols-2 gap-x-6 gap-y-2 md:flex md:flex-wrap md:items-end md:gap-x-8 pointer-events-none max-w-[58vw] md:max-w-none">
         {[[d.stats.anuncios, 'official announcements'], [d.stats.iniciativas, 'AI bills'], [d.stats.casos, 'judicial cases'], [d.stats.fuentes, 'cited sources & documents'], [d.stats.eventos, 'monitoring events']].map(([n, l]) => (
           <div key={String(l)}>
             <div className="font-serif-display text-3xl md:text-4xl" style={{
