@@ -281,7 +281,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
               Ver el mapa
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </Link>
-            <a href="#metodologia" className="font-sans-tech" style={{
+            <a href="/metodologia" className="font-sans-tech" style={{
               fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.text, padding: '15px 26px', borderRadius: 100,
               background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)' }}>
               Cómo verificamos los datos

@@ -15,6 +15,7 @@ export const DICT = {
       actividad: 'Actividad',
       informe: 'Informe 2026',
       grafo: 'Mapa',
+      metodologia: 'Metodología',
     },
     home: {
       badge: 'Observatorio ciudadano',
@@ -65,6 +66,7 @@ export const DICT = {
       actividad: 'Activity',
       informe: '2026 Report',
       grafo: 'Map',
+      metodologia: 'Methodology',
     },
     home: {
       badge: 'Citizen watchdog',
