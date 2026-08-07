@@ -18,6 +18,9 @@ interface Props {
   puntos: PuntoVivo[];
   enlaces: [number, number][];
   locale?: 'es' | 'en';
+  /** true cuando la constelación es fondo de otra sección (hero): la rueda
+   *  solo hace zoom con Ctrl/Cmd para no secuestrar el scroll de la página. */
+  modoFondo?: boolean;
 }
 
 const L = {
@@ -76,7 +79,7 @@ function tint(hex: string, f: number): string {
   return `rgb(${m(r)},${m(gg)},${m(b)})`;
 }
 
-export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
+export default function MapaVivo3D({ puntos, enlaces, locale = 'es', modoFondo = false }: Props) {
   const t = L[locale];
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -454,6 +457,7 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
     };
     const leave = () => { mx = -1; my = -1; };
     const wheel = (e: WheelEvent) => {
+      if (modoFondo && !e.ctrlKey && !e.metaKey) return; // deja pasar el scroll
       e.preventDefault();
       zoom = Math.min(2.6, Math.max(0.55, zoom * (e.deltaY < 0 ? 1.08 : 0.925)));
     };
@@ -474,7 +478,7 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
       canvas.removeEventListener('pointerleave', leave);
       canvas.removeEventListener('wheel', wheel);
     };
-  }, [puntos, enlacesCortos, pos, rotulos, masas, locale, t]);
+  }, [puntos, enlacesCortos, pos, rotulos, masas, locale, t, modoFondo]);
 
   return (
     <div ref={wrapRef} className="absolute inset-0" aria-hidden="true">

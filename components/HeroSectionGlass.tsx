@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 // Tema dark (Holographic Glass)
-import GrafoEcosistema from './GrafoEcosistema';
+import MapaVivoFondo from './MapaVivoFondo';
 
 const T = {
   void: '#05070C', text: '#E7ECF7', body: '#B5BFD4', mute: '#7886A2',
@@ -144,9 +144,9 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
         maskImage: 'radial-gradient(ellipse at 50% 40%, #000 0%, transparent 85%)',
         WebkitMaskImage: 'radial-gradient(ellipse at 50% 40%, #000 0%, transparent 85%)',
       }} />
-      {/* EL MAPA VIVO — el grafo real del ecosistema como corazón del hero */}
+      {/* EL MAPA VIVO — la constelación (galaxia de objetos públicos) como corazón del hero */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
-        <GrafoEcosistema chrome={false} />
+        <MapaVivoFondo locale="es" />
       </div>
       {/* legibilidad del texto sobre el mapa: velo más profundo bajo el título
           (el mapa competía con el h1) + banda superior; el mapa respira a la derecha */}

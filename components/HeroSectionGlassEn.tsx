@@ -8,7 +8,7 @@ import { dict } from '@/lib/i18n/dictionary';
 
 // Twin en inglés de HeroSectionGlass.tsx — mismo diseño y lógica, strings traducidos a inglés.
 // Tema dark (Holographic Glass)
-import GrafoEcosistema from './GrafoEcosistema';
+import MapaVivoFondo from './MapaVivoFondo';
 
 const T = {
   void: '#05070C', text: '#E7ECF7', body: '#B5BFD4', mute: '#7886A2',
@@ -150,7 +150,7 @@ export default function HeroSectionGlassEn({ stats, legStats, casosStats, loadin
       }} />
       {/* EL MAPA VIVO — el grafo real del ecosistema como corazón del hero */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
-        <GrafoEcosistema chrome={false} locale="en" />
+        <MapaVivoFondo locale="en" />
       </div>
       {/* legibilidad del texto sobre el mapa: velo más profundo bajo el título
           (el mapa competía con el h1) + banda superior; el mapa respira a la derecha */}
