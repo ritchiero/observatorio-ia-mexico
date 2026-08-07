@@ -33,12 +33,13 @@ export async function datosMapaVivo(): Promise<DatosMapaVivo> {
         pide('/api/grafo'), pide('/api/anuncios'), pide('/api/iniciativas'),
         pide('/api/casos-ia'), pide('/api/actividad?limit=500'),
       ])
-    ).map((r) => (r.status === 'fulfilled' ? r.value : {}));
-    const anuncios = (a.data ?? a.anuncios ?? []) as Array<Record<string, unknown>>;
-    const iniciativas = (i.data ?? i.iniciativas ?? []) as Array<Record<string, unknown>>;
-    const casos = (c.casos ?? c.data ?? []) as Array<Record<string, unknown>>;
-    const actividad = (act.actividad ?? act.data ?? act.logs ?? []) as Array<Record<string, unknown>>;
-    const gnodes = (g.nodes ?? []) as Array<Record<string, unknown>>;
+    ).map((r) => (r.status === 'fulfilled' ? r.value : {})) as Array<Record<string, unknown>>;
+    const arr = (v: unknown) => (Array.isArray(v) ? (v as Array<Record<string, unknown>>) : undefined);
+    const anuncios = arr(a.data) ?? arr(a.anuncios) ?? [];
+    const iniciativas = arr(i.data) ?? arr(i.iniciativas) ?? [];
+    const casos = arr(c.casos) ?? arr(c.data) ?? [];
+    const actividad = arr(act.actividad) ?? arr(act.data) ?? arr(act.logs) ?? [];
+    const gnodes = arr(g.nodes) ?? [];
 
     const puntos: PuntoVivo[] = [];
     const idx = new Map<string, number>();
@@ -84,7 +85,7 @@ export async function datosMapaVivo(): Promise<DatosMapaVivo> {
 
     // Relaciones documentadas del grafo, mapeadas a nuestros puntos
     const enlaces: [number, number][] = [];
-    for (const l of (g.links ?? []) as Array<{ source: string; target: string }>) {
+    for (const l of (arr(g.links) ?? []) as unknown as Array<{ source: string; target: string }>) {
       const s1 = idx.get(String(l.source)), t1 = idx.get(String(l.target));
       if (s1 != null && t1 != null) enlaces.push([s1, t1]);
     }
