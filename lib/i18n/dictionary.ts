@@ -15,6 +15,7 @@ export const DICT = {
       actividad: 'Actividad',
       informe: 'Informe 2026',
       grafo: 'Mapa',
+      mapaVivo: 'Mapa vivo',
       metodologia: 'Metodología',
     },
     home: {
@@ -66,6 +67,7 @@ export const DICT = {
       actividad: 'Activity',
       informe: '2026 Report',
       grafo: 'Map',
+      mapaVivo: 'Living map',
       metodologia: 'Methodology',
     },
     home: {
