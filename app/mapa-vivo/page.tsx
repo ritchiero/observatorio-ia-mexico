@@ -43,8 +43,8 @@ export default async function MapaVivoPage() {
       </div>
 
       {/* Titular */}
-      <div className="absolute left-5 md:left-10 top-[15%] md:top-[16%] z-10 max-w-[560px] pointer-events-none pr-5">
-        <h1 className="font-serif-display font-medium leading-[0.98] tracking-[-0.03em]" style={{ fontSize: 'clamp(44px, 7.6vw, 104px)', color: '#EDF1FA' }}>
+      <div className="absolute left-5 md:left-10 top-[13%] md:top-[14%] z-10 max-w-[560px] lg:max-w-[660px] pointer-events-none pr-5">
+        <h1 className="font-serif-display font-medium leading-[0.98] tracking-[-0.03em]" style={{ fontSize: 'clamp(40px, min(7.2vw, 10.5svh), 100px)', color: '#EDF1FA' }}>
           El mapa real de{' '}
           <span style={{
             background: 'linear-gradient(135deg, #3DE0FF 0%, #4D7BFF 55%, #A47CFF 100%)',
