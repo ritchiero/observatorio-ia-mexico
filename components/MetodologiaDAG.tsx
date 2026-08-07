@@ -53,7 +53,7 @@ function Check({ s = 18, c = '#fff', w = 2.5 }: { s?: number; c?: string; w?: nu
 const STEPS = [
   { n: '1', verb: 'INGEST', title: 'Detección en fuentes oficiales', accent: C.cyan },
   { n: '2', verb: 'EXTRACT', title: 'Extracción de datos clave', accent: C.blue },
-  { n: '3', verb: 'AUDIT', title: 'Verificación humana', accent: C.violet },
+  { n: '3', verb: 'AUDIT', title: 'Auditoría humana', accent: C.violet },
   { n: '✓', verb: 'PUBLISH', title: 'Publicación con citas', accent: C.green },
 ];
 
@@ -111,7 +111,7 @@ export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) 
             Metodología del <em style={{ fontStyle: 'italic', fontWeight: 400, color: C.cyan }}>Observatorio</em>
           </h2>
           <p className="font-serif-display" style={{ margin: '18px auto 0', maxWidth: 600, fontSize: 'clamp(16px,2.2vw,18px)', lineHeight: 1.5, color: C.body }}>
-            Tres verticales de monitoreo con <b style={{ color: C.cyan, fontWeight: 500 }}>fuentes oficiales verificables</b>, validadas por un pipeline auditable con verificación humana.
+            Tres verticales de monitoreo con <b style={{ color: C.cyan, fontWeight: 500 }}>fuentes oficiales verificables</b>, validadas por un pipeline auditable. Cada ficha declara su nivel de verificación: fuente oficial, extracción automatizada o auditoría humana.
           </p>
         </header>
 
@@ -249,14 +249,14 @@ export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) 
 
         {/* footer strip — afirmaciones reales + Powered by Claude */}
         <div className="mt-10 flex items-center gap-3 flex-wrap justify-center">
-          {([['Monitoreo automatizado', C.green], ['IA + verificación humana', C.cyan], ['Fuentes oficiales verificables', C.violet]] as [string, string][]).map(([t, col], i) => (
+          {([['Monitoreo automatizado', C.green], ['IA + auditoría humana en curso', C.cyan], ['Fuentes oficiales verificables', C.violet]] as [string, string][]).map(([t, col], i) => (
             <span key={i} className="font-mono uppercase" style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '8px 15px', border: `1px solid ${C.line2}`, borderRadius: 999, background: C.panel, fontSize: 10.5, letterSpacing: '0.1em', color: C.body, fontWeight: 500 }}>
               <span style={{ width: 7, height: 7, borderRadius: 999, background: col, boxShadow: `0 0 8px ${col}66` }} />{t}
             </span>
           ))}
           <span className="font-mono inline-flex items-center gap-1.5" style={{ fontSize: 10.5, color: C.faint, letterSpacing: '0.08em' }}>
             Powered by
-            <img src="https://ik.imagekit.io/lawgic/Claude%20(1).png" alt="Claude AI" className="h-4 w-auto inline-block align-middle" />
+            <span style={{ color: C.body, fontWeight: 600, letterSpacing: '0.04em' }}>Claude</span>
           </span>
         </div>
       </div>

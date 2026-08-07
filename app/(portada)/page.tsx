@@ -484,7 +484,7 @@ export default function Home() {
       </section>
 
       {/* Tabla de anuncios */}
-      <section id="tracker" className="py-8 sm:py-12 md:py-16 px-4 bg-white">
+      <section id="tracker" className="scroll-mt-24 py-8 sm:py-12 md:py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
             <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 flex items-center gap-3">

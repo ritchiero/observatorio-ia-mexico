@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 export const metadata: Metadata = {
   title: { absolute: 'Observatorio IA México — AI in the Mexican State' },
   description: 'Comprehensive tracking of AI in the Mexican state. Official announcements, active legislation and judicial precedents in one place.',
-  alternates: { canonical: '/en', languages: { es: '/', en: '/en' } },
+  alternates: { canonical: '/en', languages: { es: '/', en: '/en', 'x-default': '/' } },
   openGraph: {
     title: 'Observatorio IA México',
     description: 'Comprehensive tracking of AI in the Mexican state. Official announcements, active legislation and judicial precedents.',

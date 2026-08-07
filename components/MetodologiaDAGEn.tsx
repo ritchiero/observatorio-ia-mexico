@@ -55,7 +55,7 @@ function Check({ s = 18, c = '#fff', w = 2.5 }: { s?: number; c?: string; w?: nu
 const STEPS = [
   { n: '1', verb: 'INGEST', title: 'Detection in official sources', accent: C.cyan },
   { n: '2', verb: 'EXTRACT', title: 'Extraction of key data', accent: C.blue },
-  { n: '3', verb: 'AUDIT', title: 'Human verification', accent: C.violet },
+  { n: '3', verb: 'AUDIT', title: 'Human audit', accent: C.violet },
   { n: '✓', verb: 'PUBLISH', title: 'Publication with citations', accent: C.green },
 ];
 
@@ -113,7 +113,7 @@ export default function MetodologiaDAGEn({ anuncios, iniciativas, casos }: Props
             Methodology of the <em style={{ fontStyle: 'italic', fontWeight: 400, color: C.cyan }}>Observatory</em>
           </h2>
           <p className="font-serif-display" style={{ margin: '18px auto 0', maxWidth: 600, fontSize: 'clamp(16px,2.2vw,18px)', lineHeight: 1.5, color: C.body }}>
-            Three monitoring verticals built on <b style={{ color: C.cyan, fontWeight: 500 }}>verifiable official sources</b>, validated by an auditable pipeline with human review.
+            Three monitoring verticals built on <b style={{ color: C.cyan, fontWeight: 500 }}>verifiable official sources</b>, validated by an auditable pipeline. Every record declares its verification level: official source, automated extraction, or human audit.
           </p>
         </header>
 
@@ -251,14 +251,14 @@ export default function MetodologiaDAGEn({ anuncios, iniciativas, casos }: Props
 
         {/* footer strip — afirmaciones reales + Powered by Claude */}
         <div className="mt-10 flex items-center gap-3 flex-wrap justify-center">
-          {([['Automated monitoring', C.green], ['AI + human verification', C.cyan], ['Verifiable official sources', C.violet]] as [string, string][]).map(([t, col], i) => (
+          {([['Automated monitoring', C.green], ['AI + human audit in progress', C.cyan], ['Verifiable official sources', C.violet]] as [string, string][]).map(([t, col], i) => (
             <span key={i} className="font-mono uppercase" style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '8px 15px', border: `1px solid ${C.line2}`, borderRadius: 999, background: C.panel, fontSize: 10.5, letterSpacing: '0.1em', color: C.body, fontWeight: 500 }}>
               <span style={{ width: 7, height: 7, borderRadius: 999, background: col, boxShadow: `0 0 8px ${col}66` }} />{t}
             </span>
           ))}
           <span className="font-mono inline-flex items-center gap-1.5" style={{ fontSize: 10.5, color: C.faint, letterSpacing: '0.08em' }}>
             Powered by
-            <img src="https://ik.imagekit.io/lawgic/Claude%20(1).png" alt="Claude AI" className="h-4 w-auto inline-block align-middle" />
+            <span style={{ color: C.body, fontWeight: 600, letterSpacing: '0.04em' }}>Claude</span>
           </span>
         </div>
       </div>

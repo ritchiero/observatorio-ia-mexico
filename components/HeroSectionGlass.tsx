@@ -101,7 +101,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  const navItems: [string, string][] = [['Tracker', '/'], ['Legislación', '/legislacion'], ['Casos', '/casos-ia'], ['Hemeroteca', '/hemeroteca'], ['Recap', '/recap'], ['Actividad', '/actividad']];
+  const navItems: [string, string][] = [['Tracker', '/'], ['Legislación', '/legislacion'], ['Casos', '/casos-ia'], ['Hemeroteca', '/hemeroteca'], ['Recap', '/recap'], ['Actividad', '/actividad'], ['Informe 2026', '/informe-2026']];
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,24 +267,25 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
           </p>
 
           <div className="mt-10 flex flex-wrap gap-3.5 items-center">
-            <button onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+            {/* Jerarquía inequívoca: 1º tracker (el producto), 2º mapa, 3º metodología */}
+            <a href="#tracker"
               className="font-sans-tech inline-flex items-center gap-3 cursor-pointer" style={{
                 fontSize: 14, letterSpacing: '0.04em', fontWeight: 600, color: T.void, padding: '16px 28px', borderRadius: 100,
                 border: 'none', background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)`, boxShadow: `0 12px 48px ${T.cyan}40, inset 0 1px 0 rgba(255,255,255,0.4)` }}>
-              Entrar al observatorio
+              Explorar el tracker
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-            <a href="#metodologia" className="font-sans-tech" style={{
-              fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.text, padding: '15px 26px', borderRadius: 100,
-              background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-              Ver metodología
             </a>
             <Link href="/grafo" className="font-sans-tech inline-flex items-center gap-2" style={{
               fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.cyan, padding: '15px 26px', borderRadius: 100,
               background: 'rgba(61,224,255,0.06)', backdropFilter: 'blur(20px)', border: `1px solid ${T.cyan}44` }}>
-              Explorar el mapa
+              Ver el mapa
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </Link>
+            <a href="#metodologia" className="font-sans-tech" style={{
+              fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.text, padding: '15px 26px', borderRadius: 100,
+              background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              Cómo verificamos los datos
+            </a>
           </div>
 
           <div className="mt-12 flex flex-wrap gap-3">
@@ -329,7 +330,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
                 <div className="text-center mb-6">
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4"><Eye size={24} className="text-blue-500" /></div>
                   <h3 id="subscription-title" className="font-serif-display text-2xl text-gray-900 mb-2">Únete al Observatorio</h3>
-                  <p className="text-gray-600 font-sans-tech text-sm">Recibe actualizaciones sobre IA en México: nuevos anuncios, legislación y casos judiciales.</p>
+                  <p className="text-gray-600 font-sans-tech text-sm">Recibe el recap mensual y avisos cuando cambie el estatus de un anuncio, iniciativa o caso. Sin spam; baja en un clic.</p>
                 </div>
                 <form onSubmit={handleSubscribe} className="space-y-4">
                   <div>

@@ -148,7 +148,7 @@ export default function RecapPage() {
                     </div>
                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
                       <div className="font-serif-display text-2xl text-blue-600">{calcularCumplimiento(selectedRecap.statsSnapshot)}%</div>
-                      <div className="text-[10px] font-sans-tech text-blue-600 uppercase tracking-wider">Cumplimiento</div>
+                      <div className="text-[10px] font-sans-tech text-blue-600 uppercase tracking-wider">En operación</div>
                     </div>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
                       <div className="font-serif-display text-2xl text-amber-600">{selectedRecap.statsSnapshot.totalIniciativas || '\u2014'}</div>
