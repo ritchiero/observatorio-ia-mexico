@@ -18,8 +18,9 @@ export default function Header() {
     ? `${pathname.replace(/^\/en/, '') || '/'}?hl=es`
     : `/en${pathname}?hl=en`;
 
-  // La home usa su propio header glass (hero inmersivo); ocultamos el global ahí.
-  if (pathname === '/' || pathname === '/en') return null;
+  // La home usa su propio header glass (hero inmersivo) y el mapa vivo es
+  // vitrina de pantalla completa; ocultamos el header global en ambos.
+  if (pathname === '/' || pathname === '/en' || pathname === '/mapa-vivo' || pathname === '/en/mapa-vivo') return null;
 
   return (
     <header className="border-b border-gray-200 bg-white">
