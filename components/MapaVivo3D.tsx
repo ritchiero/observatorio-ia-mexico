@@ -85,17 +85,28 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
   const pos = useMemo(() => {
     const arr = new Float32Array(puntos.length * 3);
     const subC = new Map<string, [number, number, number]>();
+    const porCluster = new Map<string, [number, number, number][]>();
     const subCentro = (k: string, s: string): [number, number, number] => {
       const key = `${k}|${s}`;
-      let c = subC.get(key);
-      if (!c) {
-        const [cx, cy, cz] = CENTRO[k] ?? CENTRO.temas;
-        const sig = SIGMA[k] ?? 0.2;
-        const a1 = h01(key, 51) * Math.PI * 2, a2 = h01(key, 57) * Math.PI;
-        const r = sig * (0.55 + h01(key, 61) * 0.75);
+      const ya = subC.get(key);
+      if (ya) return ya;
+      const [cx, cy, cz] = CENTRO[k] ?? CENTRO.temas;
+      const sig = SIGMA[k] ?? 0.2;
+      let a1 = h01(key, 51) * Math.PI * 2;
+      const a2 = h01(key, 57) * Math.PI;
+      const r = sig * (0.72 + h01(key, 61) * 0.7);
+      const vecinos = porCluster.get(k) ?? [];
+      let c: [number, number, number] = [cx + Math.cos(a1) * Math.sin(a2) * r * 1.25, cy + Math.cos(a2) * r, cz + Math.sin(a1) * Math.sin(a2) * r];
+      // dos soles del mismo clúster no se encimen: rota hasta despejarse
+      for (let intento = 0; intento < 3; intento++) {
+        const pegado = vecinos.some((v) => (v[0] - c[0]) ** 2 + (v[1] - c[1]) ** 2 + (v[2] - c[2]) ** 2 < (sig * 0.55) ** 2);
+        if (!pegado) break;
+        a1 += 1.9;
         c = [cx + Math.cos(a1) * Math.sin(a2) * r * 1.25, cy + Math.cos(a2) * r, cz + Math.sin(a1) * Math.sin(a2) * r];
-        subC.set(key, c);
       }
+      vecinos.push(c);
+      porCluster.set(k, vecinos);
+      subC.set(key, c);
       return c;
     };
     puntos.forEach((n, i) => {
@@ -118,6 +129,10 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
         arr[i * 3] = Math.cos(a) * r;
         arr[i * 3 + 1] = g(n.id, 29) * 0.78;
         arr[i * 3 + 2] = Math.sin(a) * r * (0.5 + h01(n.id, 43) * 0.85);
+      } else if (n.c === 'ancla') {
+        // sol institucional: en el centro exacto de su enjambre
+        const [sx, sy, sz] = n.s ? subCentro(n.k, n.s) : (CENTRO[n.k] ?? CENTRO.temas);
+        arr[i * 3] = sx; arr[i * 3 + 1] = sy; arr[i * 3 + 2] = sz;
       } else if (n.s) {
         const [sx, sy, sz] = subCentro(n.k, n.s);
         const sig = (SIGMA[n.k] ?? 0.2) * 0.42;
@@ -133,6 +148,17 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
       }
     });
     return arr;
+  }, [puntos]);
+
+  // Masa real por institución (cuántos registros orbitan cada sol)
+  const masas = useMemo(() => {
+    const m = new Map<string, number>();
+    puntos.forEach((p) => {
+      if (p.c !== 'registro') return;
+      m.set(p.k, (m.get(p.k) ?? 0) + 1);
+      if (p.s) m.set(`${p.k}|${p.s}`, (m.get(`${p.k}|${p.s}`) ?? 0) + 1);
+    });
+    return m;
   }, [puntos]);
 
   // Solo los hilos más cortos (los largos cruzan todo y ensucian)
@@ -178,6 +204,8 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
       const lbl = (p.l as string).charAt(0).toUpperCase() + (p.l as string).slice(1);
       out.push({ texto: lbl.length > 22 ? lbl.slice(0, 21) + '…' : lbl, x: pos[i * 3], y: pos[i * 3 + 1], z: pos[i * 3 + 2], peso: 1 });
     }
+    // los soles (peso 1) rotulan primero: son la jerarquía que importa
+    out.sort((a, b) => a.peso - b.peso);
     return out;
   }, [puntos, pos, t]);
 
@@ -277,19 +305,41 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
         const tono = (p.c === 'fuente' || p.c === 'evento' ? suaves : shades).get(p.k) ?? shades.get('temas')!;
         const brillo = h01(p.id, 71);
         let r: number, alpha: number;
-        if (p.c === 'evento') { r = (0.65 + brillo * 0.4) * s; alpha = (0.3 + brillo * 0.2) * depth; }
+        if (p.c === 'ancla') {
+          // sol: tamaño por masa real (registros que lo orbitan) o peso del grafo
+          const masa = Math.max(p.v ?? 1, masas.get(p.s ? `${p.k}|${p.s}` : p.k) ?? 0);
+          r = Math.min(10, 2.4 + Math.sqrt(masa) * 0.82) * s;
+          alpha = 0.95 * depth;
+        }
+        else if (p.c === 'evento') { r = (0.65 + brillo * 0.4) * s; alpha = (0.3 + brillo * 0.2) * depth; }
         else if (p.c === 'fuente') { r = (0.85 + brillo * 0.45) * s; alpha = (0.48 + brillo * 0.3) * depth; }
-        else if (p.c === 'puente') { r = (0.9 + Math.min(p.v ?? 1, 3) * 0.3) * s; alpha = (p.k === 'personas' ? 0.45 : 0.7) * depth; }
+        else if (p.c === 'puente') { r = (1 + Math.min(p.v ?? 1, 4) * 0.45) * s; alpha = (p.k === 'personas' ? 0.45 : 0.75) * depth; }
         else { r = (1.1 + Math.min(p.v ?? 1, 3) * 0.35) * s; alpha = (0.8 + brillo * 0.2) * depth; }
         ctx.globalAlpha = Math.min(1, alpha);
-        ctx.fillStyle = tono[brillo > 0.86 ? 2 : brillo > 0.55 ? 1 : 0];
+        ctx.fillStyle = p.c === 'ancla' ? tono[1] : tono[brillo > 0.86 ? 2 : brillo > 0.55 ? 1 : 0];
         ctx.beginPath();
         ctx.arc(X, Y, Math.max(0.4, r), 0, 6.2832);
         ctx.fill();
+        if (p.c === 'ancla') {
+          // corona del sol
+          const gsz = r * 6;
+          ctx.globalAlpha = Math.min(1, alpha) * 0.6;
+          ctx.drawImage(sprite(p.k), X - gsz / 2, Y - gsz / 2, gsz, gsz);
+          ctx.globalAlpha = Math.min(1, alpha) * 0.9;
+          ctx.fillStyle = tono[2];
+          ctx.beginPath();
+          ctx.arc(X, Y, Math.max(0.4, r * 0.45), 0, 6.2832);
+          ctx.fill();
+        }
         if (p.c === 'registro' && (p.n || (p.v ?? 0) >= 2.6)) {
           const gsz = r * 7;
           ctx.globalAlpha = Math.min(1, alpha) * 0.5;
           ctx.drawImage(sprite(p.k), X - gsz / 2, Y - gsz / 2, gsz, gsz);
+        }
+        if (p.c === 'puente' && p.k === 'temas' && (p.v ?? 0) >= 3) {
+          const gsz = r * 5;
+          ctx.globalAlpha = Math.min(1, alpha) * 0.4;
+          ctx.drawImage(sprite('temas'), X - gsz / 2, Y - gsz / 2, gsz, gsz);
         }
         if (mx >= 0 && p.l) {
           const dx = X - mx, dy = Y - my, d = dx * dx + dy * dy;
@@ -311,22 +361,25 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
         if (X < 8 || X > W - 90 || Y < 26 || Y > H - 14) continue;
         // zona del titular/párrafo: sin rótulos encima (los puntos sí pasan);
         // en pantallas angostas el texto ocupa casi todo el ancho
-        const zonaTexto = W < 900 ? W * 0.96 : W * 0.44;
-        if (X < zonaTexto && Y < H * (W < 900 ? 0.62 : 0.55)) continue;
-        const ancho = rot.peso === 2 ? 150 : 110;
-        if (puestas.some(([qx, qy]) => Math.abs(qx - X) < ancho && Math.abs(qy - Y) < 30)) continue;
+        const zonaTexto = W < 900 ? W * 0.96 : W * 0.4;
+        if (X < zonaTexto && Y < H * (W < 900 ? 0.62 : 0.52)) continue;
+        const ancho = rot.peso === 2 ? 150 : 96;
+        if (puestas.some(([qx, qy]) => Math.abs(qx - X) < ancho && Math.abs(qy - Y) < 24)) continue;
         puestas.push([X, Y]);
         if (rot.peso === 2) {
           ctx.font = `600 ${Math.round(13.5 * s)}px ui-sans-serif, system-ui, sans-serif`;
           ctx.fillStyle = 'rgba(236,241,250,0.96)';
-          ctx.fillText(rot.texto, X + 10, Y - 3);
+          ctx.fillText(rot.texto, X + 10, Y - 22);
           ctx.font = `${Math.round(10.5 * s)}px ui-monospace, monospace`;
           ctx.fillStyle = 'rgba(150,168,205,0.85)';
-          if (rot.sub) ctx.fillText(rot.sub, X + 10, Y + 12);
+          if (rot.sub) ctx.fillText(rot.sub, X + 10, Y - 7);
         } else {
           ctx.font = `500 ${Math.round(11 * s)}px ui-sans-serif, system-ui, sans-serif`;
-          ctx.fillStyle = 'rgba(214,222,240,0.78)';
-          ctx.fillText(rot.texto + (rot.sub ? ` · ${rot.sub}` : ''), X + 8, Y + 3);
+          ctx.fillStyle = 'rgba(220,228,244,0.85)';
+          // debajo del sol, con sombra para despegarse del glow
+          ctx.shadowColor = 'rgba(3,4,9,0.9)'; ctx.shadowBlur = 6;
+          ctx.fillText(rot.texto + (rot.sub ? ` · ${rot.sub}` : ''), X + 13, Y + 4);
+          ctx.shadowBlur = 0;
         }
       }
 
@@ -421,7 +474,7 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
       canvas.removeEventListener('pointerleave', leave);
       canvas.removeEventListener('wheel', wheel);
     };
-  }, [puntos, enlacesCortos, pos, rotulos, locale, t]);
+  }, [puntos, enlacesCortos, pos, rotulos, masas, locale, t]);
 
   return (
     <div ref={wrapRef} className="absolute inset-0" aria-hidden="true">

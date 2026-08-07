@@ -6,7 +6,7 @@
 export interface PuntoVivo {
   k: string;            // clúster: ejecutivo|legislativo|judicial|academia|privado|temas|personas|bitacora
   s?: string;           // sub-clúster real (cámara, dependencia) — produce las etiquetas finas
-  c: 'registro' | 'fuente' | 'evento' | 'puente';
+  c: 'registro' | 'fuente' | 'evento' | 'puente' | 'ancla';
   id: string;           // id determinista (posicionamiento por hash)
   l?: string;           // label para hover (solo registros/puentes)
   h?: string;           // href de la ficha
@@ -47,17 +47,46 @@ export async function datosMapaVivo(): Promise<DatosMapaVivo> {
     const push = (p: PuntoVivo) => { idx.set(p.id, puntos.length); puntos.push(p); };
     let fuentes = 0;
 
-    // Sub-clúster legislativo por cámara (real, del campo camara)
-    const camaraDe = (c: unknown): string => {
-      const v = String(c ?? '').toLowerCase();
-      if (/diputad/.test(v)) return 'Diputados';
-      if (/senad/.test(v)) return 'Senado';
-      return 'Congresos locales';
+    // Ente real por anuncio, del grafo (los anuncios de UNAM son academia,
+    // los de las cámaras legislativo…); huérfanos del grafo → ejecutivo.
+    const enteDeAnuncio = new Map<string, string>();
+    for (const n of gnodes) {
+      if (String(n.type) === 'anuncio' && typeof n.ente === 'string') {
+        enteDeAnuncio.set(String(n.id).replace(/^a:/, ''), n.ente);
+      }
+    }
+
+    // Normalización canónica de instituciones — la MISMA para los registros
+    // (sub-clúster) y para los nodos actor/cámara del grafo (soles): así cada
+    // sol aterriza exactamente sobre el enjambre de sus fichas y los
+    // duplicados del grafo ("ATDT" vs nombre largo) se fusionan en un cuerpo.
+    const INSTITUCIONES: Array<[RegExp, string]> = [
+      [/diputad/i, 'Diputados'],
+      [/senad/i, 'Senado'],
+      [/congreso/i, 'Congresos locales'],
+      [/atdt|transformaci[oó]n digital/i, 'ATDT'],
+      [/presidencia|sheinbaum/i, 'Presidencia'],
+      [/econom[ií]a/i, 'Economía'],
+      [/educaci[oó]n p[uú]blica|\bsep\b/i, 'SEP'],
+      [/cultura/i, 'Cultura'],
+      [/unam|ccoia/i, 'UNAM · CCOIA'],
+      [/buap/i, 'BUAP'],
+      [/tecnm/i, 'TecNM'],
+      [/nuevo le[oó]n/i, 'Gob. Nuevo León'],
+    ];
+    const normInstitucion = (raw: string): string | null => {
+      for (const [re, key] of INSTITUCIONES) if (re.test(raw)) return key;
+      return null;
     };
-    // Sub-clúster ejecutivo por dependencia: sigla entre paréntesis o nombre corto
+    const camaraDe = (c: unknown): string => {
+      const v = String(c ?? '');
+      return normInstitucion(v) && /diputad|senad/i.test(v) ? (normInstitucion(v) as string) : 'Congresos locales';
+    };
     const depDe = (x: Record<string, unknown>): string => {
       const raw = String(x.dependencia ?? x.responsable ?? '').trim();
       if (!raw) return 'Otras dependencias';
+      const canon = normInstitucion(raw);
+      if (canon) return canon;
       const sigla = raw.match(/\(([A-ZÁÉÍÓÚ]{2,12})\)/);
       if (sigla) return sigla[1];
       const corto = raw.split(/[,—-]/)[0].trim();
@@ -68,9 +97,10 @@ export async function datosMapaVivo(): Promise<DatosMapaVivo> {
     for (const x of anuncios) {
       const id = `a:${x.id}`;
       const sub = depDe(x);
-      push({ k: 'ejecutivo', s: sub, c: 'registro', id, l: String(x.titulo ?? ''), h: `/anuncio/${x.id}`, v: 2 });
+      const kA = enteDeAnuncio.get(String(x.id)) ?? 'ejecutivo';
+      push({ k: kA, s: sub, c: 'registro', id, l: String(x.titulo ?? ''), h: `/anuncio/${x.id}`, v: 2 });
       const fs = Array.isArray(x.fuentes) ? x.fuentes.length : 0;
-      for (let j = 0; j < fs; j++) { fuentes++; push({ k: 'ejecutivo', s: sub, c: 'fuente', id: `${id}·f${j}`, p: idx.get(id) }); }
+      for (let j = 0; j < fs; j++) { fuentes++; push({ k: kA, s: sub, c: 'fuente', id: `${id}·f${j}`, p: idx.get(id) }); }
     }
     for (const x of iniciativas) {
       const id = `i:${x.id}`;
@@ -88,16 +118,36 @@ export async function datosMapaVivo(): Promise<DatosMapaVivo> {
       for (let j = 0; j < fs; j++) { fuentes++; push({ k: 'judicial', c: 'fuente', id: `${id}·f${j}`, p: idx.get(id) }); }
     }
 
-    // Entidades del grafo que no viven en colecciones: personas, temas, actores, cámaras
+    // Personas y temas del grafo (puentes) + actores/cámaras como SOLES:
+    // la jerarquía gravitacional — instituciones grandes, fichas orbitando.
     let personas = 0, temas = 0;
+    const soles = new Map<string, { k: string; s: string; v: number; ids: string[] }>();
     for (const n of gnodes) {
       const t = String(n.type);
-      if (t === 'persona' || t === 'tema' || t === 'actor' || t === 'camara') {
-        const k = t === 'persona' ? 'personas' : t === 'tema' ? 'temas' : (typeof n.ente === 'string' && n.ente) || (t === 'camara' ? 'legislativo' : 'temas');
-        if (t === 'persona') personas++;
-        if (t === 'tema') temas++;
-        push({ k, c: 'puente', id: String(n.id), l: String(n.label ?? ''), h: typeof n.href === 'string' ? n.href : undefined, v: Math.min(Number(n.val) || 1, 3) });
+      if (t === 'persona' || t === 'tema') {
+        const k = t === 'persona' ? 'personas' : 'temas';
+        if (t === 'persona') personas++; else temas++;
+        push({ k, c: 'puente', id: String(n.id), l: String(n.label ?? ''), h: typeof n.href === 'string' ? n.href : undefined, v: Math.min(Number(n.val) || 1, 4) });
+      } else if (t === 'actor' || t === 'camara') {
+        const label = String(n.label ?? '');
+        const canon = normInstitucion(label) ?? (label.length > 24 ? label.slice(0, 22) + '…' : label);
+        const ente = (typeof n.ente === 'string' && n.ente) || (t === 'camara' ? 'legislativo' : 'temas');
+        const key = `${ente}|${canon}`;
+        const e = soles.get(key) ?? { k: ente, s: canon, v: 0, ids: [] };
+        e.v = Math.max(e.v, Number(n.val) || 1);
+        e.ids.push(String(n.id));
+        soles.set(key, e);
       }
+    }
+    for (const e of soles.values()) {
+      // un solo cuerpo por institución; conserva el primer id del grafo para
+      // que las relaciones (links) sigan conectando con él
+      push({ k: e.k, s: e.s, c: 'ancla', id: e.ids[0], l: e.s, v: e.v });
+      for (let j = 1; j < e.ids.length; j++) idx.set(e.ids[j], idx.get(e.ids[0])!);
+    }
+    // El Poder Judicial no trae nodo institucional en el grafo → sol sintético
+    if (![...soles.values()].some((e) => e.k === 'judicial')) {
+      push({ k: 'judicial', c: 'ancla', id: 'ancla:judicial', l: 'SCJN · Tribunales', v: 4 + casos.length });
     }
 
     // Bitácora: cada entrada del monitoreo es un objeto público (el polvo del disco)
