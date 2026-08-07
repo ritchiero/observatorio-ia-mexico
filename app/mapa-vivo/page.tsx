@@ -22,14 +22,19 @@ export default async function MapaVivoPage() {
     <div className="relative h-[100svh] min-h-[560px] w-full overflow-hidden" style={{ background: '#05070C', color: '#E7ECF7' }}>
       {/* Fondo holográfico de la casa */}
       <div className="absolute inset-0" style={{
-        background: `radial-gradient(ellipse 60% 50% at 20% 30%, rgba(77,123,255,0.16) 0%, transparent 60%),
-          radial-gradient(ellipse 50% 60% at 80% 70%, rgba(61,224,255,0.12) 0%, transparent 60%),
-          linear-gradient(180deg, #06081A 0%, #04060F 100%)`,
+        background: `radial-gradient(ellipse 60% 50% at 22% 30%, rgba(77,123,255,0.09) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 60% at 80% 70%, rgba(61,224,255,0.07) 0%, transparent 60%),
+          linear-gradient(180deg, #04050D 0%, #030409 100%)`,
       }} />
 
       {/* La constelación */}
       <MapaVivo3D puntos={d.puntos} enlaces={d.enlaces} locale="es" />
 
+      {/* Velo de legibilidad sobre la constelación, bajo el texto */}
+      <div className="absolute inset-0 z-[5] pointer-events-none" style={{
+        background: `linear-gradient(90deg, rgba(3,4,9,0.88) 0%, rgba(3,4,9,0.55) 34%, rgba(3,4,9,0.08) 55%, rgba(3,4,9,0) 70%),
+          linear-gradient(0deg, rgba(3,4,9,0.82) 0%, rgba(3,4,9,0) 22%)`,
+      }} />
       {/* Marca / regreso */}
       <div className="absolute left-5 top-5 md:left-10 md:top-8 z-10 pointer-events-none">
         <Link href="/" className="pointer-events-auto font-sans-tech text-[11px] uppercase tracking-[0.28em] text-gray-400 hover:text-white transition-colors">
@@ -38,24 +43,24 @@ export default async function MapaVivoPage() {
       </div>
 
       {/* Titular */}
-      <div className="absolute left-5 md:left-10 top-[16%] md:top-[18%] z-10 max-w-[560px] pointer-events-none pr-5">
-        <h1 className="font-serif-display font-medium leading-[0.98] tracking-[-0.03em]" style={{ fontSize: 'clamp(40px, 6.5vw, 84px)', color: '#E7ECF7' }}>
+      <div className="absolute left-5 md:left-10 top-[15%] md:top-[16%] z-10 max-w-[560px] pointer-events-none pr-5">
+        <h1 className="font-serif-display font-medium leading-[0.98] tracking-[-0.03em]" style={{ fontSize: 'clamp(44px, 7.6vw, 104px)', color: '#EDF1FA' }}>
           El mapa real de{' '}
           <span style={{
             background: 'linear-gradient(135deg, #3DE0FF 0%, #4D7BFF 55%, #A47CFF 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>la IA del Estado mexicano</span>
         </h1>
-        <p className="font-sans-tech mt-5 text-[15px] leading-relaxed text-[#B5BFD4] max-w-[420px]">
+        <p className="font-sans-tech mt-5 text-[14.5px] leading-relaxed text-[#9AA6C2] max-w-[400px]">
           Cada punto es un registro público con fuente; cada línea, una relación documentada.
           No es una lista: es el ecosistema completo — tres Poderes, academia y sector privado — bajo la lupa.
         </p>
         <div className="mt-6 flex flex-wrap gap-3 pointer-events-auto">
-          <Link href="/grafo" className="font-sans-tech text-[13px] font-semibold rounded-full px-5 py-2.5 transition-transform hover:scale-[1.03]"
+          <Link href="/grafo" className="font-sans-tech text-[12.5px] font-semibold rounded-full px-4 py-2 transition-transform hover:scale-[1.03]"
             style={{ color: '#05070C', background: 'linear-gradient(135deg, #3DE0FF, #4D7BFF)' }}>
             Explorar el mapa interactivo →
           </Link>
-          <Link href="/metodologia" className="font-sans-tech text-[13px] rounded-full px-5 py-2.5 border border-white/15 text-[#E7ECF7] hover:border-cyan-300/50 transition-colors">
+          <Link href="/metodologia" className="font-sans-tech text-[12.5px] rounded-full px-4 py-2 border border-white/12 text-[#E7ECF7] hover:border-cyan-300/50 transition-colors">
             Cómo verificamos los datos
           </Link>
         </div>
@@ -69,7 +74,7 @@ export default async function MapaVivoPage() {
       </div>
 
       {/* Cifras inferiores */}
-      <div className="absolute bottom-5 md:bottom-8 left-5 md:left-10 z-10 flex flex-wrap items-end gap-x-8 gap-y-2 pointer-events-none max-w-[62vw] md:max-w-none">
+      <div className="absolute bottom-5 md:bottom-8 left-5 md:left-10 z-10 grid grid-cols-2 gap-x-6 gap-y-2 md:flex md:flex-wrap md:items-end md:gap-x-8 pointer-events-none max-w-[58vw] md:max-w-none">
         {[[d.stats.anuncios, 'anuncios oficiales'], [d.stats.iniciativas, 'iniciativas de ley'], [d.stats.casos, 'casos judiciales'], [d.stats.fuentes, 'fuentes y documentos citados'], [d.stats.eventos, 'eventos de monitoreo']].map(([n, l]) => (
           <div key={String(l)}>
             <div className="font-serif-display text-3xl md:text-4xl" style={{
@@ -81,9 +86,9 @@ export default async function MapaVivoPage() {
       </div>
 
       {/* Pie derecho: leyenda + idioma */}
-      <div className="absolute bottom-5 md:bottom-8 right-5 md:right-10 z-10 text-right font-sans-tech text-[11px] leading-5 text-[#7886A2]">
-        <div className="pointer-events-none"><span className="inline-block h-2 w-2 rounded-full align-middle mr-1.5" style={{ background: '#3DE0FF', boxShadow: '0 0 8px #3DE0FF88' }} />1 punto = 1 objeto público: registro, fuente o evento</div>
-        <div className="pointer-events-none">arrastra para rotar · rueda para acercar · clic abre la ficha</div>
+      <div className="absolute bottom-5 md:bottom-8 right-5 md:right-10 z-10 text-right font-sans-tech text-[11px] leading-5 text-[#7886A2] max-w-[46vw]">
+        <div className="pointer-events-none hidden md:block"><span className="inline-block h-2 w-2 rounded-full align-middle mr-1.5" style={{ background: '#3DE0FF', boxShadow: '0 0 8px #3DE0FF88' }} />1 punto = 1 objeto público: registro, fuente o evento</div>
+        <div className="pointer-events-none hidden md:block">arrastra para rotar · rueda para acercar · clic abre la ficha</div>
         <div className="mt-2 inline-flex rounded-full border border-white/15 overflow-hidden pointer-events-auto">
           <span className="px-3 py-1 font-semibold text-[#05070C]" style={{ background: '#E7ECF7' }}>ES</span>
           <a href="/en/mapa-vivo?hl=en" className="px-3 py-1 text-[#B5BFD4] hover:text-white transition-colors">EN</a>
