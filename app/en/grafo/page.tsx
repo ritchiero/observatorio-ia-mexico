@@ -372,6 +372,18 @@ export default function GrafoPageEn() {
           })}
 
           <span className="mx-1 h-4 w-px bg-slate-700/70 hidden sm:block" />
+          <Link
+            href="/en/mapa-vivo"
+            className="font-sans-tech uppercase inline-flex items-center gap-1.5 transition-transform hover:scale-[1.04]"
+            style={{
+              fontSize: 11, letterSpacing: '0.1em', fontWeight: 600, color: T.cyan,
+              padding: '7px 14px', borderRadius: 100,
+              background: 'rgba(61,224,255,0.08)', border: `1px solid ${T.cyan}44`,
+            }}
+          >
+            ✦ Living map
+          </Link>
+
 
           <div className="inline-flex rounded-full border border-slate-700/70 bg-slate-900/70 p-0.5 backdrop-blur">
             {ESTADOS.map((e) => (
