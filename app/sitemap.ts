@@ -56,6 +56,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/actividad`, lastModified: now, changeFrequency: 'daily', priority: 0.6 },
     { url: `${BASE}/proceso-legislativo`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/metodologia`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/mapa-vivo`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     // Edición en inglés (backfill IA + andamiaje /en) — espejo completo
     { url: `${BASE}/en`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/en/legislacion`, lastModified: now, changeFrequency: 'daily', priority: 0.8 },
@@ -67,6 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/en/grafo/tabla`, lastModified: now, changeFrequency: 'daily', priority: 0.5 },
     { url: `${BASE}/en/proceso-legislativo`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE}/en/metodologia`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${BASE}/en/mapa-vivo`, lastModified: now, changeFrequency: 'weekly', priority: 0.5 },
   ];
 
   const fichas: MetadataRoute.Sitemap = [
