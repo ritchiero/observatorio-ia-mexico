@@ -23,12 +23,12 @@ export interface DatosMapaVivo {
 
 const BASE = 'https://www.observatorio-ia-mexico.com';
 
-export async function datosMapaVivo(): Promise<DatosMapaVivo> {
+export async function datosMapaVivo(base: string = BASE): Promise<DatosMapaVivo> {
   const vacio: DatosMapaVivo = { puntos: [], enlaces: [], stats: { anuncios: 0, iniciativas: 0, casos: 0, fuentes: 0, eventos: 0, personas: 0, temas: 0 } };
   try {
     // allSettled: si una API falla, el mapa se dibuja con lo demás (no se vacía)
     const pide = (ruta: string) =>
-      fetch(`${BASE}${ruta}`, { next: { revalidate: 300 } }).then((r) => (r.ok ? r.json() : {}));
+      fetch(`${base}${ruta}`, { next: { revalidate: 300 } }).then((r) => (r.ok ? r.json() : {}));
     const [g, a, i, c, act] = (
       await Promise.allSettled([
         pide('/api/grafo'), pide('/api/anuncios'), pide('/api/iniciativas'),
