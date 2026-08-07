@@ -105,7 +105,7 @@ export default function HeroSectionGlassEn({ stats, legStats, casosStats, loadin
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  const navItems: [string, string][] = [[navT.tracker, '/en'], [navT.legislacion, '/en/legislacion'], [navT.casos, '/en/casos-ia'], [navT.hemeroteca, '/en/hemeroteca'], [navT.recap, '/en/recap'], [navT.actividad, '/en/actividad']];
+  const navItems: [string, string][] = [[navT.tracker, '/en'], [navT.legislacion, '/en/legislacion'], [navT.casos, '/en/casos-ia'], [navT.hemeroteca, '/en/hemeroteca'], [navT.recap, '/en/recap'], [navT.actividad, '/en/actividad'], [navT.informe, '/en/informe-2026']];
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,24 +271,25 @@ export default function HeroSectionGlassEn({ stats, legStats, casosStats, loadin
           </p>
 
           <div className="mt-10 flex flex-wrap gap-3.5 items-center">
-            <button onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+            {/* Unambiguous hierarchy: 1st the tracker (the product), 2nd the map, 3rd methodology */}
+            <a href="#tracker"
               className="font-sans-tech inline-flex items-center gap-3 cursor-pointer" style={{
                 fontSize: 14, letterSpacing: '0.04em', fontWeight: 600, color: T.void, padding: '16px 28px', borderRadius: 100,
                 border: 'none', background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)`, boxShadow: `0 12px 48px ${T.cyan}40, inset 0 1px 0 rgba(255,255,255,0.4)` }}>
-              Enter the Observatorio
+              Explore the tracker
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-            <a href="#metodologia" className="font-sans-tech" style={{
-              fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.text, padding: '15px 26px', borderRadius: 100,
-              background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-              View methodology
             </a>
             <Link href="/en/grafo" className="font-sans-tech inline-flex items-center gap-2" style={{
               fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.cyan, padding: '15px 26px', borderRadius: 100,
               background: 'rgba(61,224,255,0.06)', backdropFilter: 'blur(20px)', border: `1px solid ${T.cyan}44` }}>
-              Explore the map
+              View the map
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </Link>
+            <a href="#metodologia" className="font-sans-tech" style={{
+              fontSize: 14, letterSpacing: '0.04em', fontWeight: 500, color: T.text, padding: '15px 26px', borderRadius: 100,
+              background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              How we verify the data
+            </a>
           </div>
 
           <div className="mt-12 flex flex-wrap gap-3">
@@ -333,7 +334,7 @@ export default function HeroSectionGlassEn({ stats, legStats, casosStats, loadin
                 <div className="text-center mb-6">
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4"><Eye size={24} className="text-blue-500" /></div>
                   <h3 id="subscription-title" className="font-serif-display text-2xl text-gray-900 mb-2">Join the Observatorio</h3>
-                  <p className="text-gray-600 font-sans-tech text-sm">Get updates on AI in Mexico: new announcements, legislation, and judicial cases.</p>
+                  <p className="text-gray-600 font-sans-tech text-sm">Get the monthly recap plus alerts when the status of an announcement, bill or case changes. No spam; unsubscribe in one click.</p>
                 </div>
                 <form onSubmit={handleSubscribe} className="space-y-4">
                   <div>
