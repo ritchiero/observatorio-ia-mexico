@@ -5,6 +5,7 @@
 
 export interface PuntoVivo {
   k: string;            // clúster: ejecutivo|legislativo|judicial|academia|privado|temas|personas|bitacora
+  s?: string;           // sub-clúster real (cámara, dependencia) — produce las etiquetas finas
   c: 'registro' | 'fuente' | 'evento' | 'puente';
   id: string;           // id determinista (posicionamiento por hash)
   l?: string;           // label para hover (solo registros/puentes)
@@ -46,20 +47,39 @@ export async function datosMapaVivo(): Promise<DatosMapaVivo> {
     const push = (p: PuntoVivo) => { idx.set(p.id, puntos.length); puntos.push(p); };
     let fuentes = 0;
 
+    // Sub-clúster legislativo por cámara (real, del campo camara)
+    const camaraDe = (c: unknown): string => {
+      const v = String(c ?? '').toLowerCase();
+      if (/diputad/.test(v)) return 'Diputados';
+      if (/senad/.test(v)) return 'Senado';
+      return 'Congresos locales';
+    };
+    // Sub-clúster ejecutivo por dependencia: sigla entre paréntesis o nombre corto
+    const depDe = (x: Record<string, unknown>): string => {
+      const raw = String(x.dependencia ?? x.responsable ?? '').trim();
+      if (!raw) return 'Otras dependencias';
+      const sigla = raw.match(/\(([A-ZÁÉÍÓÚ]{2,12})\)/);
+      if (sigla) return sigla[1];
+      const corto = raw.split(/[,—-]/)[0].trim();
+      return corto.length > 26 ? corto.slice(0, 24) + '…' : corto;
+    };
+
     // Registros de las colecciones (la autoridad) + sus fuentes como satélites
     for (const x of anuncios) {
       const id = `a:${x.id}`;
-      push({ k: 'ejecutivo', c: 'registro', id, l: String(x.titulo ?? ''), h: `/anuncio/${x.id}`, v: 2 });
+      const sub = depDe(x);
+      push({ k: 'ejecutivo', s: sub, c: 'registro', id, l: String(x.titulo ?? ''), h: `/anuncio/${x.id}`, v: 2 });
       const fs = Array.isArray(x.fuentes) ? x.fuentes.length : 0;
-      for (let j = 0; j < fs; j++) { fuentes++; push({ k: 'ejecutivo', c: 'fuente', id: `${id}·f${j}`, p: idx.get(id) }); }
+      for (let j = 0; j < fs; j++) { fuentes++; push({ k: 'ejecutivo', s: sub, c: 'fuente', id: `${id}·f${j}`, p: idx.get(id) }); }
     }
     for (const x of iniciativas) {
       const id = `i:${x.id}`;
-      push({ k: 'legislativo', c: 'registro', id, l: String(x.titulo ?? ''), h: `/legislacion/${x.id}`, v: 1.6 });
+      const sub = camaraDe(x.camara);
+      push({ k: 'legislativo', s: sub, c: 'registro', id, l: String(x.titulo ?? ''), h: `/legislacion/${x.id}`, v: 1.6 });
       let fs = Array.isArray(x.fuentes) ? x.fuentes.length : 0;
       if (x.urlGaceta) fs++;
       if (x.urlPDFBackup) fs++;
-      for (let j = 0; j < fs; j++) { fuentes++; push({ k: 'legislativo', c: 'fuente', id: `${id}·f${j}`, p: idx.get(id) }); }
+      for (let j = 0; j < fs; j++) { fuentes++; push({ k: 'legislativo', s: sub, c: 'fuente', id: `${id}·f${j}`, p: idx.get(id) }); }
     }
     for (const x of casos) {
       const id = `j:${x.id}`;
