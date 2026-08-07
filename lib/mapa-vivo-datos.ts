@@ -25,13 +25,15 @@ const BASE = 'https://www.observatorio-ia-mexico.com';
 export async function datosMapaVivo(): Promise<DatosMapaVivo> {
   const vacio: DatosMapaVivo = { puntos: [], enlaces: [], stats: { anuncios: 0, iniciativas: 0, casos: 0, fuentes: 0, eventos: 0, personas: 0, temas: 0 } };
   try {
-    const [g, a, i, c, act] = await Promise.all([
-      fetch(`${BASE}/api/grafo`, { next: { revalidate: 300 } }).then((r) => r.json()),
-      fetch(`${BASE}/api/anuncios`, { next: { revalidate: 300 } }).then((r) => r.json()),
-      fetch(`${BASE}/api/iniciativas`, { next: { revalidate: 300 } }).then((r) => r.json()),
-      fetch(`${BASE}/api/casos-ia`, { next: { revalidate: 300 } }).then((r) => r.json()),
-      fetch(`${BASE}/api/actividad?limit=500`, { next: { revalidate: 300 } }).then((r) => r.json()),
-    ]);
+    // allSettled: si una API falla, el mapa se dibuja con lo demás (no se vacía)
+    const pide = (ruta: string) =>
+      fetch(`${BASE}${ruta}`, { next: { revalidate: 300 } }).then((r) => (r.ok ? r.json() : {}));
+    const [g, a, i, c, act] = (
+      await Promise.allSettled([
+        pide('/api/grafo'), pide('/api/anuncios'), pide('/api/iniciativas'),
+        pide('/api/casos-ia'), pide('/api/actividad?limit=500'),
+      ])
+    ).map((r) => (r.status === 'fulfilled' ? r.value : {}));
     const anuncios = (a.data ?? a.anuncios ?? []) as Array<Record<string, unknown>>;
     const iniciativas = (i.data ?? i.iniciativas ?? []) as Array<Record<string, unknown>>;
     const casos = (c.casos ?? c.data ?? []) as Array<Record<string, unknown>>;
@@ -91,7 +93,8 @@ export async function datosMapaVivo(): Promise<DatosMapaVivo> {
       puntos, enlaces,
       stats: { anuncios: anuncios.length, iniciativas: iniciativas.length, casos: casos.length, fuentes, eventos: actividad.length, personas, temas },
     };
-  } catch {
+  } catch (err) {
+    console.error('[mapa-vivo] no se pudieron construir los datos', err);
     return vacio;
   }
 }

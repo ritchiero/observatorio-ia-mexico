@@ -293,8 +293,10 @@ export default function MapaVivo3D({ puntos, enlaces, locale = 'es' }: Props) {
       if (pointers.size === 0) {
         if (dragging && moved < 6 && hover >= 0) {
           const p = puntos[hover];
-          if (p.h) {
-            const href = locale === 'en' && p.h.startsWith('/') && !p.h.startsWith('/en') ? `/en${p.h}` : p.h;
+          // solo paths internos; el prefijo /en se detecta por segmento (no confundir /entidad)
+          if (p.h && p.h.startsWith('/') && !p.h.startsWith('//')) {
+            const yaEn = /^\/en(\/|$|\?)/.test(p.h);
+            const href = locale === 'en' && !yaEn ? `/en${p.h}` : p.h;
             window.location.href = href;
           }
         }
