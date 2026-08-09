@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import MonitoreoLegislativo from '@/components/MonitoreoLegislativo';
 import { ArrowLeft, Calendar, ExternalLink, Play, Tv, Radio, Clock, Users, AlertCircle, Scale, Shield, Building2, Database, Lightbulb, Globe, FileText, BookOpen, ChevronRight, MessageSquareWarning, History, Landmark, ScrollText, Eye, Gavel, CheckCircle } from 'lucide-react';
 
 export const metadata = {
@@ -244,6 +245,8 @@ export default function ProcesoLegislativoPage() {
             </div>
           </div>
         </section>
+
+        <MonitoreoLegislativo locale="es" />
 
         <section className="mb-12">
           <div className="flex items-center gap-3 mb-6">
