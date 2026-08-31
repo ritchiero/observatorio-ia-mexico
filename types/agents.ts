@@ -12,9 +12,9 @@
 // ============================================
 
 export type ClaudeModel = 
-  | 'claude-3-5-haiku-20241022'
-  | 'claude-sonnet-4-20250514'
-  | 'claude-sonnet-4-5-20250929';
+  | 'claude-opus-5'
+  | 'claude-sonnet-5'
+  | 'claude-haiku-4-5';
 
 export interface ModelPricing {
   inputPer1M: number;   // USD por 1M tokens de entrada

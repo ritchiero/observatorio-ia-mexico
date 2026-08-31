@@ -17,23 +17,23 @@ import type {
 // ============================================
 
 export const MODEL_PRICING: Record<ClaudeModel, ModelPricing> = {
-  'claude-3-5-haiku-20241022': {
-    inputPer1M: 0.80,
-    outputPer1M: 4.00,
-    name: 'Claude 3.5 Haiku',
+  'claude-haiku-4-5': {
+    inputPer1M: 1.00,
+    outputPer1M: 5.00,
+    name: 'Claude Haiku 4.5',
     description: 'Rápido y económico. Ideal para tareas de alto volumen.',
   },
-  'claude-sonnet-4-20250514': {
-    inputPer1M: 3.00,
-    outputPer1M: 15.00,
-    name: 'Claude Sonnet 4',
-    description: 'Equilibrio entre costo y capacidad. Soporta web search.',
+  'claude-sonnet-5': {
+    inputPer1M: 2.00,
+    outputPer1M: 10.00,
+    name: 'Claude Sonnet 5',
+    description: 'Equilibrio entre costo y capacidad. Soporta búsqueda web.',
   },
-  'claude-sonnet-4-5-20250929': {
-    inputPer1M: 3.00,
-    outputPer1M: 15.00,
-    name: 'Claude Sonnet 4.5',
-    description: 'Última versión de Sonnet. Mayor precisión.',
+  'claude-opus-5': {
+    inputPer1M: 5.00,
+    outputPer1M: 25.00,
+    name: 'Claude Opus 5',
+    description: 'El más capaz. Búsqueda web y razonamiento adaptativo.',
   },
 };
 
@@ -42,11 +42,11 @@ export const MODEL_PRICING: Record<ClaudeModel, ModelPricing> = {
 // ============================================
 
 export const RECOMMENDED_MODELS: Record<AgentType, ClaudeModel> = {
-  detection: 'claude-3-5-haiku-20241022',      // Alto volumen, tareas simples
-  monitoring: 'claude-3-5-haiku-20241022',     // Alto volumen, comparaciones
-  legislation: 'claude-3-5-haiku-20241022',    // Extracción de datos
-  judicial_cases: 'claude-3-5-haiku-20241022', // Búsqueda y clasificación
-  criteria: 'claude-sonnet-4-20250514',        // Análisis más complejo
+  detection: 'claude-opus-5',      // Búsqueda web + extracción estructurada
+  monitoring: 'claude-opus-5',     // Comparación de estado contra fuentes
+  legislation: 'claude-opus-5',    // Extracción de datos legislativos
+  judicial_cases: 'claude-opus-5', // Búsqueda y clasificación
+  criteria: 'claude-opus-5',       // Análisis más complejo
 };
 
 // ============================================
@@ -59,7 +59,7 @@ export const DEFAULT_AGENT_CONFIGS: AgentConfig[] = [
     name: 'Detección de Anuncios',
     description: 'Busca nuevos anuncios gubernamentales sobre IA',
     enabled: true,
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-opus-5',
     maxItemsPerRun: 5,
     maxTokensOutput: 2000,
     schedule: '0 10 * * 1', // Lunes 10am
@@ -69,7 +69,7 @@ export const DEFAULT_AGENT_CONFIGS: AgentConfig[] = [
     name: 'Monitoreo de Anuncios',
     description: 'Actualiza el estado de anuncios existentes',
     enabled: true,
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-opus-5',
     maxItemsPerRun: 10,
     maxTokensOutput: 1500,
     schedule: '0 9 * * 1,3,5', // Lun, Mié, Vie 9am
@@ -79,7 +79,7 @@ export const DEFAULT_AGENT_CONFIGS: AgentConfig[] = [
     name: 'Legislación',
     description: 'Detecta nuevas iniciativas de ley sobre IA',
     enabled: false, // Deshabilitado por defecto (no implementado)
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-opus-5',
     maxItemsPerRun: 5,
     maxTokensOutput: 2000,
   },
@@ -88,7 +88,7 @@ export const DEFAULT_AGENT_CONFIGS: AgentConfig[] = [
     name: 'Casos Judiciales',
     description: 'Busca casos judiciales relacionados con IA',
     enabled: false,
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-opus-5',
     maxItemsPerRun: 5,
     maxTokensOutput: 2000,
   },
@@ -97,7 +97,7 @@ export const DEFAULT_AGENT_CONFIGS: AgentConfig[] = [
     name: 'Criterios Jurídicos',
     description: 'Detecta nuevos criterios y precedentes sobre IA',
     enabled: false,
-    model: 'claude-sonnet-4-20250514', // Más complejo, usa Sonnet
+    model: 'claude-opus-5',
     maxItemsPerRun: 3,
     maxTokensOutput: 3000,
   },

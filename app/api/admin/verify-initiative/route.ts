@@ -19,10 +19,10 @@ export async function POST(request: NextRequest) {
     const initiative = await request.json();
     
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-opus-5",
       max_tokens: 8096,
       tools: [{
-        type: "web_search_20250305",
+        type: "web_search_20260209",
         name: "web_search",
       } as any],
       messages: [{
