@@ -80,9 +80,9 @@ IMPORTANTE: Solo incluye en correctedData los campos que realmente necesitan cor
 
     // @ts-ignore
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-opus-5",
       max_tokens: 4096,
-      tools: [{ type: "web_search_20250305", name: "web_search" } as any],
+      tools: [{ type: "web_search_20260209", name: "web_search" } as any],
       messages: [{
         role: "user",
         content: prompt

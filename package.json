@@ -16,7 +16,7 @@
     "test:security": "node --experimental-strip-types --test lib/api-security-policy.test.mjs lib/auth-policy.test.mjs lib/pdf-backup-security.test.mjs lib/public-read-fallback.test.mjs lib/public-record-sanitizer.test.mjs lib/subscription-policy.test.mjs lib/subscription-rate-limit.test.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
+    "@anthropic-ai/sdk": "^0.122.0",
     "@heroicons/react": "^2.2.0",
     "@vercel/analytics": "^1.4.1",
     "bcryptjs": "^3.0.3",

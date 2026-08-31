@@ -30,7 +30,7 @@ const CATEGORIAS = [
 async function categorizeInitiative(initiative: any): Promise<string | null> {
   try {
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-opus-5",
       max_tokens: 100,
       messages: [{
         role: "user",

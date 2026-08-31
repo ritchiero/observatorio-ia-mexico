@@ -129,7 +129,7 @@ export async function trackedClaudeCall(
   const {
     agentType,
     mode,
-    model = 'claude-3-5-haiku-20241022',
+    model = 'claude-opus-5',
     systemPrompt,
     userPrompt,
     maxTokens = 2000,
@@ -187,7 +187,7 @@ export async function trackedClaudeCall(
     // Preparar tools si web search está habilitado
     const tools: Anthropic.Messages.Tool[] = enableWebSearch ? [
       {
-        type: 'web_search_20250305' as unknown as 'custom',
+        type: 'web_search_20260209' as unknown as 'custom',
         name: 'web_search',
       } as unknown as Anthropic.Messages.Tool
     ] : [];
@@ -311,7 +311,7 @@ export function estimateCallCost(
  */
 export function modelSupportsWebSearch(model: ClaudeModel): boolean {
   // Haiku no soporta web search
-  return model !== 'claude-3-5-haiku-20241022';
+  return model !== 'claude-haiku-4-5';
 }
 
 /**

@@ -169,14 +169,14 @@ async function executeDetection(
   run.promptPreview = fullPrompt.substring(0, 500) + (fullPrompt.length > 500 ? '...' : '');
   
   // Llamar a Claude
-  const webSearchEnabled = model !== 'claude-3-5-haiku-20241022';
+  const webSearchEnabled = model !== 'claude-haiku-4-5';
   logs.push(`🤖 Llamando a Claude (modelo: ${model}, web_search: ${webSearchEnabled ? 'SÍ' : 'NO'})`);
   logs.push(`⚙️ Modo: ${run.mode}`);
   
   const result = await trackedClaudeCall({
     agentType: 'detection',
     mode: run.mode,
-    model: model as 'claude-3-5-haiku-20241022' | 'claude-sonnet-4-20250514' | 'claude-sonnet-4-5-20250929',
+    model: model as 'claude-opus-5' | 'claude-sonnet-5' | 'claude-haiku-4-5',
     systemPrompt: 'Eres un analista de políticas públicas de inteligencia artificial en México.',
     userPrompt: fullPrompt,
     maxTokens: 2000,
@@ -307,7 +307,7 @@ async function executeMonitoring(
       systemPrompt: 'Eres un analista de seguimiento de políticas públicas de inteligencia artificial en México.',
       userPrompt: prompt,
       maxTokens: 2000,
-      enableWebSearch: model !== 'claude-3-5-haiku-20241022',
+      enableWebSearch: model !== 'claude-haiku-4-5',
     });
 
     calls += 1;
