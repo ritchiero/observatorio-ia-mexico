@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { requireCron } from '@/lib/auth';
+import {
+  getCurrentDeploymentOrigin,
+  runConsolidatedAgents,
+} from '@/lib/agents/run-consolidated-cron';
 
 export const maxDuration = 300; // 5 minutos
 export const dynamic = 'force-dynamic';
@@ -12,35 +16,17 @@ export async function GET(request: Request) {
   const authError = requireCron(request);
   if (authError) return authError;
 
-  const host = request.headers.get('host');
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (host ? `https://${host}` : 'https://www.observatorio-ia-mexico.com');
+  // Mantener todas las subejecuciones en el mismo deployment que recibió la
+  // llamada. Esto permite probar un preview sin terminar ejecutando el código
+  // de producción por culpa de NEXT_PUBLIC_SITE_URL.
+  const base = getCurrentDeploymentOrigin(request.url);
   const secret = process.env.CRON_SECRET;
 
-  // Orden solo cosmético; corren en paralelo. Primero los que descubren contenido nuevo.
-  const agentes = ['deteccion', 'legislacion', 'casos', 'monitoreo'];
+  // requireCron ya falla cerrado si el secreto no existe.
+  const result = await runConsolidatedAgents(base, secret!);
 
-  const settled = await Promise.allSettled(
-    agentes.map((a) =>
-      fetch(`${base}/api/cron/${a}`, {
-        headers: { Authorization: `Bearer ${secret}` },
-      }).then(async (r) => ({ agente: a, ok: r.ok, status: r.status }))
-    )
+  return NextResponse.json(
+    result,
+    { status: result.ok ? 200 : 502 },
   );
-
-  const resultados = settled.map((s, i) =>
-    s.status === 'fulfilled'
-      ? s.value
-      : { agente: agentes[i], error: s.reason instanceof Error ? s.reason.message : String(s.reason) }
-  );
-
-  console.log('[CRON todo] corrida consolidada:', JSON.stringify(resultados));
-
-  return NextResponse.json({
-    ok: true,
-    corridaConsolidada: true,
-    agentes,
-    resultados,
-  });
 }

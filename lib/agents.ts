@@ -5,6 +5,7 @@ import { DeteccionResponse, MonitoreoResponse, TriggerTipo, DeteccionResponseCon
 import { Timestamp } from 'firebase-admin/firestore';
 import { crearEventoInicial, crearEventoTimeline } from './timeline';
 import { tierFuente, esDuplicado, folioFactory } from './expediente';
+import { selectMonitoringCandidates, summarizeMonitoringRun } from './monitoring-health';
 
 export async function ejecutarAgenteDeteccion(
   trigger: TriggerTipo = 'manual',
@@ -43,8 +44,7 @@ export async function ejecutarAgenteDeteccion(
       }
       deteccion = JSON.parse(jsonMatch[0]);
     } catch (parseError) {
-      errores.push(`Error al parsear respuesta: ${parseError}`);
-      deteccion = { nuevos_anuncios: [] };
+      throw new Error(`Respuesta invalida del agente de deteccion: ${parseError}`);
     }
 
     // Guardar nuevos anuncios (con guardrails: dedup → verificación → folio)
@@ -56,7 +56,6 @@ export async function ejecutarAgenteDeteccion(
         // GUARDRAIL 1 — dedup por folio/título/fuente: si ya existe, NO duplicar.
         const dup = esDuplicado(anuncio.titulo, urls, existentes);
         if (dup.dup) {
-          errores.push(`Omitido (duplicado): "${anuncio.titulo}" — ${dup.razon}`);
           decisiones.push({ titulo: anuncio.titulo, accion: 'omitido_duplicado', razon: dup.razon });
           continue;
         }
@@ -155,16 +154,21 @@ export async function ejecutarAgenteDeteccion(
         trigger,
       });
 
+      const parcial = errores.length > 0;
+
       // Registrar actividad de ejecución
       await db.collection('actividad').add({
         fecha: Timestamp.now(),
-        tipo: 'agente_ejecutado',
-        descripcion: `Agente de detección ejecutado. ${anunciosEncontrados} nuevo(s) anuncio(s) encontrado(s).`,
+        tipo: parcial ? 'agente_parcial' : 'agente_ejecutado',
+        descripcion: parcial
+          ? `El agente de detección encontró ${anunciosEncontrados} anuncio(s), pero completó la corrida con ${errores.length} error(es). El detalle quedó en el registro interno.`
+          : `Agente de detección ejecutado. ${anunciosEncontrados} nuevo(s) anuncio(s) encontrado(s).`,
       });
     }
 
     return {
       success: true,
+      partial: errores.length > 0,
       dryRun,
       anunciosEncontrados,
       decisiones,
@@ -195,7 +199,7 @@ export async function ejecutarAgenteDeteccion(
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
       tipo: 'agente_fallo',
-      descripcion: `El agente de detección falló y no pudo revisar fuentes: ${errorMsg}`,
+      descripcion: 'El agente de detección falló y no pudo completar la revisión de fuentes. El detalle quedó en el registro interno.',
     });
 
     return {
@@ -216,6 +220,8 @@ export async function ejecutarAgenteMonitoreo(
   const db = getAdminDb();
   const errores: string[] = [];
   let actualizacionesDetectadas = 0;
+  let verificacionesExitosas = 0;
+  let verificacionesFallidas = 0;
 
   try {
     // Obtener todos los anuncios
@@ -235,17 +241,12 @@ export async function ejecutarAgenteMonitoreo(
       [key: string]: unknown;
     }>;
 
-    // Rotación: solo activos (prometido/en_desarrollo), no ocultos, empezando por
-    // los más rancios (updatedAt más viejo). Evita el timeout de hacer web_search
-    // sobre los 55 anuncios en una sola invocación de la función.
-    const candidatos = anuncios
-      .filter(a => !(a as { oculto?: boolean }).oculto && ['prometido', 'en_desarrollo'].includes(String(a.status)))
-      .sort((x, y) => {
-        const tx = (x as { updatedAt?: { toDate?: () => Date } }).updatedAt?.toDate?.().getTime?.() ?? 0;
-        const ty = (y as { updatedAt?: { toDate?: () => Date } }).updatedAt?.toDate?.().getTime?.() ?? 0;
-        return tx - ty;
-      })
-      .slice(0, LIMIT);
+    // La rotacion usa un cursor propio. `updatedAt` no cambia cuando una revision
+    // no encuentra noticias, por lo que antes se elegian los mismos 12 expedientes
+    // en cada corrida y el resto podia quedar sin revisar indefinidamente.
+    // Los incumplidos tambien vuelven a la cola: pueden aparecer pruebas tardias
+    // que rehabiliten el estatus o agreguen contexto al retraso.
+    const candidatos = selectMonitoringCandidates(anuncios, LIMIT);
 
     // Monitorear cada anuncio del lote rotado
     for (const anuncio of candidatos) {
@@ -273,8 +274,11 @@ export async function ejecutarAgenteMonitoreo(
           monitoreo = JSON.parse(jsonMatch[0]);
         } catch (parseError) {
           errores.push(`Error al parsear respuesta para "${anuncio.titulo}": ${parseError}`);
+          verificacionesFallidas++;
           continue;
         }
+
+        const ultimaVerificacionAt = Timestamp.now();
 
         // Si hay actualización, guardarla
         if (monitoreo.hay_actualizacion && monitoreo.actualizacion) {
@@ -293,6 +297,7 @@ export async function ejecutarAgenteMonitoreo(
           const updateData: Record<string, unknown> = {
             actualizaciones,
             updatedAt: Timestamp.now(),
+            ultimaVerificacionAt,
           };
 
           // Cambiar status si es recomendado
@@ -358,11 +363,22 @@ export async function ejecutarAgenteMonitoreo(
           }
           
           actualizacionesDetectadas++;
+        } else {
+          // Mover el expediente al final de la cola aunque no haya novedad.
+          await db.collection('anuncios').doc(anuncio.id).update({ ultimaVerificacionAt });
         }
+        verificacionesExitosas++;
       } catch (error) {
         errores.push(`Error al monitorear "${anuncio.titulo}": ${error}`);
+        verificacionesFallidas++;
       }
     }
+
+    const salud = summarizeMonitoringRun({
+      candidates: candidatos.length,
+      successfulChecks: verificacionesExitosas,
+      failedChecks: verificacionesFallidas,
+    });
 
     // Guardar log del agente
     const duracionMs = Date.now() - startTime;
@@ -372,21 +388,40 @@ export async function ejecutarAgenteMonitoreo(
       duracionMs,
       anunciosEncontrados: 0,
       actualizacionesDetectadas,
+      candidatos: candidatos.length,
+      verificacionesExitosas,
+      verificacionesFallidas,
       errores,
       rawResponse: '',
       trigger,
     });
 
-    // Registrar actividad de ejecución
+    // Una corrida con cero actualizaciones solo cuenta como "sin novedad" si
+    // hubo revisiones validas. Los fallos totales y parciales quedan separados.
+    const tipoActividad = !salud.success
+      ? 'agente_fallo'
+      : salud.partial
+        ? 'agente_parcial'
+        : 'agente_ejecutado';
+    const descripcionActividad = !salud.success
+      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote. El detalle quedó en el registro interno.`
+      : salud.partial
+        ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron. Detectó ${actualizacionesDetectadas} actualización(es).`
+        : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).`;
+
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
-      tipo: 'agente_ejecutado',
-      descripcion: `Agente de monitoreo ejecutado. ${actualizacionesDetectadas} actualización(es) detectada(s).`,
+      tipo: tipoActividad,
+      descripcion: descripcionActividad,
     });
 
     return {
-      success: true,
+      success: salud.success,
+      partial: salud.partial,
       actualizacionesDetectadas,
+      candidatos: candidatos.length,
+      verificacionesExitosas,
+      verificacionesFallidas,
       errores,
       duracionMs,
     };
@@ -411,12 +446,15 @@ export async function ejecutarAgenteMonitoreo(
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
       tipo: 'agente_fallo',
-      descripcion: `El agente de monitoreo falló y no pudo revisar estatus: ${errorMsg}`,
+      descripcion: 'El agente de monitoreo falló antes de completar la revisión de estatus. El detalle quedó en el registro interno.',
     });
 
     return {
       success: false,
       actualizacionesDetectadas: 0,
+      candidatos: 0,
+      verificacionesExitosas: 0,
+      verificacionesFallidas: 0,
       errores,
       duracionMs,
     };

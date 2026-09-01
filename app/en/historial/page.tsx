@@ -8,7 +8,7 @@ import ActividadFeedEn from '@/components/ActividadFeedEn';
 const GRUPOS: { key: string; label: string; tipos: string[] }[] = [
   { key: 'deteccion', label: 'Detections and updates', tipos: ['actualizacion', 'nuevo_anuncio'] },
   { key: 'status', label: 'Status changes', tipos: ['cambio_status'] },
-  { key: 'agente', label: 'Agent runs', tipos: ['agente_ejecuta', 'agente_ejecutado', 'agente_fallo'] },
+  { key: 'agente', label: 'Agent runs', tipos: ['agente_ejecuta', 'agente_ejecutado', 'agente_parcial', 'agente_fallo'] },
   { key: 'manual', label: 'Additions and edits', tipos: ['anuncio_manual', 'edicion_manual'] },
 ];
 

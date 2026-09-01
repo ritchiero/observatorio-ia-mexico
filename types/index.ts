@@ -46,7 +46,7 @@ export interface Anuncio {
   updatedAt: Timestamp;
 }
 
-export type ActividadTipo = 'nuevo_anuncio' | 'cambio_status' | 'actualizacion' | 'agente_ejecutado' | 'agente_fallo' | 'anuncio_manual';
+export type ActividadTipo = 'nuevo_anuncio' | 'cambio_status' | 'actualizacion' | 'agente_ejecutado' | 'agente_parcial' | 'agente_fallo' | 'anuncio_manual';
 
 export interface ActividadLog {
   id: string;
