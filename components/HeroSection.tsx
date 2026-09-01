@@ -34,7 +34,13 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
   
   // Estado del modal de suscripción
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ nombre: '', email: '', telefono: '' });
+  const [formData, setFormData] = useState({
+    nombre: '',
+    email: '',
+    telefono: '',
+    consentimientoEmail: false,
+    consentimientoWhatsApp: false,
+  });
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [formMessage, setFormMessage] = useState('');
 
@@ -58,7 +64,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
 
       setFormStatus('success');
       setFormMessage(data.message);
-      setFormData({ nombre: '', email: '', telefono: '' });
+      setFormData({ nombre: '', email: '', telefono: '', consentimientoEmail: false, consentimientoWhatsApp: false });
       
       // Cerrar modal después de 3 segundos
       setTimeout(() => {
@@ -139,7 +145,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
             />
             
             {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8 animate-reveal">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain p-6 md:p-8 animate-reveal">
               {/* Close button */}
               <button
                 onClick={() => formStatus !== 'loading' && setShowModal(false)}
@@ -223,6 +229,28 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
                       />
                       <p className="text-[10px] text-gray-400 mt-1">Para enviarte alertas importantes</p>
                     </div>
+
+                    <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={formData.consentimientoEmail}
+                        onChange={(e) => setFormData({ ...formData, consentimientoEmail: e.target.checked })}
+                        required
+                        disabled={formStatus === 'loading'}
+                      />
+                      <span>Acepto recibir actualizaciones del Observatorio por correo.</span>
+                    </label>
+
+                    <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={formData.consentimientoWhatsApp}
+                        onChange={(e) => setFormData({ ...formData, consentimientoWhatsApp: e.target.checked })}
+                        required
+                        disabled={formStatus === 'loading'}
+                      />
+                      <span>Acepto recibir avisos del Observatorio por WhatsApp.</span>
+                    </label>
 
                     {formStatus === 'error' && (
                       <div className="p-3 bg-red-50 border border-red-200 rounded-lg">

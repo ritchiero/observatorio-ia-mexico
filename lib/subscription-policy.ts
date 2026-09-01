@@ -1,4 +1,4 @@
-export const SUBSCRIPTION_CONSENT_VERSION = '2026-07-10';
+export const SUBSCRIPTION_CONSENT_VERSION = '2026-09-01';
 export const SUBSCRIPTION_SUCCESS_MESSAGE =
   'Si el correo es válido, recibirás las actualizaciones del Observatorio.';
 
@@ -15,10 +15,10 @@ export class SubscriptionValidationError extends Error {
 
 export type NormalizedSubscription = {
   email: string;
-  nombre?: string;
-  telefono?: string;
+  nombre: string;
+  telefono: string;
   consentimientoEmail: true;
-  consentimientoWhatsApp: boolean;
+  consentimientoWhatsApp: true;
   origen: string;
   honeypotTriggered: boolean;
 };
@@ -29,6 +29,12 @@ function optionalString(value: unknown, maxLength: number): string | undefined {
   const normalized = value.trim();
   if (!normalized) return undefined;
   if (normalized.length > maxLength) throw new SubscriptionValidationError('Solicitud inválida.');
+  return normalized;
+}
+
+function requiredString(value: unknown, maxLength: number, message: string): string {
+  const normalized = optionalString(value, maxLength);
+  if (!normalized) throw new SubscriptionValidationError(message);
   return normalized;
 }
 
@@ -48,21 +54,17 @@ export function normalizeSubscriptionRequest(value: unknown): NormalizedSubscrip
     );
   }
 
-  const nombre = optionalString(input.nombre, 120);
-  const rawPhone = optionalString(input.telefono, 32);
-  const telefono = rawPhone?.replace(/\D/g, '');
-  if (telefono && (telefono.length < 10 || telefono.length > 15)) {
+  const nombre = requiredString(input.nombre, 120, 'Ingresa tu nombre completo.');
+  const rawPhone = requiredString(input.telefono, 32, 'Ingresa tu teléfono.');
+  const telefono = rawPhone.replace(/\D/g, '');
+  if (telefono.length < 10 || telefono.length > 15) {
     throw new SubscriptionValidationError('El teléfono debe tener entre 10 y 15 dígitos.');
   }
 
-  const consentimientoWhatsApp = input.consentimientoWhatsApp === true;
-  if (telefono && !consentimientoWhatsApp) {
+  if (input.consentimientoWhatsApp !== true) {
     throw new SubscriptionValidationError(
-      'Autoriza WhatsApp expresamente o deja el teléfono vacío.'
+      'Necesitamos tu consentimiento para enviarte avisos por WhatsApp.'
     );
-  }
-  if (!telefono && consentimientoWhatsApp) {
-    throw new SubscriptionValidationError('Agrega un teléfono para autorizar WhatsApp.');
   }
 
   const origen = optionalString(input.origen, 100) ?? 'sitio-web';
@@ -70,10 +72,10 @@ export function normalizeSubscriptionRequest(value: unknown): NormalizedSubscrip
 
   return {
     email,
-    ...(nombre ? { nombre } : {}),
-    ...(telefono ? { telefono } : {}),
+    nombre,
+    telefono,
     consentimientoEmail: true,
-    consentimientoWhatsApp,
+    consentimientoWhatsApp: true,
     origen,
     honeypotTriggered,
   };
