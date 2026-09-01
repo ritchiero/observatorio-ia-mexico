@@ -8,7 +8,7 @@ import ActividadFeed from '@/components/ActividadFeed';
 const GRUPOS: { key: string; label: string; tipos: string[] }[] = [
   { key: 'deteccion', label: 'Detecciones y actualizaciones', tipos: ['actualizacion', 'nuevo_anuncio'] },
   { key: 'status', label: 'Cambios de estatus', tipos: ['cambio_status'] },
-  { key: 'agente', label: 'Corridas del agente', tipos: ['agente_ejecuta', 'agente_ejecutado', 'agente_fallo'] },
+  { key: 'agente', label: 'Corridas del agente', tipos: ['agente_ejecuta', 'agente_ejecutado', 'agente_parcial', 'agente_fallo'] },
   { key: 'manual', label: 'Altas y ediciones', tipos: ['anuncio_manual', 'edicion_manual'] },
 ];
 

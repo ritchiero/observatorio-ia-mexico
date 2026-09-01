@@ -21,6 +21,7 @@ const tipoIconos: Record<string, React.ComponentType<{ className?: string }>> = 
   actualizacion: DocumentTextIcon,
   agente_ejecutado: CpuChipIcon,
   anuncio_manual: PencilSquareIcon,
+  agente_parcial: ExclamationTriangleIcon,
   agente_fallo: ExclamationTriangleIcon,
 };
 
@@ -36,6 +37,7 @@ const esCorridaVacia = (item: ActividadLog) =>
 // Un fallo NUNCA se colapsa: "sin novedad" y "no pude revisar" son cosas distintas
 // y confundirlas fue lo que ocultó la caída del agente durante 20 corridas.
 const esFallo = (item: ActividadLog) => item.tipo === 'agente_fallo';
+const esParcial = (item: ActividadLog) => item.tipo === 'agente_parcial';
 
 type FeedEntry =
   | { kind: 'item'; item: ActividadLog }
@@ -101,6 +103,30 @@ const statusEn = (codigo: string): string => {
 type ReglaDescripcion = { test: RegExp; build: (m: RegExpMatchArray) => string };
 
 const REGLAS_DESCRIPCION: ReglaDescripcion[] = [
+  {
+    test: /^El agente de detecci[oó]n encontr[oó] (\d+) anuncio\(s\), pero complet[oó] la corrida con (\d+) error\(es\)\. El detalle qued[oó] en el registro interno\.?$/i,
+    build: (m) => `The detection agent found ${m[1]} announcement(s), but completed the run with ${m[2]} error(s). Details were saved to the internal log.`,
+  },
+  {
+    test: /^El agente de detecci[oó]n fall[oó] y no pudo completar la revisi[oó]n de fuentes\. El detalle qued[oó] en el registro interno\.?$/i,
+    build: () => 'The detection agent failed and could not complete the source review. Details were saved to the internal log.',
+  },
+  {
+    test: /^El agente de monitoreo fall[oó] antes de completar la revisi[oó]n de estatus\. El detalle qued[oó] en el registro interno\.?$/i,
+    build: () => 'The monitoring agent failed before completing the status review. Details were saved to the internal log.',
+  },
+  {
+    test: /^El agente de monitoreo fall[oó] en las (\d+) verificaciones del lote\. El detalle qued[oó] en el registro interno\.?$/i,
+    build: (m) => `The monitoring agent failed all ${m[1]} checks in the batch. Details were saved to the internal log.`,
+  },
+  {
+    test: /^El agente de monitoreo complet[oó] (\d+) de (\d+) verificaciones; (\d+) fallaron\. Detect[oó] (\d+) actualizaci[oó]n\(es\)\.?$/i,
+    build: (m) => `The monitoring agent completed ${m[1]} of ${m[2]} checks; ${m[3]} failed. It detected ${m[4]} update(s).`,
+  },
+  {
+    test: /^Agente de monitoreo ejecutado\. (\d+) expediente\(s\) revisado\(s\) y (\d+) actualizaci[oó]n\(es\) detectada\(s\)\.?$/i,
+    build: (m) => `Monitoring agent run. ${m[1]} record(s) checked and ${m[2]} update(s) detected.`,
+  },
   // "El agente de detección falló y no pudo revisar fuentes: <motivo>"
   {
     test: /^El agente de detecci[oó]n fall[oó] y no pudo revisar fuentes:\s*([\s\S]*)$/i,
@@ -264,6 +290,7 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
         const notaEditorial = (item as ActividadLog & { notaEditorial?: string }).notaEditorial;
         const atenuada = marca === 'superado' || marca === 'retractado';
         const fallo = esFallo(item);
+        const parcial = esParcial(item);
         const fecha = item.fecha ? new Date(item.fecha as unknown as string) : null;
         const Icon = tipoIconos[item.tipo] || ClipboardDocumentListIcon;
 
@@ -271,7 +298,7 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
           <div
             key={item.id}
             className={`rounded-lg border p-3 sm:p-4 transition-all ${
-              fallo
+              fallo || parcial
                 ? 'bg-amber-50 border-amber-300'
                 : atenuada
                 ? 'bg-gray-50 border-dashed border-gray-200'
@@ -279,13 +306,18 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
             }`}
           >
             <div className="flex items-start gap-2 sm:gap-3">
-              <Icon className={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 ${fallo ? 'text-amber-600' : atenuada ? 'text-gray-300' : 'text-cyan-600'}`} />
+              <Icon className={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 ${fallo || parcial ? 'text-amber-600' : atenuada ? 'text-gray-300' : 'text-cyan-600'}`} />
               <div className="flex-1 min-w-0">
                 <div className="text-xs sm:text-sm text-gray-500 mb-1 flex items-center gap-2 flex-wrap">
                   {formatDateEn(fecha)}
                   {fallo && (
                     <span className="inline-flex items-center rounded-full bg-amber-200 text-amber-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
                       Agent failure
+                    </span>
+                  )}
+                  {parcial && (
+                    <span className="inline-flex items-center rounded-full bg-amber-200 text-amber-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                      Partial review
                     </span>
                   )}
                   {marca === 'superado' && (
@@ -299,7 +331,7 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
                     </span>
                   )}
                 </div>
-                <p className={`text-sm sm:text-base ${fallo ? 'text-amber-900' : atenuada ? 'text-gray-400' : 'text-gray-700'}`}>{traducirDescripcion(item.descripcion)}</p>
+                <p className={`text-sm sm:text-base ${fallo || parcial ? 'text-amber-900' : atenuada ? 'text-gray-400' : 'text-gray-700'}`}>{traducirDescripcion(item.descripcion)}</p>
                 {atenuada && notaEditorial && (
                   <p className="text-xs text-gray-500 mt-1 italic">{notaEditorial}</p>
                 )}

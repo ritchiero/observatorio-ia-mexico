@@ -25,7 +25,21 @@ export async function GET(request: Request) {
     agentes.map((a) =>
       fetch(`${base}/api/cron/${a}`, {
         headers: { Authorization: `Bearer ${secret}` },
-      }).then(async (r) => ({ agente: a, ok: r.ok, status: r.status }))
+      }).then(async (r) => {
+        const body = await r.json().catch(() => null) as {
+          success?: boolean;
+          partial?: boolean;
+        } | null;
+
+        // Un subagente puede responder HTTP 200 con success:false. Esa era la
+        // causa de que Vercel marcara verde una corrida que no revisó nada.
+        return {
+          agente: a,
+          ok: r.ok && body?.success !== false,
+          partial: body?.partial === true,
+          status: r.status,
+        };
+      })
     )
   );
 
@@ -34,13 +48,17 @@ export async function GET(request: Request) {
       ? s.value
       : { agente: agentes[i], error: s.reason instanceof Error ? s.reason.message : String(s.reason) }
   );
+  const ok = resultados.every((resultado) => 'ok' in resultado && resultado.ok === true);
 
   console.log('[CRON todo] corrida consolidada:', JSON.stringify(resultados));
 
-  return NextResponse.json({
-    ok: true,
-    corridaConsolidada: true,
-    agentes,
-    resultados,
-  });
+  return NextResponse.json(
+    {
+      ok,
+      corridaConsolidada: true,
+      agentes,
+      resultados,
+    },
+    { status: ok ? 200 : 502 },
+  );
 }

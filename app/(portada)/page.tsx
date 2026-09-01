@@ -664,13 +664,15 @@ export default function Home() {
                   
                   {/* Footer del card */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    {item.fechaPrometida && item.status === 'incumplido' ? (
-                      <div className="flex items-center gap-2 text-red-500">
+                    {item.fechaPrometida && calcularDiasVencidos(item.fechaPrometida) > 0 ? (
+                      <div className={`flex items-center gap-2 ${item.status === 'incumplido' ? 'text-red-500' : 'text-amber-600'}`}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-xs font-mono font-bold">
-                          {calcularDiasVencidos(item.fechaPrometida)} días de retraso
+                          {item.status === 'incumplido'
+                            ? `${calcularDiasVencidos(item.fechaPrometida)} días de retraso`
+                            : `Venció hace ${calcularDiasVencidos(item.fechaPrometida)} días · verificar estatus`}
                         </span>
                       </div>
                     ) : item.fechaPrometida ? (
