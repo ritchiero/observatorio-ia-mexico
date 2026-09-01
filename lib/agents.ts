@@ -188,6 +188,16 @@ export async function ejecutarAgenteDeteccion(
       trigger,
     });
 
+    // OIA-012: una corrida FALLIDA debe dejar rastro en la bitácora pública.
+    // Antes solo se escribía en `agenteLogs` (interno), así que un agente muerto
+    // se veía idéntico a un mes sin noticias: el fallo de jul-ago 2026 pasó 20
+    // corridas inadvertido por esto.
+    await db.collection('actividad').add({
+      fecha: Timestamp.now(),
+      tipo: 'agente_fallo',
+      descripcion: `El agente de detección falló y no pudo revisar fuentes: ${errorMsg}`,
+    });
+
     return {
       success: false,
       anunciosEncontrados: 0,
@@ -395,6 +405,13 @@ export async function ejecutarAgenteMonitoreo(
       errores,
       rawResponse: '',
       trigger,
+    });
+
+    // Mismo criterio que en detección: el fallo se publica, no se esconde.
+    await db.collection('actividad').add({
+      fecha: Timestamp.now(),
+      tipo: 'agente_fallo',
+      descripcion: `El agente de monitoreo falló y no pudo revisar estatus: ${errorMsg}`,
     });
 
     return {

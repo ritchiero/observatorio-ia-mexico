@@ -7,7 +7,8 @@ import {
   DocumentTextIcon,
   CpuChipIcon,
   PencilSquareIcon,
-  ClipboardDocumentListIcon
+  ClipboardDocumentListIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 interface ActividadFeedEnProps {
@@ -20,6 +21,7 @@ const tipoIconos: Record<string, React.ComponentType<{ className?: string }>> = 
   actualizacion: DocumentTextIcon,
   agente_ejecutado: CpuChipIcon,
   anuncio_manual: PencilSquareIcon,
+  agente_fallo: ExclamationTriangleIcon,
 };
 
 // OIA-012: monitoring-agent runs with NO changes don't deserve a card each —
@@ -30,6 +32,10 @@ const tipoIconos: Record<string, React.ComponentType<{ className?: string }>> = 
 // below must stay in Spanish.
 const esCorridaVacia = (item: ActividadLog) =>
   item.tipo === 'agente_ejecutado' && /\b0 actualizaci/i.test(String(item.descripcion ?? ''));
+
+// Un fallo NUNCA se colapsa: "sin novedad" y "no pude revisar" son cosas distintas
+// y confundirlas fue lo que ocultó la caída del agente durante 20 corridas.
+const esFallo = (item: ActividadLog) => item.tipo === 'agente_fallo';
 
 type FeedEntry =
   | { kind: 'item'; item: ActividadLog }
@@ -95,6 +101,16 @@ const statusEn = (codigo: string): string => {
 type ReglaDescripcion = { test: RegExp; build: (m: RegExpMatchArray) => string };
 
 const REGLAS_DESCRIPCION: ReglaDescripcion[] = [
+  // "El agente de detección falló y no pudo revisar fuentes: <motivo>"
+  {
+    test: /^El agente de detecci[oó]n fall[oó] y no pudo revisar fuentes:\s*([\s\S]*)$/i,
+    build: (m) => `The detection agent failed and could not check sources: ${m[1]}`,
+  },
+  // "El agente de monitoreo falló y no pudo revisar estatus: <motivo>"
+  {
+    test: /^El agente de monitoreo fall[oó] y no pudo revisar estatus:\s*([\s\S]*)$/i,
+    build: (m) => `The monitoring agent failed and could not check statuses: ${m[1]}`,
+  },
   // "Agente de monitoreo ejecutado. N actualización(es) detectada(s)."
   {
     test: /^Agente de monitoreo ejecutado\.\s*(\d+)\s*actualizaci[oó]n\(es\)\s*detectada\(s\)\.?\s*$/i,
@@ -247,6 +263,7 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
         const marca = (item as ActividadLog & { estadoEditorial?: string }).estadoEditorial;
         const notaEditorial = (item as ActividadLog & { notaEditorial?: string }).notaEditorial;
         const atenuada = marca === 'superado' || marca === 'retractado';
+        const fallo = esFallo(item);
         const fecha = item.fecha ? new Date(item.fecha as unknown as string) : null;
         const Icon = tipoIconos[item.tipo] || ClipboardDocumentListIcon;
 
@@ -254,16 +271,23 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
           <div
             key={item.id}
             className={`rounded-lg border p-3 sm:p-4 transition-all ${
-              atenuada
+              fallo
+                ? 'bg-amber-50 border-amber-300'
+                : atenuada
                 ? 'bg-gray-50 border-dashed border-gray-200'
                 : 'bg-white border-gray-200 hover:border-cyan-300 hover:shadow-sm'
             }`}
           >
             <div className="flex items-start gap-2 sm:gap-3">
-              <Icon className={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 ${atenuada ? 'text-gray-300' : 'text-cyan-600'}`} />
+              <Icon className={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5 ${fallo ? 'text-amber-600' : atenuada ? 'text-gray-300' : 'text-cyan-600'}`} />
               <div className="flex-1 min-w-0">
                 <div className="text-xs sm:text-sm text-gray-500 mb-1 flex items-center gap-2 flex-wrap">
                   {formatDateEn(fecha)}
+                  {fallo && (
+                    <span className="inline-flex items-center rounded-full bg-amber-200 text-amber-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                      Agent failure
+                    </span>
+                  )}
                   {marca === 'superado' && (
                     <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
                       Superseded
@@ -275,7 +299,7 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
                     </span>
                   )}
                 </div>
-                <p className={`text-sm sm:text-base ${atenuada ? 'text-gray-400' : 'text-gray-700'}`}>{traducirDescripcion(item.descripcion)}</p>
+                <p className={`text-sm sm:text-base ${fallo ? 'text-amber-900' : atenuada ? 'text-gray-400' : 'text-gray-700'}`}>{traducirDescripcion(item.descripcion)}</p>
                 {atenuada && notaEditorial && (
                   <p className="text-xs text-gray-500 mt-1 italic">{notaEditorial}</p>
                 )}
