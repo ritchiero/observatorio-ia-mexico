@@ -7,6 +7,7 @@ import StatusBadge from '@/components/StatusBadge';
 import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
 import FolioBadge from '@/components/FolioBadge';
 import { formatDate } from '@/lib/utils';
+import { evaluarPlazo, leyendaPlazo } from '@/lib/plazo-verificacion';
 import { ArrowLeft, Calendar, User, Building2, ExternalLink, Newspaper, Clock, TrendingUp, TrendingDown, Minus, ChevronDown, Megaphone, Circle }  from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
@@ -88,6 +89,7 @@ export default function AnuncioDetailPage() {
 
   const fechaAnuncio = anuncio.fechaAnuncio ? new Date(anuncio.fechaAnuncio as unknown as string) : null;
   const fechaPrometida = anuncio.fechaPrometida ? new Date(anuncio.fechaPrometida as unknown as string) : null;
+  const plazo = evaluarPlazo(anuncio as unknown as Parameters<typeof evaluarPlazo>[0]);
 
   // Combinar todas las fuentes (oficiales primero, luego prensa, luego otras)
   const todasLasFuentes = [
@@ -171,6 +173,24 @@ export default function AnuncioDetailPage() {
 
       {/* Contenido Principal */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12">
+
+        {/* Señal DERIVADA: el plazo venció y nadie lo ha revisado desde entonces.
+            No afirma incumplimiento — eso exige evidencia y revisor (OIA-005/008). */}
+        {plazo.sinVerificar && (
+          <section className="bg-amber-50 border border-amber-300 rounded-xl p-5 sm:p-6">
+            <div className="flex items-start gap-3">
+              <Clock size={20} className="text-amber-700 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900 font-sans-tech">
+                  {leyendaPlazo(plazo, 'es')}
+                </p>
+                <p className="text-sm text-amber-800 mt-1 font-sans-tech">
+                  El estatus mostrado arriba es el último registrado; no hay constancia de una revisión posterior a la fecha comprometida.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
         
         {/* Cita de la promesa */}
         {anuncio.citaPromesa && (

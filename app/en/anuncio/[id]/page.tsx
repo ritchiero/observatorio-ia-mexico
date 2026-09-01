@@ -7,6 +7,7 @@ import StatusBadgeEn from '@/components/StatusBadgeEn';
 import NivelConfianzaBadgeEn from '@/components/NivelConfianzaBadgeEn';
 import FolioBadge from '@/components/FolioBadge';
 import { fetchOverlayEn, aplicarOverlayDoc } from '@/lib/i18n/client';
+import { evaluarPlazo, leyendaPlazo } from '@/lib/plazo-verificacion';
 import { ArrowLeft, Calendar, User, Building2, ExternalLink, Newspaper, Clock, TrendingUp, TrendingDown, Minus, ChevronDown, Megaphone, Circle } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
@@ -110,6 +111,7 @@ export default function AnuncioDetailPageEn() {
 
   const fechaAnuncio = anuncio.fechaAnuncio ? new Date(anuncio.fechaAnuncio as unknown as string) : null;
   const fechaPrometida = anuncio.fechaPrometida ? new Date(anuncio.fechaPrometida as unknown as string) : null;
+  const plazo = evaluarPlazo(anuncio as unknown as Parameters<typeof evaluarPlazo>[0]);
 
   // Combine all sources (official first, then press, then other)
   const todasLasFuentes = [
@@ -193,6 +195,24 @@ export default function AnuncioDetailPageEn() {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12">
+
+        {/* Derived signal: the deadline passed and nobody has reviewed it since.
+            It does NOT assert non-compliance — that needs evidence and a reviewer. */}
+        {plazo.sinVerificar && (
+          <section className="bg-amber-50 border border-amber-300 rounded-xl p-5 sm:p-6">
+            <div className="flex items-start gap-3">
+              <Clock size={20} className="text-amber-700 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900 font-sans-tech">
+                  {leyendaPlazo(plazo, 'en')}
+                </p>
+                <p className="text-sm text-amber-800 mt-1 font-sans-tech">
+                  The status shown above is the last one on record; there is no evidence of a review after the committed date.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Quote of the promise */}
         {anuncio.citaPromesa && (
