@@ -32,8 +32,11 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
   const [showModal, setShowModal] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
+    nombre: '',
     email: '',
+    telefono: '',
     consentimientoEmail: false,
+    consentimientoWhatsApp: false,
     website: '',
   });
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -117,7 +120,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
       if (!response.ok) throw new Error(data.error || 'Error al suscribirse');
       setFormStatus('success');
       setFormMessage(data.message);
-      setFormData({ email: '', consentimientoEmail: false, website: '' });
+      setFormData({ nombre: '', email: '', telefono: '', consentimientoEmail: false, consentimientoWhatsApp: false, website: '' });
     } catch (error) {
       setFormStatus('error');
       setFormMessage(error instanceof Error ? error.message : 'Error al suscribirse');
@@ -309,7 +312,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => formStatus !== 'loading' && setShowModal(false)} />
           <div
             ref={dialogRef}
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8"
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain p-6 md:p-8"
             role="dialog"
             aria-modal="true"
             aria-labelledby="subscription-title"
@@ -334,8 +337,16 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
                 </div>
                 <form onSubmit={handleSubscribe} className="space-y-4">
                   <div>
+                    <label htmlFor="subscription-name" className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">Nombre completo *</label>
+                    <input id="subscription-name" name="nombre" type="text" autoComplete="name" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} placeholder="Tu nombre completo" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required maxLength={120} disabled={formStatus === 'loading'} />
+                  </div>
+                  <div>
                     <label htmlFor="subscription-email" className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">Correo electrónico *</label>
-                    <input id="subscription-email" type="email" autoComplete="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="tu@email.com" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required disabled={formStatus === 'loading'} />
+                    <input id="subscription-email" name="email" type="email" autoComplete="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="tu@email.com" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required maxLength={254} disabled={formStatus === 'loading'} />
+                  </div>
+                  <div>
+                    <label htmlFor="subscription-phone" className="block text-xs font-sans-tech font-medium text-gray-700 mb-1.5">Teléfono con lada *</label>
+                    <input id="subscription-phone" name="telefono" type="tel" inputMode="tel" autoComplete="tel" value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} placeholder="+52 55 1234 5678" className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required maxLength={32} disabled={formStatus === 'loading'} />
                   </div>
                   <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">
                     <input
@@ -347,6 +358,17 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
                       disabled={formStatus === 'loading'}
                     />
                     <span>Acepto recibir por correo actualizaciones del Observatorio y poder darme de baja en cualquier momento.</span>
+                  </label>
+                  <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={formData.consentimientoWhatsApp}
+                      onChange={(e) => setFormData({ ...formData, consentimientoWhatsApp: e.target.checked })}
+                      required
+                      disabled={formStatus === 'loading'}
+                    />
+                    <span>Acepto recibir avisos del Observatorio por WhatsApp y puedo solicitar la baja en cualquier momento.</span>
                   </label>
                   <div className="absolute -left-[10000px]" aria-hidden="true">
                     <label htmlFor="subscription-website">Sitio web</label>
@@ -364,7 +386,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
                   <button type="submit" disabled={formStatus === 'loading'} className="w-full py-3 bg-blue-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
                     {formStatus === 'loading' ? 'Registrando…' : 'Suscribirme'}
                   </button>
-                  <p className="text-[11px] text-gray-500 text-center">Sólo pedimos tu correo. No solicitamos WhatsApp ni nombre para esta suscripción.</p>
+                  <p className="text-[11px] text-gray-500 text-center">Nombre, correo y teléfono son obligatorios para completar la suscripción.</p>
                 </form>
               </>
             )}

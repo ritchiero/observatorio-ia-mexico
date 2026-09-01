@@ -70,8 +70,8 @@ export async function POST(request: Request) {
     try {
       await documentRef.create({
         email: subscription.email,
-        nombre: subscription.nombre ?? null,
-        telefono: subscription.telefono ?? null,
+        nombre: subscription.nombre,
+        telefono: subscription.telefono,
         activo: true,
         estadoVerificacion: 'pendiente',
         fechaRegistro: now,
