@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -113,6 +113,14 @@ export default function HemerotecaExplorerEn({ items }: { items: ItemHemeroteca[
     });
     return r;
   }, [items, q, aiSlugs, fMateria, fCamara, fEstatus, desde, hasta, orden]);
+
+  // Paginación en cliente (auditoría 1-sep-2026): la hemeroteca pintaba las
+  // ~162 fichas de golpe (1.16 MB de HTML). Se muestran de 30 en 30; el filtro
+  // y la búsqueda siguen operando sobre el conjunto completo.
+  const PAGINA = 30;
+  const [limite, setLimite] = useState(PAGINA);
+  useEffect(() => { setLimite(PAGINA); }, [filtrados]);
+  const visibles = filtrados.slice(0, limite);
 
   const preguntarIA = async () => {
     const pregunta = q.trim();
@@ -268,7 +276,7 @@ export default function HemerotecaExplorerEn({ items }: { items: ItemHemeroteca[
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm text-slate-500">
-                  <strong className="text-slate-950">{compactNumber(filtrados.length)}</strong> {filtrados.length === 1 ? 'result' : 'results'}{activos ? ` out of ${compactNumber(items.length)}` : ''}
+                  <strong className="text-slate-950">{compactNumber(filtrados.length)}</strong> {filtrados.length === 1 ? 'result' : 'results'}{activos ? ` out of ${compactNumber(items.length)}` : ''}{filtrados.length > limite ? ` · showing ${limite} of ${compactNumber(filtrados.length)}` : ''}
                 </p>
                 {filtrosActivos.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -299,7 +307,7 @@ export default function HemerotecaExplorerEn({ items }: { items: ItemHemeroteca[
             </div>
           ) : (
             <ul className="space-y-3">
-              {filtrados.map((it) => {
+              {visibles.map((it) => {
                 const org = TONO[it.organoTono];
                 const vig = TONO[it.vigenciaTono];
                 const Icon = ICONO[it.organoIcono as keyof typeof ICONO] ?? Landmark;
@@ -368,6 +376,14 @@ export default function HemerotecaExplorerEn({ items }: { items: ItemHemeroteca[
                 );
               })}
             </ul>
+          )}
+          {filtrados.length > limite && (
+            <div className="mt-6 flex justify-center">
+              <button type="button" onClick={() => setLimite((l) => l + PAGINA)} aria-label="Show more records"
+                className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50">
+                Show {Math.min(PAGINA, filtrados.length - limite)} more
+              </button>
+            </div>
           )}
         </div>
       </div>
