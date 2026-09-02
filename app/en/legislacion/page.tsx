@@ -47,11 +47,11 @@ export default function LegislacionPageEn() {
             <div className="absolute inset-0 border-2 border-blue-500/20 rounded-full"></div>
             <div className="absolute inset-0 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
           </div>
-          <h2 className="text-2xl font-serif-display font-light text-gray-900 mb-2">
-            Loading <span className="italic text-blue-500">bills</span>
-          </h2>
+          <h1 className="text-2xl font-serif-display font-light text-gray-900 mb-2">
+            AI <span className="italic text-blue-500">legislation</span>
+          </h1>
           <p className="text-gray-600 font-sans-tech text-sm">
-            Fetching data from the server
+            Loading bills · fetching data from the server
           </p>
         </div>
       </div>

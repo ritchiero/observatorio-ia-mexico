@@ -23,7 +23,6 @@ interface HeroGlassProps {
 }
 
 export default function HeroSectionGlass({ stats, legStats, casosStats, loading, loadingLeg, loadingCasos }: HeroGlassProps) {
-  const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -41,10 +40,6 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
   });
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [formMessage, setFormMessage] = useState('');
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!showModal) return;
@@ -163,7 +158,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
 
       {/* Header glass FIJO — persiste en todo el scroll del home (el global se oculta en home).
           Se condensa y opaca al bajar; trae menú hamburguesa en móvil. */}
-      <header className={`fixed top-0 inset-x-0 z-40 flex items-center justify-between gap-4 mx-3 md:mx-8 rounded-[100px] transition-all duration-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3'} ${scrolled ? 'mt-2 px-4 md:px-7 py-2.5' : 'mt-4 md:mt-5 px-5 md:px-8 py-3.5 md:py-4'}`}
+      <header className={`fixed top-0 inset-x-0 z-40 flex items-center justify-between gap-4 mx-3 md:mx-8 rounded-[100px] transition-all duration-300 animate-header-in ${scrolled ? 'mt-2 px-4 md:px-7 py-2.5' : 'mt-4 md:mt-5 px-5 md:px-8 py-3.5 md:py-4'}`}
         style={{
           background: scrolled ? 'rgba(7,10,20,0.82)' : 'rgba(11,15,28,0.55)',
           backdropFilter: 'blur(22px) saturate(160%)', WebkitBackdropFilter: 'blur(22px) saturate(160%)',
