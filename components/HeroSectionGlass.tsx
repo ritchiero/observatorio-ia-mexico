@@ -386,7 +386,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
                   <button type="submit" disabled={formStatus === 'loading'} className="w-full py-3 bg-blue-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
                     {formStatus === 'loading' ? 'Registrando…' : 'Suscribirme'}
                   </button>
-                  <p className="text-[11px] text-gray-500 text-center">Nombre, correo y teléfono son obligatorios para completar la suscripción.</p>
+                  <p className="text-[11px] text-gray-500 text-center">Nombre, correo y teléfono son obligatorios para completar la suscripción. Consulta el <a href="/privacidad" className="underline underline-offset-2 hover:text-gray-700">aviso de privacidad</a>.</p>
                 </form>
               </>
             )}

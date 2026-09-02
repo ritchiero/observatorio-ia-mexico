@@ -390,7 +390,7 @@ export default function HeroSectionGlassEn({ stats, legStats, casosStats, loadin
                   <button type="submit" disabled={formStatus === 'loading'} className="w-full py-3 bg-blue-600 text-white font-sans-tech text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
                     {formStatus === 'loading' ? 'Subscribing…' : 'Subscribe'}
                   </button>
-                  <p className="text-[11px] text-gray-500 text-center">Name, email, and phone number are required to complete the subscription.</p>
+                  <p className="text-[11px] text-gray-500 text-center">Name, email, and phone number are required to complete the subscription. See the <a href="/en/privacidad" className="underline underline-offset-2 hover:text-gray-700">privacy notice</a>.</p>
                 </form>
               </>
             )}

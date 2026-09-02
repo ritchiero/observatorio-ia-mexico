@@ -249,7 +249,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
                         required
                         disabled={formStatus === 'loading'}
                       />
-                      <span>Acepto recibir avisos del Observatorio por WhatsApp.</span>
+                      <span>Acepto recibir avisos del Observatorio por WhatsApp. He leído el <a href="/privacidad" className="underline underline-offset-2">aviso de privacidad</a>.</span>
                     </label>
 
                     {formStatus === 'error' && (
