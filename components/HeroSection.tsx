@@ -225,7 +225,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
                         required
                         disabled={formStatus === 'loading'}
                       />
-                      <p className="text-[10px] text-gray-400 mt-1">Para enviarte alertas importantes</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Para enviarte alertas importantes</p>
                     </div>
 
                     <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">
@@ -274,7 +274,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
                       )}
                     </button>
 
-                    <p className="text-[10px] text-gray-400 text-center">
+                    <p className="text-[11px] text-gray-400 text-center">
                       Al suscribirte aceptas recibir comunicaciones del Observatorio IA México.
                     </p>
                   </form>
@@ -325,19 +325,19 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
               <div className={`font-serif-display text-3xl md:text-5xl text-gray-900 group-hover:text-blue-400 transition-colors duration-300 ${isLoading ? 'animate-pulse' : ''}`}>
                 {isLoading ? '—' : stats.total}
               </div>
-              <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Anuncios Oficiales</div>
+              <div className="font-sans-tech text-[11px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Anuncios Oficiales</div>
             </div>
             <div className="group cursor-default">
               <div className={`font-serif-display text-3xl md:text-5xl text-blue-500 group-hover:text-gray-900 transition-colors duration-300 ${isLoading ? 'animate-pulse' : ''}`}>
                 {isLoading ? '—' : stats.operando}
               </div>
-              <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Productos Operativos</div>
+              <div className="font-sans-tech text-[11px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform">Productos Operativos</div>
             </div>
             <Link href="/legislacion" className="group cursor-pointer">
               <div className={`font-serif-display text-3xl md:text-5xl text-emerald-600 group-hover:text-gray-900 transition-colors duration-300 ${isLoadingLeg ? 'animate-pulse' : ''}`}>
                 {isLoadingLeg ? '—' : legStats?.total}
               </div>
-              <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              <div className="font-sans-tech text-[11px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
                 <Scale size={10} className="hidden md:inline" />
                 Iniciativas de Ley
               </div>
@@ -346,7 +346,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
               <div className={`font-serif-display text-3xl md:text-5xl text-purple-500 group-hover:text-gray-900 transition-colors duration-300 ${isLoadingCasos ? 'animate-pulse' : ''}`}>
                 {isLoadingCasos ? '—' : casosStats?.total}
               </div>
-              <div className="font-sans-tech text-[10px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+              <div className="font-sans-tech text-[11px] md:text-xs text-gray-900/40 uppercase tracking-widest mt-1 group-hover:translate-x-1 transition-transform flex items-center gap-1">
                 <Gavel size={10} className="hidden md:inline" />
                 Casos Judiciales
               </div>
@@ -397,7 +397,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 animate-[float_3s_ease-in-out_infinite] opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
       >
         <div className="flex flex-col items-center gap-2">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-gray-900/40 font-sans-tech">Scroll</span>
+          <span className="text-[11px] uppercase tracking-[0.2em] text-gray-900/40 font-sans-tech">Scroll</span>
           <ChevronDown className="text-blue-500" size={20} />
         </div>
       </div>

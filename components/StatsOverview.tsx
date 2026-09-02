@@ -38,7 +38,7 @@ export default function StatsOverview({ anuncios }: StatsOverviewProps) {
             <p className="text-xl sm:text-2xl font-bold text-gray-900">
               {stat.value}
             </p>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{stat.label}</p>
+            <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">{stat.label}</p>
           </div>
         </div>
       ))}

@@ -46,7 +46,7 @@ export default function Header() {
                 </svg>
               </div>
               <div className="flex flex-col leading-none">
-                <span className="font-sans-tech text-[10px] sm:text-xs tracking-[0.2em] text-gray-900/60 uppercase">Observatorio</span>
+                <span className="font-sans-tech text-[11px] sm:text-xs tracking-[0.2em] text-gray-900/60 uppercase">Observatorio</span>
                 <span className="font-serif-display text-base sm:text-lg leading-none text-gray-900 font-bold">IA México</span>
               </div>
             </div>

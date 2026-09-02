@@ -1143,7 +1143,7 @@ export default function DashboardPage() {
                               <div className="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center group-hover:bg-blue-500 group-hover:border-blue-500 transition-all duration-300">
                                 <IconComponent size={18} className="text-gray-500 group-hover:text-white transition-colors" />
                               </div>
-                              <span className="font-mono text-[10px] text-gray-400 uppercase px-2 py-1 bg-gray-100 rounded">
+                              <span className="font-mono text-[11px] text-gray-400 uppercase px-2 py-1 bg-gray-100 rounded">
                                 {action.method}
                               </span>
                             </div>
@@ -1476,9 +1476,9 @@ export default function DashboardPage() {
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <p className="font-mono text-[10px] text-gray-400">{ini.id}</p>
+                            <p className="font-mono text-[11px] text-gray-400">{ini.id}</p>
                             {ini.estadoVerificacion && (
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                              <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${
                                 ini.estadoVerificacion === 'verificado' ? 'bg-green-100 text-green-700' :
                                 ini.estadoVerificacion === 'revision' ? 'bg-orange-100 text-orange-700' :
                                 'bg-gray-100 text-gray-500'
@@ -1489,7 +1489,7 @@ export default function DashboardPage() {
                           </div>
                           <p className="font-sans-tech text-sm text-gray-900 line-clamp-2 mb-1">{ini.titulo}</p>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
                               ini.estatus === 'Aprobada' ? 'bg-green-100 text-green-700' :
                               ini.estatus === 'Rechazada' ? 'bg-red-100 text-red-700' :
                               ini.estatus === 'En comisiones' ? 'bg-yellow-100 text-yellow-700' :
@@ -1497,9 +1497,9 @@ export default function DashboardPage() {
                             }`}>
                               {ini.estatus}
                             </span>
-                            <span className="text-[10px] text-gray-400">{ini.categoria}</span>
+                            <span className="text-[11px] text-gray-400">{ini.categoria}</span>
                             {ini.fechaVerificacion && (
-                              <span className="text-[9px] text-gray-400">
+                              <span className="text-[11px] text-gray-400">
                                 Verificado: {new Date(ini.fechaVerificacion).toLocaleDateString('es-MX')}
                               </span>
                             )}
@@ -1527,7 +1527,7 @@ export default function DashboardPage() {
                     {/* Toggle Modo JSON / Formulario + Eliminar */}
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           ID
                         </label>
                         <p className="font-mono text-xs text-gray-600">
@@ -1569,7 +1569,7 @@ export default function DashboardPage() {
                     {jsonEditMode ? (
                       <div className="space-y-4">
                         <div>
-                          <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-2">
+                          <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-2">
                             Editar JSON
                           </label>
                           <textarea
@@ -1633,7 +1633,7 @@ export default function DashboardPage() {
                       <>
                         {/* Título */}
                     <div>
-                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                      <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                         Título
                       </label>
                       <textarea
@@ -1647,7 +1647,7 @@ export default function DashboardPage() {
                     {/* Row: Estatus + Cámara */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           Estatus
                         </label>
                         <select
@@ -1662,7 +1662,7 @@ export default function DashboardPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           Ámbito
                         </label>
                         <select
@@ -1680,7 +1680,7 @@ export default function DashboardPage() {
 
                     {/* Proponente */}
                     <div>
-                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                      <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                         Proponente
                       </label>
                       <input
@@ -1694,7 +1694,7 @@ export default function DashboardPage() {
                     {/* Row: Cámara + Entidad */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           Cámara
                         </label>
                         <input
@@ -1705,7 +1705,7 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           Entidad Federativa
                         </label>
                         <input
@@ -1720,7 +1720,7 @@ export default function DashboardPage() {
                     {/* Row: Legislatura + Tipo */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           Legislatura
                         </label>
                         <input
@@ -1731,7 +1731,7 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           Tipo
                         </label>
                         <input
@@ -1745,7 +1745,7 @@ export default function DashboardPage() {
 
                     {/* Categoría Temática */}
                     <div>
-                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                      <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                         Categoría Temática
                       </label>
                       <select
@@ -1763,7 +1763,7 @@ export default function DashboardPage() {
                     {/* Row: Categoría antigua + Partido */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           Categoría (legacy)
                         </label>
                         <input
@@ -1774,7 +1774,7 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div>
-                        <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                        <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                           Partido
                         </label>
                         <input
@@ -1788,7 +1788,7 @@ export default function DashboardPage() {
 
                     {/* Descripción */}
                     <div>
-                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                      <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                         Descripción
                       </label>
                       <textarea
@@ -1801,7 +1801,7 @@ export default function DashboardPage() {
 
                     {/* Resumen */}
                     <div>
-                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                      <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                         Resumen
                       </label>
                       <textarea
@@ -1814,7 +1814,7 @@ export default function DashboardPage() {
 
                     {/* URL Gaceta */}
                     <div>
-                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                      <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                         URL Gaceta
                       </label>
                       <input
@@ -1827,7 +1827,7 @@ export default function DashboardPage() {
 
                     {/* URL PDF */}
                     <div>
-                      <label className="block font-sans-tech text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                      <label className="block font-sans-tech text-[11px] uppercase tracking-widest text-gray-500 mb-1">
                         URL PDF
                       </label>
                       <input
@@ -1859,7 +1859,7 @@ export default function DashboardPage() {
                                 ? '✓ VERIFICADO' 
                                 : '⚠ REQUIERE REVISIÓN'}
                             </span>
-                            <span className={`px-2 py-1 rounded-full text-[10px] font-medium ${
+                            <span className={`px-2 py-1 rounded-full text-[11px] font-medium ${
                               verificationResult.confidence === 'high' ? 'bg-green-200 text-green-800' :
                               verificationResult.confidence === 'medium' ? 'bg-yellow-200 text-yellow-800' :
                               'bg-red-200 text-red-800'
@@ -1869,7 +1869,7 @@ export default function DashboardPage() {
                             </span>
                           </div>
                           {verificationResult.fechaVerificacion && (
-                            <p className="font-mono text-[10px] text-gray-500 mt-1">
+                            <p className="font-mono text-[11px] text-gray-500 mt-1">
                               Verificado: {new Date(verificationResult.fechaVerificacion).toLocaleString('es-MX')}
                             </p>
                           )}
@@ -2098,31 +2098,31 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-5 gap-2">
                     <div className="bg-gray-50 rounded-lg p-2 text-center">
                       <p className="font-sans-tech text-lg font-bold text-gray-900">{bulkQueue.length}</p>
-                      <p className="font-sans-tech text-[9px] text-gray-500">Total</p>
+                      <p className="font-sans-tech text-[11px] text-gray-500">Total</p>
                     </div>
                     <div className="bg-green-50 rounded-lg p-2 text-center">
                       <p className="font-sans-tech text-lg font-bold text-green-600">
                         {bulkQueue.filter(i => i.status === 'verified').length}
                       </p>
-                      <p className="font-sans-tech text-[9px] text-green-600">Verificados</p>
+                      <p className="font-sans-tech text-[11px] text-green-600">Verificados</p>
                     </div>
                     <div className="bg-orange-50 rounded-lg p-2 text-center">
                       <p className="font-sans-tech text-lg font-bold text-orange-600">
                         {bulkQueue.filter(i => i.status === 'revision').length}
                       </p>
-                      <p className="font-sans-tech text-[9px] text-orange-600">Revisión</p>
+                      <p className="font-sans-tech text-[11px] text-orange-600">Revisión</p>
                     </div>
                     <div className="bg-emerald-50 rounded-lg p-2 text-center">
                       <p className="font-sans-tech text-lg font-bold text-emerald-600">
                         {bulkQueue.filter(i => i.status === 'corrected').length}
                       </p>
-                      <p className="font-sans-tech text-[9px] text-emerald-600">Corregidos</p>
+                      <p className="font-sans-tech text-[11px] text-emerald-600">Corregidos</p>
                     </div>
                     <div className="bg-blue-50 rounded-lg p-2 text-center">
                       <p className="font-sans-tech text-lg font-bold text-blue-600">
                         {bulkQueue.filter(i => i.status === 'pending' || i.status === 'verifying' || i.status === 'correcting').length}
                       </p>
-                      <p className="font-sans-tech text-[9px] text-blue-600">Proceso</p>
+                      <p className="font-sans-tech text-[11px] text-blue-600">Proceso</p>
                     </div>
                   </div>
 
@@ -2180,21 +2180,21 @@ export default function DashboardPage() {
                             {item.titulo}
                           </p>
                           {item.status === 'verifying' && (
-                            <p className="font-sans-tech text-[10px] text-blue-500">Verificando con Claude Sonnet 4...</p>
+                            <p className="font-sans-tech text-[11px] text-blue-500">Verificando con Claude Sonnet 4...</p>
                           )}
                           {item.status === 'correcting' && (
-                            <p className="font-sans-tech text-[10px] text-orange-500">🔧 Buscando datos correctos...</p>
+                            <p className="font-sans-tech text-[11px] text-orange-500">🔧 Buscando datos correctos...</p>
                           )}
                           {item.status === 'corrected' && (
-                            <p className="font-sans-tech text-[10px] text-emerald-500">✓ Corregido y verificado</p>
+                            <p className="font-sans-tech text-[11px] text-emerald-500">✓ Corregido y verificado</p>
                           )}
                           {item.status === 'error' && item.error && (
-                            <p className="font-sans-tech text-[10px] text-red-500">{item.error}</p>
+                            <p className="font-sans-tech text-[11px] text-red-500">{item.error}</p>
                           )}
                         </div>
 
                         {/* Número */}
-                        <span className="font-mono text-[10px] text-gray-400">
+                        <span className="font-mono text-[11px] text-gray-400">
                           {idx + 1}/{bulkQueue.length}
                         </span>
                       </div>
@@ -2265,11 +2265,11 @@ export default function DashboardPage() {
                           {result.estadoVerificacion === 'verificado' ? '✓' : '⚠'}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="font-mono text-[10px] text-gray-500">{result.id}</p>
+                          <p className="font-mono text-[11px] text-gray-500">{result.id}</p>
                           <p className="font-sans-tech text-sm text-gray-900 truncate">{result.titulo}</p>
                           <p className="font-sans-tech text-xs text-gray-500 mt-1">{result.summary}</p>
                         </div>
-                        <span className={`shrink-0 px-2 py-1 rounded text-[10px] font-medium ${
+                        <span className={`shrink-0 px-2 py-1 rounded text-[11px] font-medium ${
                           result.confidence === 'high' ? 'bg-green-200 text-green-800' :
                           result.confidence === 'medium' ? 'bg-yellow-200 text-yellow-800' :
                           'bg-red-200 text-red-800'
@@ -2526,7 +2526,7 @@ export default function DashboardPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   {itemIndex === 0 && (
-                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-sans-tech font-medium rounded-full">
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[11px] font-sans-tech font-medium rounded-full">
                                       CONSERVAR
                                     </span>
                                   )}

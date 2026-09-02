@@ -12,7 +12,7 @@ interface Props {
 
 export default function FolioBadge({ folio, size = 'md', className = '', locale = 'es' }: Props) {
   if (!folio) return null;
-  const pad = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]';
+  const pad = size === 'sm' ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-0.5 text-[11px]';
   const title = locale === 'en' ? `Case file number: ${folio}` : `Folio de expediente: ${folio}`;
   return (
     <span

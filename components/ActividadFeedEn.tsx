@@ -284,17 +284,17 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
                 <div className="text-xs sm:text-sm text-gray-500 mb-1 flex items-center gap-2 flex-wrap">
                   {formatDateEn(fecha)}
                   {fallo && (
-                    <span className="inline-flex items-center rounded-full bg-amber-200 text-amber-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <span className="inline-flex items-center rounded-full bg-amber-200 text-amber-900 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                       Agent failure
                     </span>
                   )}
                   {marca === 'superado' && (
-                    <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                       Superseded
                     </span>
                   )}
                   {marca === 'retractado' && (
-                    <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                       Retracted
                     </span>
                   )}

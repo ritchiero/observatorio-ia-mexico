@@ -16,7 +16,7 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
   const config = statusConfig[status];
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium font-sans-tech border whitespace-nowrap backdrop-blur-sm ${config.colors}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-medium font-sans-tech border whitespace-nowrap backdrop-blur-sm ${config.colors}`}>
       <span>{config.emoji}</span>
       {config.label}
     </span>

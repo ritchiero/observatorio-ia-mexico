@@ -311,11 +311,11 @@ export default function HomeEn() {
             <div className="flex items-center gap-4">
               <div className="text-center px-4 py-2 bg-purple-100 rounded-xl">
                 <div className="font-serif-display text-2xl text-purple-700">{casosStats.total}</div>
-                <div className="text-[10px] font-sans-tech text-purple-600 uppercase tracking-wider">Cases</div>
+                <div className="text-[11px] font-sans-tech text-purple-600 uppercase tracking-wider">Cases</div>
               </div>
               <div className="text-center px-4 py-2 bg-purple-50 rounded-xl">
                 <div className="font-serif-display text-2xl text-purple-600">{casosStats.conCriterio}</div>
-                <div className="text-[10px] font-sans-tech text-purple-500 uppercase tracking-wider">Legal Standard</div>
+                <div className="text-[11px] font-sans-tech text-purple-500 uppercase tracking-wider">Legal Standard</div>
               </div>
             </div>
           </div>
@@ -348,7 +348,7 @@ export default function HomeEn() {
                     className="bg-white border border-gray-200 rounded-xl p-5 hover:border-purple-300 hover:shadow-md transition-all group"
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <span className={`px-2 py-0.5 text-[10px] font-sans-tech font-medium rounded-full ${casoBadge.c}`}>
+                      <span className={`px-2 py-0.5 text-[11px] font-sans-tech font-medium rounded-full ${casoBadge.c}`}>
                         {casoBadge.t}
                       </span>
                     </div>
@@ -391,34 +391,34 @@ export default function HomeEn() {
           <div className={`grid ${stats.concluido > 0 || stats.sinClasificar > 0 ? 'grid-cols-3' : 'grid-cols-5'} gap-2 text-center sm:hidden`}>
             <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
               <div className="text-lg font-bold text-gray-900">{stats.total}</div>
-              <div className="text-[10px] text-gray-900/40">Total</div>
+              <div className="text-[11px] text-gray-900/40">Total</div>
             </div>
             <div className="bg-emerald-50 rounded-lg py-2 px-1 border border-emerald-200">
               <div className="text-lg font-bold text-emerald-500">{stats.operando}</div>
-              <div className="text-[10px] text-gray-900/40">Operating</div>
+              <div className="text-[11px] text-gray-900/40">Operating</div>
             </div>
             <div className="bg-blue-50 rounded-lg py-2 px-1 border border-blue-200">
               <div className="text-lg font-bold text-blue-500">{stats.enDesarrollo}</div>
-              <div className="text-[10px] text-gray-900/40">In dev.</div>
+              <div className="text-[11px] text-gray-900/40">In dev.</div>
             </div>
             <div className="bg-red-50 rounded-lg py-2 px-1 border border-red-200">
               <div className="text-lg font-bold text-red-500">{stats.incumplido}</div>
-              <div className="text-[10px] text-gray-900/40">Broken</div>
+              <div className="text-[11px] text-gray-900/40">Broken</div>
             </div>
             <div className="bg-gray-100 rounded-lg py-2 px-1 border border-gray-300/10">
               <div className="text-lg font-bold text-gray-900/60">{stats.prometido}</div>
-              <div className="text-[10px] text-gray-900/40">Promised</div>
+              <div className="text-[11px] text-gray-900/40">Promised</div>
             </div>
             {stats.concluido > 0 && (
               <div className="bg-teal-50 rounded-lg py-2 px-1 border border-teal-200">
                 <div className="text-lg font-bold text-teal-600">{stats.concluido}</div>
-                <div className="text-[10px] text-gray-900/40">Concluded</div>
+                <div className="text-[11px] text-gray-900/40">Concluded</div>
               </div>
             )}
             {stats.sinClasificar > 0 && (
               <div className="bg-amber-50 rounded-lg py-2 px-1 border border-amber-200">
                 <div className="text-lg font-bold text-amber-600">{stats.sinClasificar}</div>
-                <div className="text-[10px] text-gray-900/40">Unclassified</div>
+                <div className="text-[11px] text-gray-900/40">Unclassified</div>
               </div>
             )}
           </div>
@@ -479,7 +479,7 @@ export default function HomeEn() {
 
           {/* Fecha de actualización móvil */}
           <div className="sm:hidden text-center mt-2">
-            <span className="text-[10px] text-gray-900/30 font-mono">Updated monthly</span>
+            <span className="text-[11px] text-gray-900/30 font-mono">Updated monthly</span>
           </div>
 
           {/* Datos abiertos (OIA-013): el público cita y reutiliza sin scrapear */}
@@ -624,7 +624,7 @@ export default function HomeEn() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
 
                   {/* Badge de estado */}
-                  <div className={`absolute top-3.5 right-3.5 px-3 py-1.5 rounded-full text-[10px] font-sans-tech font-bold uppercase tracking-wider backdrop-blur-sm ${
+                  <div className={`absolute top-3.5 right-3.5 px-3 py-1.5 rounded-full text-[11px] font-sans-tech font-bold uppercase tracking-wider backdrop-blur-sm ${
                     item.status === 'incumplido' ? 'bg-red-500 text-white' :
                     item.status === 'en_desarrollo' ? 'bg-blue-500 text-white' :
                     item.status === 'operando' ? 'bg-emerald-500 text-white' :
@@ -635,7 +635,7 @@ export default function HomeEn() {
 
                   {/* Fecha */}
                   <div className="absolute top-3.5 left-3.5 px-3 py-1.5 bg-black/45 backdrop-blur-sm rounded-full">
-                    <span className="font-mono text-[10px] text-white uppercase tracking-wider">
+                    <span className="font-mono text-[11px] text-white uppercase tracking-wider">
                       {formatearMes(item.fechaAnuncio)} {getYearUTC(item.fechaAnuncio)}
                     </span>
                   </div>

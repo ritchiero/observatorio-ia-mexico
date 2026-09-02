@@ -80,7 +80,7 @@ export default async function MapaVivoPage() {
             <div className="font-serif-display text-3xl md:text-4xl" style={{
               background: 'linear-gradient(135deg, #3DE0FF, #A47CFF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
             }}>{String(n)}</div>
-            <div className="font-sans-tech text-[10px] uppercase tracking-[0.18em] text-[#7886A2]">{String(l)}</div>
+            <div className="font-sans-tech text-[11px] uppercase tracking-[0.18em] text-[#7886A2]">{String(l)}</div>
           </div>
         ))}
       </div>

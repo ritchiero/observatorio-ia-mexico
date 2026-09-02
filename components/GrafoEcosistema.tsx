@@ -757,7 +757,7 @@ export default function GrafoEcosistema({
         <ZBtn label="+" testid="zoom-in" onClick={() => zoomBy(1.5)} locale={locale} />
         <ZBtn label="−" testid="zoom-out" onClick={() => zoomBy(1 / 1.5)} locale={locale} />
         <ZBtn label="⤢" testid="zoom-fit" onClick={() => fgRef.current?.zoomToFit(500, 50)} locale={locale} />
-        <span className="mt-1 hidden sm:block max-w-[9rem] font-mono text-[9px] leading-snug text-slate-500">
+        <span className="mt-1 hidden sm:block max-w-[9rem] font-mono text-[11px] leading-snug text-slate-500">
           {t.ayudaZoom}
         </span>
       </div>
@@ -767,7 +767,7 @@ export default function GrafoEcosistema({
       {chrome && selected && (
         <div className="fixed inset-x-2 bottom-2 top-auto z-50 max-h-[55dvh] overflow-y-auto rounded-xl border border-slate-700/70 bg-slate-900/95 p-4 backdrop-blur sm:absolute sm:z-auto sm:inset-x-auto sm:right-3 sm:top-16 sm:bottom-4 sm:max-h-none sm:w-80 sm:max-w-[86vw] sm:bg-slate-900/90">
           <div className="flex items-start justify-between gap-2">
-            <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: COLOR[selected.type] }}>
+            <div className="font-mono text-[11px] uppercase tracking-widest" style={{ color: COLOR[selected.type] }}>
               {selected.type}
               {!enPasado && selected.nuevo ? t.nuevo : ''}
               {!enPasado && selected.estado && ITEM_TYPES.has(selected.type) ? ` · ${t.estado[selected.estado] ?? selected.estado}` : ''}
@@ -802,7 +802,7 @@ export default function GrafoEcosistema({
 
           {/* Memoria: qué pasa con el tema, no solo bullets */}
           {(anio === null || anio >= anioActual) && (<>
-          <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">{t.memoria}</div>
+          <div className="mt-3 font-mono text-[11px] uppercase tracking-widest text-slate-500">{t.memoria}</div>
           {selected.desc ? (
             <p className="mt-1.5 text-xs leading-relaxed text-slate-300">{selected.desc}</p>
           ) : (
@@ -833,7 +833,7 @@ export default function GrafoEcosistema({
           </>)}
 
           {/* Conexiones (vecinos clicables: saltan en el mapa) */}
-          <div className="mt-3 font-mono text-[9px] uppercase tracking-widest text-slate-500">{t.conexiones}</div>
+          <div className="mt-3 font-mono text-[11px] uppercase tracking-widest text-slate-500">{t.conexiones}</div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {[...(neigh.get(String(selected.id)) ?? [])]
               .map((nid) => byId.get(nid))
@@ -845,7 +845,7 @@ export default function GrafoEcosistema({
                 <button
                   key={String(v.id)}
                   onClick={() => goTo(v)}
-                  className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-800/60 px-2 py-0.5 text-[10px] text-slate-200 hover:border-cyan-500/50"
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-800/60 px-2 py-0.5 text-[11px] text-slate-200 hover:border-cyan-500/50"
                 >
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: COLOR[v.type] ?? '#94a3b8' }} />
                   <span className="truncate">{String(v.label).slice(0, 34)}</span>
@@ -872,23 +872,23 @@ export default function GrafoEcosistema({
               </a>
             )}
           </div>
-          <div className="mt-3 text-[10px] text-slate-500">{t.escCerrar}</div>
+          <div className="mt-3 text-[11px] text-slate-500">{t.escCerrar}</div>
         </div>
       )}
 
       {/* tooltip del nodo bajo el cursor (hover: sólo escritorio; en táctil el tap abre el panel) */}
       {chrome && hover && !selected && (
         <div className="pointer-events-none absolute left-16 bottom-4 hidden max-w-sm rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 backdrop-blur sm:block">
-          <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: COLOR[hover.type] }}>
+          <div className="text-[11px] font-mono uppercase tracking-widest" style={{ color: COLOR[hover.type] }}>
             {hover.type}
             {!enPasado && hover.nuevo ? t.nuevo : ''}
             {!enPasado && hover.estado && ITEM_TYPES.has(hover.type) ? ` · ${t.estado[hover.estado] ?? hover.estado}` : ''}
           </div>
           <div className="text-sm text-slate-100 leading-snug">{hover.label}</div>
           {hover.communityLabel && hover.communityLabel !== hover.label && (
-            <div className="text-[10px] text-cyan-200/60 mt-0.5">{t.region}{hover.communityLabel}</div>
+            <div className="text-[11px] text-cyan-200/60 mt-0.5">{t.region}{hover.communityLabel}</div>
           )}
-          <div className="text-[10px] text-slate-400 mt-0.5">{t.clicApunte}</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">{t.clicApunte}</div>
         </div>
       )}
     </div>

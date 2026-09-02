@@ -279,7 +279,7 @@ export default function GrafoPage() {
               className="w-full bg-transparent py-2.5 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none"
             />
             {corte !== null && (
-              <span className="shrink-0 font-mono text-[9px] uppercase text-amber-300/80" title="La IA responde sobre la actualidad">
+              <span className="shrink-0 font-mono text-[11px] uppercase text-amber-300/80" title="La IA responde sobre la actualidad">
                 🕰 {anio}
               </span>
             )}
@@ -305,7 +305,7 @@ export default function GrafoPage() {
                 >
                   <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: PODER_COLOR[n.type] ?? '#94a3b8' }} />
                   <span className="truncate">{n.label}</span>
-                  <span className="ml-auto shrink-0 font-mono text-[9px] uppercase text-slate-500">{n.type}</span>
+                  <span className="ml-auto shrink-0 font-mono text-[11px] uppercase text-slate-500">{n.type}</span>
                 </button>
               ))}
             </div>
@@ -321,7 +321,7 @@ export default function GrafoPage() {
               ) : ai && (
                 <>
                   <div className="flex items-start justify-between gap-2">
-                    <div className="font-mono text-[9px] uppercase tracking-widest text-cyan-400">✨ Respuesta del mapa</div>
+                    <div className="font-mono text-[11px] uppercase tracking-widest text-cyan-400">✨ Respuesta del mapa</div>
                     <button onClick={limpiarAi} aria-label="Cerrar" className="rounded px-1 text-slate-400 hover:text-slate-100">✕</button>
                   </div>
                   <p className="mt-1 text-xs leading-relaxed text-slate-200">{ai.respuesta}</p>
@@ -331,7 +331,7 @@ export default function GrafoPage() {
                         <button
                           key={n.id}
                           onClick={() => irA(n.id)}
-                          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-800/60 px-2 py-0.5 text-[10px] text-slate-200 hover:border-cyan-500/50"
+                          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-800/60 px-2 py-0.5 text-[11px] text-slate-200 hover:border-cyan-500/50"
                         >
                           <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: PODER_COLOR[n.type] ?? '#94a3b8' }} />
                           <span className="truncate">{n.label.slice(0, 40)}</span>
@@ -473,7 +473,7 @@ export default function GrafoPage() {
                   </select>
                   <button
                     onClick={() => { setPeriodo(null); setPeriodoOpen(false); }}
-                    className="rounded-full px-2 py-0.5 text-[10px] text-slate-400 hover:text-slate-100"
+                    className="rounded-full px-2 py-0.5 text-[11px] text-slate-400 hover:text-slate-100"
                   >
                     Todo el tiempo
                   </button>
@@ -481,7 +481,7 @@ export default function GrafoPage() {
                     const sf = stats?.anual?.sinFecha;
                     const n = sf ? sf.anuncios + sf.iniciativas + sf.casos : 0;
                     return periodo && n > 0 ? (
-                      <span className="text-[10px] text-slate-500">{n} sin fecha fuera del periodo</span>
+                      <span className="text-[11px] text-slate-500">{n} sin fecha fuera del periodo</span>
                     ) : null;
                   })()}
                 </div>
@@ -557,7 +557,7 @@ export default function GrafoPage() {
             />
             <button onClick={cerrarHistoria} aria-label="Cerrar Historia" className="shrink-0 rounded px-1.5 text-slate-400 hover:text-slate-100">✕</button>
           </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-slate-400">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-slate-400">
             {(() => { const c = corte !== null ? acumuladoHasta(anio) : stats; return c ? (
               <>
                 <span><b className="text-cyan-300">{c.anuncios}</b> anuncios</span>
@@ -579,7 +579,7 @@ export default function GrafoPage() {
 
       {/* Leyenda */}
       <div className="pointer-events-none absolute right-4 bottom-4 rounded-lg border border-slate-700/60 bg-slate-900/80 px-3 py-2 backdrop-blur hidden sm:block">
-        <div className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Leyenda</div>
+        <div className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-1.5">Leyenda</div>
         <Leg color="#22d3ee" t="Anuncio (Ejecutivo)" />
         <Leg color="#7ea2ff" t="Iniciativa / cámara (Legislativo)" />
         <Leg color="#c084fc" t="Precedente (Judicial)" />
@@ -588,8 +588,8 @@ export default function GrafoPage() {
         <Leg color="#94a3b8" t="Dependencia / actor" />
         <Leg color="#f59e0b" t="Sector privado — empresas, clústeres" />
         <Leg color="#f472b6" t="Academia — universidades, centros" />
-        <div className="mt-1 text-[10px] text-slate-500">Color = origen / tipo · anillo = nuevo · tenue = inactivo · clic = apunte</div>
-        <div className="mt-1 text-[10px]">
+        <div className="mt-1 text-[11px] text-slate-500">Color = origen / tipo · anillo = nuevo · tenue = inactivo · clic = apunte</div>
+        <div className="mt-1 text-[11px]">
           <Link href="/grafo/tabla" className="pointer-events-auto text-cyan-400/80 hover:text-cyan-300 underline">
             Vista accesible: los mismos datos en tabla →
           </Link>
