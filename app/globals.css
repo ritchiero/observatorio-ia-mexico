@@ -172,3 +172,13 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Entrada de la cabecera por CSS puro. Antes dependía de un estado `mounted`
+   de React: el HTML llegaba con opacity-0 y, si el JS tardaba o fallaba, no
+   había menú (auditoría 1-sep-2026). Con keyframes el navegador la muestra
+   solo, con o sin JavaScript. */
+@keyframes headerIn {
+  from { opacity: 0; transform: translateY(-0.75rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-header-in { animation: headerIn 0.3s ease-out both; }

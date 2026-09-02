@@ -29,7 +29,6 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
   const isLoading = loading || stats.total === 0;
   const isLoadingLeg = loadingLeg !== false && (!legStats || legStats.total === 0);
   const isLoadingCasos = loadingCasos !== false && (!casosStats || casosStats.total === 0);
-  const [mounted, setMounted] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
   // Estado del modal de suscripción
@@ -79,7 +78,6 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
   };
 
   useEffect(() => {
-    setMounted(true);
     const handleMouse = (e: MouseEvent) => {
       setMousePos({
         x: (e.clientX / window.innerWidth - 0.5) * 20,
@@ -121,7 +119,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
       <div className="relative z-20 flex flex-col min-h-screen px-6 md:px-12 lg:px-24 pt-8 pb-12 justify-between">
         
         {/* NAV MINIMALISTA */}
-        <nav className={`flex justify-end items-center transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <nav className={`flex justify-end items-center transition-all duration-500 animate-header-in`}>
           <button
             onClick={() => setShowModal(true)}
             className="relative flex items-center gap-2 px-4 md:px-5 py-2 border border-blue-500/30 bg-blue-500/5 text-xs uppercase tracking-widest hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300 group rounded-full"

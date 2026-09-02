@@ -47,11 +47,11 @@ export default function LegislacionPage() {
             <div className="absolute inset-0 border-2 border-blue-500/20 rounded-full"></div>
             <div className="absolute inset-0 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
           </div>
-          <h2 className="text-2xl font-serif-display font-light text-gray-900 mb-2">
-            Cargando <span className="italic text-blue-500">iniciativas</span>
-          </h2>
+          <h1 className="text-2xl font-serif-display font-light text-gray-900 mb-2">
+            Legislación <span className="italic text-blue-500">sobre IA</span>
+          </h1>
           <p className="text-gray-600 font-sans-tech text-sm">
-            Obteniendo datos del servidor
+            Cargando iniciativas · obteniendo datos del servidor
           </p>
         </div>
       </div>
