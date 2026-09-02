@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
-import Script from 'next/script';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Analytics } from '@vercel/analytics/react';
+import ConsentAnalytics from '@/components/ConsentAnalytics';
 import { getLocale } from '@/lib/i18n/locale';
 
-const GTM_ID = 'GTM-KCCM2HNW';
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'] });
 
@@ -48,37 +47,15 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <head>
-        <Script
-          id="gtm-script"
-          strategy="beforeInteractive"
-          src={`https://www.googletagmanager.com/gtm.js?id=${GTM_ID}`}
-        />
-        <Script
-          id="gtm-init"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-            `,
-          }}
-        />
       </head>
       <body className={`${jakarta.className} min-h-screen flex flex-col bg-white antialiased`}>
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-            height="0"
-            width="0"
-            style={{ display: 'none', visibility: 'hidden' }}
-          />
-        </noscript>
         <Header />
         <main className="flex-1">
           {children}
         </main>
         <Footer locale={locale} />
                   <Analytics />
+        <ConsentAnalytics locale={locale} />
       </body>
     </html>
   );
