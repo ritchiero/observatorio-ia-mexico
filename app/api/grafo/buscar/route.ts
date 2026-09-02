@@ -251,7 +251,17 @@ Reglas:
       console.error('[buscar] OpenRouter', or.status, detail.slice(0, 300));
       return respaldo();
     }
-    const data = await or.json();
+    // La señal de timeout también aborta la LECTURA del cuerpo: OpenRouter suele
+    // devolver cabeceras rápido y tardar en el cuerpo, así que el abort saltaba
+    // aquí, fuera del try de arriba, y el usuario recibía un 500 en vez del
+    // respaldo (verificado en producción el 1-sep-2026: 20.4 s → "aborted due to timeout").
+    let data: { choices?: Array<{ message?: { content?: string } }> } | null = null;
+    try {
+      data = await or.json();
+    } catch (e) {
+      console.error('[buscar] cuerpo del modelo no llegó a tiempo:', e instanceof Error ? e.message : e);
+      return respaldo();
+    }
     const raw: string = data?.choices?.[0]?.message?.content ?? '';
     const jsonTxt = raw.replace(/```json|```/g, '').trim();
     let parsed: { respuesta?: string; nodos?: string[] } = {};
