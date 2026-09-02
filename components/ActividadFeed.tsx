@@ -128,17 +128,17 @@ export default function ActividadFeed({ actividad }: ActividadFeedProps) {
                 <div className="text-xs sm:text-sm text-gray-500 mb-1 flex items-center gap-2 flex-wrap">
                   {formatDate(fecha)}
                   {fallo && (
-                    <span className="inline-flex items-center rounded-full bg-amber-200 text-amber-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <span className="inline-flex items-center rounded-full bg-amber-200 text-amber-900 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                       Fallo del agente
                     </span>
                   )}
                   {marca === 'superado' && (
-                    <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                       Superado
                     </span>
                   )}
                   {marca === 'retractado' && (
-                    <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                       Retractado
                     </span>
                   )}

@@ -140,19 +140,19 @@ export default function RecapPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
                       <div className="font-serif-display text-2xl text-gray-900">{selectedRecap.statsSnapshot.totalAnuncios}</div>
-                      <div className="text-[10px] font-sans-tech text-gray-500 uppercase tracking-wider">Anuncios</div>
+                      <div className="text-[11px] font-sans-tech text-gray-500 uppercase tracking-wider">Anuncios</div>
                     </div>
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
                       <div className="font-serif-display text-2xl text-emerald-600">{selectedRecap.statsSnapshot.operando}</div>
-                      <div className="text-[10px] font-sans-tech text-emerald-600 uppercase tracking-wider">Operando</div>
+                      <div className="text-[11px] font-sans-tech text-emerald-600 uppercase tracking-wider">Operando</div>
                     </div>
                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
                       <div className="font-serif-display text-2xl text-blue-600">{calcularCumplimiento(selectedRecap.statsSnapshot)}%</div>
-                      <div className="text-[10px] font-sans-tech text-blue-600 uppercase tracking-wider">En operación</div>
+                      <div className="text-[11px] font-sans-tech text-blue-600 uppercase tracking-wider">En operación</div>
                     </div>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
                       <div className="font-serif-display text-2xl text-amber-600">{selectedRecap.statsSnapshot.totalIniciativas || '\u2014'}</div>
-                      <div className="text-[10px] font-sans-tech text-amber-600 uppercase tracking-wider">Iniciativas</div>
+                      <div className="text-[11px] font-sans-tech text-amber-600 uppercase tracking-wider">Iniciativas</div>
                     </div>
                   </div>
                 )}

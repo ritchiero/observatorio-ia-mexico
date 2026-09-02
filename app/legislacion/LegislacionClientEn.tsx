@@ -334,7 +334,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
           {/* Filters in a responsive grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Chamber</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Chamber</label>
               <select
                 value={filtroCamara}
                 onChange={(e) => setFiltroCamara(e.target.value)}
@@ -347,7 +347,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Status</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Status</label>
               <select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value as IniciativaStatus | 'todos')}
@@ -362,7 +362,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Legislature</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Legislature</label>
               <select
                 value={filtroLegislatura}
                 onChange={(e) => setFiltroLegislatura(e.target.value)}
@@ -376,7 +376,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Topic</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Topic</label>
               <select
                 value={filtroTema}
                 onChange={(e) => setFiltroTema(e.target.value)}
@@ -395,7 +395,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">State</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">State</label>
               <select
                 value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value)}
@@ -415,7 +415,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Category</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Category</label>
               <select
                 value={filtroCategoria}
                 onChange={(e) => setFiltroCategoria(e.target.value)}
@@ -462,7 +462,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <FolioBadge folio={iniciativa.folio} size="sm" locale="en" />
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium font-sans-tech border ${badge.color}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium font-sans-tech border ${badge.color}`}>
                           {badge.text}
                         </span>
                       </div>
@@ -492,14 +492,14 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
                     <div className="border-t border-gray-100 bg-gray-50/50 p-4">
                       <div className="space-y-3">
                         <div>
-                          <span className="text-[10px] font-sans-tech font-medium text-gray-400 uppercase">Sponsor</span>
+                          <span className="text-[11px] font-sans-tech font-medium text-gray-400 uppercase">Sponsor</span>
                           <p className="text-sm text-gray-900">{iniciativa.proponente}</p>
                           {iniciativa.partido && <p className="text-xs text-gray-500">{iniciativa.partido}</p>}
                         </div>
 
                         {iniciativa.descripcion && (
                           <div>
-                            <span className="text-[10px] font-sans-tech font-medium text-gray-400 uppercase">Description</span>
+                            <span className="text-[11px] font-sans-tech font-medium text-gray-400 uppercase">Description</span>
                             <p className="text-sm text-gray-600 leading-relaxed">{iniciativa.descripcion}</p>
                           </div>
                         )}
@@ -588,7 +588,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
                               {iniciativa.titulo}
                             </div>
                             {iniciativa.estadoVerificacion === 'verificado' && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                                 <ShieldCheck size={12} />
                                 Verified
                               </span>

@@ -108,7 +108,7 @@ export default async function MethodologyPage() {
               <div key={p.n} className="border border-gray-200 rounded-xl p-5 bg-white">
                 <div className="flex items-baseline justify-between mb-3">
                   <span className="font-mono text-cyan-600 text-sm">{p.n}</span>
-                  <span className="font-sans-tech text-[10px] uppercase tracking-wider text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2 py-0.5">{p.quien}</span>
+                  <span className="font-sans-tech text-[11px] uppercase tracking-wider text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2 py-0.5">{p.quien}</span>
                 </div>
                 <h4 className="font-sans-tech font-semibold text-gray-900 mb-2">{p.titulo}</h4>
                 <p className="font-sans-tech text-sm text-gray-600 leading-relaxed mb-3">{p.que}</p>
@@ -135,7 +135,7 @@ export default async function MethodologyPage() {
                   <div key={e.label} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="font-sans-tech font-medium text-gray-900 text-sm">{e.label}</span>
-                      <span className={`font-mono text-[10px] tracking-wider px-2 py-0.5 rounded-full ${e.tono === 'emerald' ? 'bg-emerald-50 text-emerald-700' : e.tono === 'blue' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{e.tag}</span>
+                      <span className={`font-mono text-[11px] tracking-wider px-2 py-0.5 rounded-full ${e.tono === 'emerald' ? 'bg-emerald-50 text-emerald-700' : e.tono === 'blue' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{e.tag}</span>
                     </div>
                     <p className="font-sans-tech text-[13px] text-gray-600 leading-relaxed">{e.desc}</p>
                   </div>
@@ -149,7 +149,7 @@ export default async function MethodologyPage() {
                   <div key={e.label} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="font-sans-tech font-medium text-gray-900 text-sm">{e.label}</span>
-                      <span className={`font-mono text-[10px] tracking-wider px-2 py-0.5 rounded-full ${e.tono === 'emerald' ? 'bg-emerald-50 text-emerald-700' : e.tono === 'blue' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>{e.tag}</span>
+                      <span className={`font-mono text-[11px] tracking-wider px-2 py-0.5 rounded-full ${e.tono === 'emerald' ? 'bg-emerald-50 text-emerald-700' : e.tono === 'blue' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>{e.tag}</span>
                     </div>
                     <p className="font-sans-tech text-[13px] text-gray-600 leading-relaxed">{e.desc}</p>
                   </div>
@@ -171,9 +171,9 @@ export default async function MethodologyPage() {
             <div className="bg-gray-50 px-5 md:px-7 py-4 border-b border-gray-200 flex flex-wrap items-center gap-2 justify-between">
               <span className="font-mono text-xs text-gray-500">LEG-2026-013 · public record</span>
               <div className="flex flex-wrap gap-1.5">
-                <span className="font-sans-tech text-[10px] uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5">Official source</span>
-                <span className="font-sans-tech text-[10px] uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5">Automated cross-check</span>
-                <span className="font-sans-tech text-[10px] uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5">Human audit pending</span>
+                <span className="font-sans-tech text-[11px] uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5">Official source</span>
+                <span className="font-sans-tech text-[11px] uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5">Automated cross-check</span>
+                <span className="font-sans-tech text-[11px] uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5">Human audit pending</span>
               </div>
             </div>
             <div className="px-5 md:px-7 py-6">

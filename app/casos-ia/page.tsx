@@ -143,7 +143,7 @@ export default function CasosIAPage() {
         <div className="max-w-6xl mx-auto px-4 md:px-12 lg:px-24">
           <div className="flex flex-wrap gap-3">
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Tema IA</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Tema IA</label>
               <select
                 value={filtroTema}
                 onChange={(e) => setFiltroTema(e.target.value)}
@@ -156,7 +156,7 @@ export default function CasosIAPage() {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Criterio</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Criterio</label>
               <select
                 value={filtroCriterio}
                 onChange={(e) => setFiltroCriterio(e.target.value)}
@@ -168,7 +168,7 @@ export default function CasosIAPage() {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Tipo</label>
+              <label className="block text-[11px] font-sans-tech font-medium text-gray-900/50 mb-1 uppercase tracking-wider">Tipo</label>
               <select
                 value={filtroTipoCriterio}
                 onChange={(e) => setFiltroTipoCriterio(e.target.value)}
@@ -300,7 +300,7 @@ export default function CasosIAPage() {
                             {temaInfo.emoji} {temaInfo.label}
                           </span>
                           {!tieneCriterio && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-sans-tech bg-gray-100 text-gray-500">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-sans-tech bg-gray-100 text-gray-500">
                               Sin criterio aún
                             </span>
                           )}
