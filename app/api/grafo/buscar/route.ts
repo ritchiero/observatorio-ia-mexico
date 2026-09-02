@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { bucketDe } from '@/lib/estados';
+import { buscarPorTerminos, respuestaRespaldo } from '@/lib/grafo-busqueda-fallback';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -9,7 +10,11 @@ export const maxDuration = 60;
 // pregunta del usuario; devuelve una respuesta breve + los ids de nodos
 // relevantes para iluminarlos/enfocarlos en el mapa. La llave vive en
 // OPENROUTER_API_KEY (env), jamás en el repo.
-const MODEL = 'x-ai/grok-4.5';
+// Configurable sin redeploy de código: GRAFO_MODEL en el entorno.
+const MODEL = process.env.GRAFO_MODEL || 'x-ai/grok-4.5';
+// Tope para el modelo. La función tiene 60 s; sin este tope, una respuesta lenta
+// de OpenRouter colgaba al usuario hasta el maxDuration (auditoría 1-sep-2026: 25 s+).
+const TIMEOUT_MODELO_MS = Number(process.env.GRAFO_TIMEOUT_MS || 20_000);
 const MAX_NODOS = 8;
 
 type GNode = {
@@ -40,9 +45,9 @@ const ESTADO_QUERIES: Array<{ re: RegExp; reEn: RegExp; match: (it: ItemAut) => 
 
 async function catalogoAutoritativo(base: string): Promise<ItemAut[]> {
   const [aR, iR, cR] = await Promise.all([
-    fetch(`${base}/api/anuncios?limit=500`, { cache: 'no-store' }).then((r) => r.json()),
-    fetch(`${base}/api/iniciativas`, { cache: 'no-store' }).then((r) => r.json()),
-    fetch(`${base}/api/casos-ia`, { cache: 'no-store' }).then((r) => r.json()),
+    fetch(`${base}/api/anuncios?limit=500`, { next: { revalidate: 60 } }).then((r) => r.json()),
+    fetch(`${base}/api/iniciativas`, { next: { revalidate: 60 } }).then((r) => r.json()),
+    fetch(`${base}/api/casos-ia`, { next: { revalidate: 60 } }).then((r) => r.json()),
   ]);
   const arr = (j: unknown, ...keys: string[]): Record<string, unknown>[] => {
     if (Array.isArray(j)) return j as Record<string, unknown>[];
@@ -85,7 +90,7 @@ async function fastPathEstados(
   // el grafo SÓLO se usa para iluminar nodos; si falla, el conteo sale igual
   let byId = new Map<string, GNode>();
   try {
-    const g = await fetch(`${base}/api/grafo`, { cache: 'no-store' }).then((r) => r.json());
+    const g = await fetch(`${base}/api/grafo`, { next: { revalidate: 300 } }).then((r) => r.json());
     byId = new Map(((g?.nodes ?? []) as GNode[]).map((n) => [n.id, n]));
   } catch { /* sin mapa no hay iluminación, pero la cifra es la misma */ }
   // alcance opcional por tipo ("anuncios incumplidos" vs "iniciativas vigentes" / "broken bills")
@@ -164,7 +169,7 @@ export async function POST(request: NextRequest) {
         { status: 503 },
       );
     }
-    const g = await fetch(`${base}/api/grafo`, { cache: 'no-store' }).then((r) => r.json());
+    const g = await fetch(`${base}/api/grafo`, { next: { revalidate: 300 } }).then((r) => r.json());
     const nodes: GNode[] = g?.nodes ?? [];
     if (!nodes.length) {
       return NextResponse.json({ error: lang === 'en' ? 'The map has no data' : 'El grafo no tiene datos' }, { status: 502 });
@@ -178,8 +183,8 @@ export async function POST(request: NextRequest) {
           n.type,
           n.estado ?? '',
           (n as { fecha?: string }).fecha?.slice(0, 10) ?? '',
-          n.label.slice(0, 90),
-          (n.desc ?? '').replace(/\s+/g, ' ').slice(0, 110),
+          n.label.slice(0, 72),
+          (n.desc ?? '').replace(/\s+/g, ' ').slice(0, 70),
         ].join('|'),
       )
       .join('\n');
@@ -205,7 +210,21 @@ Reglas:
 4. Si nada es relevante devuelve nodos:[] y dilo con honestidad.
 5. Nunca inventes hechos que no estén en el catálogo; cita fechas cuando existan.`;
 
-    const or = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    // Respaldo: si el modelo tarda o falla, se responde con coincidencia literal
+    // sobre el catálogo y se dice explícitamente que es un respaldo.
+    const respaldo = () => {
+      const hits = buscarPorTerminos(nodes, pregunta, MAX_NODOS);
+      return NextResponse.json({
+        respuesta: respuestaRespaldo(hits, lang),
+        nodos: hits.map((n) => ({ id: n.id, label: n.label, type: n.type, communityLabel: n.communityLabel })),
+        respaldo: true,
+      });
+    };
+
+    let or: Response;
+    try {
+      or = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      signal: AbortSignal.timeout(TIMEOUT_MODELO_MS),
       method: 'POST',
       headers: {
         Authorization: `Bearer ${key}`,
@@ -223,10 +242,14 @@ Reglas:
         ],
       }),
     });
+    } catch (e) {
+      console.error('[buscar] OpenRouter no respondió a tiempo o falló:', e instanceof Error ? e.message : e);
+      return respaldo();
+    }
     if (!or.ok) {
       const detail = await or.text().catch(() => '');
       console.error('[buscar] OpenRouter', or.status, detail.slice(0, 300));
-      return NextResponse.json({ error: lang === 'en' ? `The model did not respond (HTTP ${or.status})` : `El modelo no respondió (HTTP ${or.status})` }, { status: 502 });
+      return respaldo();
     }
     const data = await or.json();
     const raw: string = data?.choices?.[0]?.message?.content ?? '';
@@ -239,7 +262,8 @@ Reglas:
       if (m) { try { parsed = JSON.parse(m[0]); } catch { /* cae al error de abajo */ } }
     }
     if (typeof parsed.respuesta !== 'string') {
-      return NextResponse.json({ error: lang === 'en' ? 'Unreadable response from the model' : 'Respuesta ilegible del modelo' }, { status: 502 });
+      console.error('[buscar] respuesta ilegible del modelo:', raw.slice(0, 200));
+      return respaldo();
     }
 
     const nodos = (parsed.nodos ?? [])
