@@ -89,11 +89,24 @@ export function evaluarAgente(r: RespuestaAgente): EvaluacionAgente {
     };
   }
 
-  if (!c || c.success === undefined) {
+  if (!c || typeof c.success !== 'boolean') {
     return {
       ...base,
       estado: 'indeterminado',
-      motivo: 'la respuesta no declara `success`',
+      motivo: 'la respuesta no declara un `success` booleano',
+      errores,
+      hallazgos,
+    };
+  }
+
+  // Una revisión parcial no equivale a una corrida sana sin novedades.
+  // Algunos agentes heredados devuelven success:true después de capturar
+  // errores por ficha: conservar los hallazgos, pero escalar el fallo.
+  if (errores.length > 0) {
+    return {
+      ...base,
+      estado: 'fallo',
+      motivo: `revisión incompleta: ${errores[0]}`,
       errores,
       hallazgos,
     };
