@@ -4,7 +4,7 @@ import { ArrowLeft, Calendar, ExternalLink, Play, Tv, Radio, Clock, Users, Alert
 
 export const metadata = {
   title: 'Iniciativa de Ley General de IA — seguimiento (en proceso) | Observatorio IA México',
-  description: 'Seguimiento de la propuesta de Ley General de Inteligencia Artificial en México. IMPORTANTE: es una iniciativa en proceso legislativo, NO una ley vigente. Contenido de la propuesta, línea de tiempo y recursos.',
+  description: 'Documentos y antecedentes de las propuestas federales de inteligencia artificial en México. Revisión documental en curso; consulta fuentes y límites de verificación.',
   alternates: { canonical: '/proceso-legislativo', languages: { es: '/proceso-legislativo', en: '/en/proceso-legislativo' } },
 };
 
@@ -21,7 +21,7 @@ export default function ProcesoLegislativoPage() {
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200/50 rounded-full mb-4">
             <Clock size={14} className="text-amber-600" />
-            <span className="text-xs font-sans-tech text-amber-700 font-medium">Iniciativa en proceso · seguimiento</span>
+            <span className="text-xs font-sans-tech text-amber-700 font-medium">Propuestas y antecedentes · revisión en curso</span>
           </div>
           <h1 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 mb-3">
             Iniciativa de <span className="italic text-emerald-600">Ley General de IA</span>
@@ -36,10 +36,8 @@ export default function ProcesoLegislativoPage() {
           <div className="flex items-start gap-3">
             <MessageSquareWarning size={22} className="text-amber-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-sans-tech text-sm font-bold text-amber-900 mb-1">Esto es una iniciativa, NO una ley vigente</h3>
-              <p className="text-amber-900 font-sans-tech text-sm leading-relaxed">
-                Al <strong>29 de mayo de 2026</strong>, la Ley General de IA <strong>no ha sido aprobada ni publicada</strong>. Es una propuesta en proceso en el Senado. La única regulación de IA con efectos vinculantes publicada en México es la reforma a la LFT y LFDA (DOF, 14 de mayo de 2026), que es distinta a esta iniciativa.
-              </p>
+              <h3 className="font-sans-tech text-sm font-bold text-amber-900 mb-1">Revisión documental en curso</h3>
+              <p className="text-amber-900 font-sans-tech text-sm leading-relaxed">Esta página reúne propuestas y antecedentes, no un catálogo exhaustivo de normas vigentes. La revisión iniciada el <strong>6 de septiembre de 2026</strong> distingue el contenido de los documentos de su estado legislativo. Una iniciativa o un texto de trabajo no acreditan por sí mismos aprobación, publicación ni entrada en vigor.</p>
             </div>
           </div>
         </div>
@@ -48,10 +46,8 @@ export default function ProcesoLegislativoPage() {
           <div className="flex items-start gap-3">
             <AlertCircle size={20} className="text-gray-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-sans-tech text-sm font-semibold text-gray-800 mb-2">Estado actual</h3>
-              <p className="text-gray-700 font-sans-tech text-sm leading-relaxed">
-                Existen tres vías paralelas: (1) una <strong>reforma constitucional al Art. 73</strong> desde el Senado (Sen. Saúl Monreal) para facultar al Congreso a legislar sobre IA, (2) una <strong>propuesta de Ley General de IA</strong> de la Comisión de IA del Senado (Sen. Rolando Zapata), y (3) desde el <strong>5 de agosto de 2026</strong>, una nueva <strong>reforma a la fracción XVII del Art. 73</strong> presentada ante la Comisión Permanente por la vicecoordinadora de Morena en la Cámara de Diputados, <strong>Gabriela Jiménez Godoy</strong> — difundida como proyecto de la bancada mayoritaria y con la regulación de la IA anunciada por Ricardo Monreal como tema principal de la agenda del periodo que inicia el 1 de septiembre. La votación que se anticipaba para el <strong>25 de febrero de 2026 no se realizó</strong>; las vías del Senado siguen <strong>en comisiones, sin fecha de dictamen ni aprobación en el pleno</strong>. Esta página documenta el contenido y la evolución de la propuesta, no una norma vigente.
-              </p>
+              <h3 className="font-sans-tech text-sm font-semibold text-gray-800 mb-2">Alcance del primer corte documental</h3>
+              <p className="text-gray-700 font-sans-tech text-sm leading-relaxed">El documento original de <strong>Saúl Monreal, fechado el 3 de febrero de 2026</strong>, propone adicionar una fracción XXXII al artículo 73 constitucional. Se confirmó el contenido de esa propuesta en el PDF del Sistema de Información Legislativa. La comprobación de su trámite posterior y de las demás propuestas continúa pendiente; no se presenta el resumen anterior como un estado legislativo actualizado.</p>
             </div>
           </div>
         </div>
@@ -71,11 +67,11 @@ export default function ProcesoLegislativoPage() {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-3"><Landmark size={16} className="text-amber-600" /><h4 className="font-sans-tech text-sm font-semibold text-amber-900">1. Reforma Constitucional al Art. 73</h4></div>
               <p className="text-sm text-amber-800 font-sans-tech leading-relaxed">Iniciativa del Sen. Saúl Monreal Ávila para adicionar una fracción XXXII al <strong>Artículo 73</strong>, otorgando al Congreso la facultad de expedir una Ley General en materia de IA.</p>
-              <p className="text-xs text-amber-700 font-sans-tech mt-2 italic">Nota: La iniciativa formal del 3 de febrero de 2026 <strong>solo reforma el Art. 73</strong>. La reforma al Art. 3 fue contemplada en la Propuesta de Marco Normativo de oct. 2025, pero no se presentó como iniciativa formal ante el Senado.</p>
+              <p className="text-xs text-amber-700 font-sans-tech mt-2 italic">Nota: La iniciativa formal del 3 de febrero de 2026 <strong>solo reforma el Art. 73</strong>. El documento consultado no propone reformar el Art. 3; esto no acredita la inexistencia de otras iniciativas.</p>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-3"><FileText size={16} className="text-blue-600" /><h4 className="font-sans-tech text-sm font-semibold text-blue-900">2. Ley General de IA (LGIA v1)</h4></div>
-              <p className="text-sm text-blue-800 font-sans-tech leading-relaxed">Propuesta de la Comisión de IA del Senado. Contiene <strong>223 artículos + 10 transitorios + Glosario Reglamentario</strong> en 14 Títulos. Resultado de consulta con <strong>72 especialistas</strong>.</p>
+              <p className="text-sm text-blue-800 font-sans-tech leading-relaxed">Contenido del texto de trabajo LGIA v1 enlazado en esta página. Contiene <strong>223 artículos + 10 transitorios + Glosario Reglamentario</strong> en 14 Títulos. Resultado de consulta con <strong>72 especialistas</strong>.</p>
             </div>
           </div>
 
@@ -106,7 +102,7 @@ export default function ProcesoLegislativoPage() {
           </div>
 
           <div className="mb-8 bg-indigo-50 border border-indigo-200 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-3"><Database size={16} className="text-indigo-600" /><h3 className="font-sans-tech text-sm font-semibold text-indigo-900">Primera Definición Federal de IA en México (Art. 4, fracc. XX)</h3></div>
+            <div className="flex items-center gap-2 mb-3"><Database size={16} className="text-indigo-600" /><h3 className="font-sans-tech text-sm font-semibold text-indigo-900">Definición incluida en el texto de trabajo (Art. 4, fracc. XX)</h3></div>
             <p className="text-xs text-indigo-800 font-sans-tech leading-relaxed italic border-l-2 border-indigo-300 pl-3 mb-3">"Sistema socio-técnico basado en modelos computacionales o matemáticos que, a partir del procesamiento de datos, señales o instrucciones, realiza funciones de aprendizaje, razonamiento, predicción, clasificación, generación de contenidos o comprensión del lenguaje, con el objetivo de producir resultados, decisiones o acciones que, de efectuarse exclusivamente por personas, requerirían inteligencia o juicio humano; pudiendo operar de manera autónoma, semiautónoma o asistida."</p>
             <p className="text-xs text-indigo-700 font-sans-tech">Más amplia que la del AI Act europeo e incluye explícitamente la IA generativa. El Art. 4 establece un glosario de <strong>49 definiciones legales</strong>: sesgo algorítmico, deepfake, sandbox regulatorio, GPAI, modelo fundacional, sistema autónomo crítico, riesgo sistémico en IA y soberanía tecnológica, entre otros. Los Anexos añaden 14 definiciones técnicas complementarias.</p>
           </div>
@@ -213,7 +209,7 @@ export default function ProcesoLegislativoPage() {
             </a>
             <a href="https://drive.google.com/file/d/1IVWTfK74RSVAMDs6cZ8B-WLuafOygFmO/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-teal-50 border border-teal-200 rounded-xl p-5 hover:border-teal-400 transition-colors group">
               <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-teal-700 transition-colors"><FileText size={20} className="text-white" /></div>
-              <div className="flex-1"><p className="text-sm font-sans-tech font-semibold text-teal-900 group-hover:text-teal-700">Ley General de Inteligencia Artificial — Dictamen</p><p className="text-xs text-teal-700 font-sans-tech mt-1">LGIA v1 — PDF publicado por la Comisión de IA del Senado</p></div>
+              <div className="flex-1"><p className="text-sm font-sans-tech font-semibold text-teal-900 group-hover:text-teal-700">Ley General de Inteligencia Artificial — texto de trabajo</p><p className="text-xs text-teal-700 font-sans-tech mt-1">LGIA v1 — archivo enlazado; trámite parlamentario pendiente de corroboración</p></div>
               <ExternalLink size={16} className="text-teal-400 flex-shrink-0 group-hover:text-teal-600" />
             </a>
             <a href="https://sil.gobernacion.gob.mx/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors group">
@@ -222,7 +218,7 @@ export default function ProcesoLegislativoPage() {
               <ExternalLink size={14} className="text-gray-300 flex-shrink-0 group-hover:text-gray-500" />
             </a>
           </div>
-          <p className="text-xs text-gray-400 font-sans-tech mt-3 italic">El dictamen de la LGIA v1 está disponible en el link anterior. La iniciativa de reforma al Art. 73 fue publicada en el SIL de Gobernación el 17 de febrero de 2026.</p>
+          <p className="text-xs text-gray-400 font-sans-tech mt-3 italic">El enlace permite consultar el texto LGIA v1; su disponibilidad no acredita que sea un dictamen aprobado. El PDF de la propuesta de Saúl Monreal está fechado el 3 de febrero de 2026.</p>
         </section>
 
         <section className="mb-12">
@@ -240,8 +236,8 @@ export default function ProcesoLegislativoPage() {
               <div className="flex items-start gap-4 relative"><div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center flex-shrink-0 z-10"><div className="w-2 h-2 rounded-full bg-orange-500" /></div><div className="flex-1 pb-2"><p className="text-xs font-sans-tech font-semibold text-gray-500">16 oct. 2025</p><p className="text-sm font-sans-tech mt-0.5 text-gray-700">La Comisión de IA aprueba su plan de trabajo anual, priorizando la creación de la Ley General de IA.</p></div></div>
               <div className="flex items-start gap-4 relative"><div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center flex-shrink-0 z-10"><div className="w-2 h-2 rounded-full bg-orange-500" /></div><div className="flex-1 pb-2"><p className="text-xs font-sans-tech font-semibold text-gray-500">3 feb. 2026</p><p className="text-sm font-sans-tech mt-0.5 text-gray-700">El Sen. Saúl Monreal Ávila presenta la iniciativa formal para reformar únicamente el Artículo 73 de la Constitución (adición de fracción XXXII).</p></div></div>
               <div className="flex items-start gap-4 relative"><div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center flex-shrink-0 z-10"><div className="w-2 h-2 rounded-full bg-orange-500" /></div><div className="flex-1 pb-2"><p className="text-xs font-sans-tech font-semibold text-gray-500">17 feb. 2026</p><p className="text-sm font-sans-tech mt-0.5 text-gray-700">La Cámara de Diputados aprueba por unanimidad (442 votos) la reforma para sancionar deepfakes de contenido sexual. Remitida al Senado.</p></div></div>
-              <div className="flex items-start gap-4 relative"><div className="w-8 h-8 rounded-full bg-orange-500 ring-4 ring-orange-100 flex items-center justify-center flex-shrink-0 z-10"><div className="w-2 h-2 rounded-full bg-white" /></div><div className="flex-1 pb-2 bg-orange-50 border border-orange-200 rounded-xl p-3 -mt-1"><p className="text-xs font-sans-tech font-semibold text-orange-700">25 feb. 2026</p><p className="text-sm font-sans-tech mt-0.5 text-orange-900 font-medium">Fecha prevista para la votación en el Pleno del Senado de la Ley General de Inteligencia Artificial.</p></div></div>
-              <div className="flex items-start gap-4 relative"><div className="w-8 h-8 rounded-full bg-orange-500 ring-4 ring-orange-100 flex items-center justify-center flex-shrink-0 z-10"><div className="w-2 h-2 rounded-full bg-white" /></div><div className="flex-1 pb-2 bg-orange-50 border border-orange-200 rounded-xl p-3 -mt-1"><p className="text-xs font-sans-tech font-semibold text-orange-700">26 feb. 2026</p><p className="text-sm font-sans-tech mt-0.5 text-orange-900 font-medium">Foro "Del Senado a la Industria" para explicar los alcances de la nueva ley al sector empresarial.</p></div></div>
+              <div className="flex items-start gap-4 relative"><div className="w-8 h-8 rounded-full bg-orange-500 ring-4 ring-orange-100 flex items-center justify-center flex-shrink-0 z-10"><div className="w-2 h-2 rounded-full bg-white" /></div><div className="flex-1 pb-2 bg-orange-50 border border-orange-200 rounded-xl p-3 -mt-1"><p className="text-xs font-sans-tech font-semibold text-orange-700">25 feb. 2026</p><p className="text-sm font-sans-tech mt-0.5 text-orange-900 font-medium">Fecha anunciada anteriormente; la votación no está acreditada en este corte documental.</p></div></div>
+              <div className="flex items-start gap-4 relative"><div className="w-8 h-8 rounded-full bg-orange-500 ring-4 ring-orange-100 flex items-center justify-center flex-shrink-0 z-10"><div className="w-2 h-2 rounded-full bg-white" /></div><div className="flex-1 pb-2 bg-orange-50 border border-orange-200 rounded-xl p-3 -mt-1"><p className="text-xs font-sans-tech font-semibold text-orange-700">26 feb. 2026</p><p className="text-sm font-sans-tech mt-0.5 text-orange-900 font-medium">Convocatoria al foro "Del Senado a la Industria"; no acredita por sí misma la existencia de una nueva ley.</p></div></div>
             </div>
           </div>
         </section>
@@ -283,20 +279,20 @@ export default function ProcesoLegislativoPage() {
         <section className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center"><Play size={18} className="text-red-600" /></div>
-            <div><h2 className="font-serif-display text-xl sm:text-2xl font-light text-gray-900">Sesiones Plenarias del Senado</h2><p className="text-xs text-gray-500 font-sans-tech">Con transmisión en vivo</p></div>
+            <div><h2 className="font-serif-display text-xl sm:text-2xl font-light text-gray-900">Sesiones Plenarias del Senado</h2><p className="text-xs text-gray-500 font-sans-tech">Archivo de convocatorias de febrero de 2026</p></div>
           </div>
-          <p className="text-gray-600 font-sans-tech text-sm mb-4">Ambas sesiones serán transmitidas en vivo por el Canal del Congreso México en YouTube y por TV abierta (canales 45.1, 45.2 y 45.3). La Ley General de IA está prevista para la sesión del 25 de febrero.</p>
+          <p className="text-gray-600 font-sans-tech text-sm mb-4">Las referencias siguientes corresponden al calendario difundido en febrero de 2026. No son próximas sesiones ni acreditan que se haya votado o aprobado una ley de IA. Consulta la agenda y los registros oficiales del Congreso para verificar cada sesión.</p>
           <div className="space-y-3">
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                <div className="flex items-center gap-2"><span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-sans-tech font-semibold"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />CLAVE</span><span className="text-sm font-sans-tech font-medium text-gray-900">Miércoles 25 de febrero</span></div>
+                <div className="flex items-center gap-2"><span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-sans-tech font-semibold"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />CLAVE</span><span className="text-sm font-sans-tech font-medium text-gray-900">Miércoles 25 de febrero de 2026</span></div>
                 <div className="flex-1"><p className="text-sm text-gray-700 font-sans-tech">Sesión Ordinaria del Pleno — <strong>Votación prevista de la Ley General de IA</strong></p></div>
                 <a href="https://www.youtube.com/@CanalCongresoMx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-sans-tech font-medium hover:bg-red-700 transition-colors whitespace-nowrap"><Play size={12} />Canal del Congreso</a>
               </div>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                <div className="flex items-center gap-2"><span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-200 text-gray-700 rounded-lg text-xs font-sans-tech font-semibold"><Clock size={12} />SESIÓN</span><span className="text-sm font-sans-tech font-medium text-gray-900">Jueves 26 de febrero</span></div>
+                <div className="flex items-center gap-2"><span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-200 text-gray-700 rounded-lg text-xs font-sans-tech font-semibold"><Clock size={12} />SESIÓN</span><span className="text-sm font-sans-tech font-medium text-gray-900">Jueves 26 de febrero de 2026</span></div>
                 <div className="flex-1"><p className="text-sm text-gray-700 font-sans-tech">Sesión Ordinaria del Pleno del Senado</p></div>
                 <a href="https://www.youtube.com/@CanalCongresoMx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-white rounded-lg text-xs font-sans-tech font-medium hover:bg-gray-800 transition-colors whitespace-nowrap"><Play size={12} />Canal del Congreso</a>
               </div>
@@ -308,13 +304,13 @@ export default function ProcesoLegislativoPage() {
         <section className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center"><Users size={18} className="text-blue-600" /></div>
-            <div><h2 className="font-serif-display text-xl sm:text-2xl font-light text-gray-900">Webinar Especial — Post-Legislativo</h2><p className="text-xs text-gray-500 font-sans-tech">Exclusivo para socios CANACINTRA</p></div>
+            <div><h2 className="font-serif-display text-xl sm:text-2xl font-light text-gray-900">Convocatoria archivada — webinar de febrero</h2><p className="text-xs text-gray-500 font-sans-tech">Exclusivo para socios CANACINTRA</p></div>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-2"><span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-sans-tech font-semibold"><Calendar size={12} />Jueves 26 de febrero, 10:00 a.m.</span></div>
+            <div className="flex items-center gap-2 mb-2"><span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-sans-tech font-semibold"><Calendar size={12} />Jueves 26 de febrero de 2026, 10:00 a.m.</span></div>
             <h3 className="font-sans-tech text-sm font-semibold text-blue-900 mb-2">Del Senado a la Industria: Panorama Legislativo IA 2026</h3>
             <p className="text-sm text-blue-800 font-sans-tech leading-relaxed mb-3">Implementa IA sin poner en riesgo a tu empresa. Impartido por <strong>Mtro. Alonso Bernardo Tamez Vélez</strong>, Secretario Técnico de la Comisión de IA del Senado. Organizado por el Comité de IA de CANACINTRA Coahuila Sureste.</p>
-            <a href="https://gqr.sh/7mDQ" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-sans-tech font-medium hover:bg-blue-700 transition-colors"><ExternalLink size={14} />Registrarse</a>
+            <p className="text-sm text-blue-800 font-sans-tech">Fecha pasada. Se retiró el enlace de inscripción; la convocatoria no acredita la aprobación de una ley.</p>
           </div>
         </section>
 
@@ -324,7 +320,7 @@ export default function ProcesoLegislativoPage() {
             <div><h2 className="font-serif-display text-xl sm:text-2xl font-light text-gray-900">Videos Disponibles</h2><p className="text-xs text-gray-500 font-sans-tech">Canal Oficial del Senado de México y Canal del Congreso</p></div>
           </div>
           <div className="space-y-2">
-            <a href="https://www.youtube.com/watch?v=4CblZopqEg4" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-purple-300 hover:bg-purple-50/30 transition-colors group"><div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-red-700 transition-colors"><Play size={16} className="text-white" /></div><div className="flex-1 min-w-0"><p className="text-sm font-sans-tech text-gray-900 group-hover:text-purple-900 transition-colors">Sesión Ordinaria del Senado 18/02/2026 (sesión más reciente)</p><p className="text-xs text-gray-500 font-sans-tech mt-0.5">18 feb. 2026</p></div><ExternalLink size={14} className="text-gray-400 flex-shrink-0 group-hover:text-purple-500" /></a>
+            <a href="https://www.youtube.com/watch?v=4CblZopqEg4" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-purple-300 hover:bg-purple-50/30 transition-colors group"><div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-red-700 transition-colors"><Play size={16} className="text-white" /></div><div className="flex-1 min-w-0"><p className="text-sm font-sans-tech text-gray-900 group-hover:text-purple-900 transition-colors">Sesión Ordinaria del Senado 18/02/2026 (archivo histórico)</p><p className="text-xs text-gray-500 font-sans-tech mt-0.5">18 feb. 2026</p></div><ExternalLink size={14} className="text-gray-400 flex-shrink-0 group-hover:text-purple-500" /></a>
             <a href="https://www.youtube.com/watch?v=yGHlnWu5Zjw" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-purple-300 hover:bg-purple-50/30 transition-colors group"><div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-red-700 transition-colors"><Play size={16} className="text-white" /></div><div className="flex-1 min-w-0"><p className="text-sm font-sans-tech text-gray-900 group-hover:text-purple-900 transition-colors">Sesión Ordinaria del Senado 17/02/2026</p><p className="text-xs text-gray-500 font-sans-tech mt-0.5">17 feb. 2026</p></div><ExternalLink size={14} className="text-gray-400 flex-shrink-0 group-hover:text-purple-500" /></a>
             <a href="https://www.youtube.com/watch?v=K-lNHJkDYQk" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-purple-300 hover:bg-purple-50/30 transition-colors group"><div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-red-700 transition-colors"><Play size={16} className="text-white" /></div><div className="flex-1 min-w-0"><p className="text-sm font-sans-tech text-gray-900 group-hover:text-purple-900 transition-colors">Inauguración del Ciclo de Talleres de IA del Senado (presidido por Sen. Rolando Zapata Bello)</p><p className="text-xs text-gray-500 font-sans-tech mt-0.5">11 feb. 2025</p></div><ExternalLink size={14} className="text-gray-400 flex-shrink-0 group-hover:text-purple-500" /></a>
             <a href="https://www.youtube.com/watch?v=H9qL7df8_as" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-purple-300 hover:bg-purple-50/30 transition-colors group"><div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-red-700 transition-colors"><Play size={16} className="text-white" /></div><div className="flex-1 min-w-0"><p className="text-sm font-sans-tech text-gray-900 group-hover:text-purple-900 transition-colors">Reunión Ordinaria de la Comisión de Análisis, Seguimiento y Evaluación sobre la IA en México</p><p className="text-xs text-gray-500 font-sans-tech mt-0.5">16 oct. 2025</p></div><ExternalLink size={14} className="text-gray-400 flex-shrink-0 group-hover:text-purple-500" /></a>
@@ -361,7 +357,7 @@ export default function ProcesoLegislativoPage() {
           </div>
           <div className="space-y-2">
             <a href="http://sil.gobernacion.gob.mx/Archivos/Documentos/2026/02/asun_5014841_20260217_1770228073.pdf" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors group"><span className="text-xs font-sans-tech text-gray-400 font-mono w-5 text-right flex-shrink-0">1.</span><p className="text-xs font-sans-tech text-gray-600 group-hover:text-emerald-700 transition-colors flex-1">Iniciativa de Reforma al Art. 73 Constitucional — SIL Gobernación (PDF)</p><ExternalLink size={12} className="text-gray-300 flex-shrink-0 group-hover:text-emerald-500" /></a>
-            <a href="https://drive.google.com/file/d/1IVWTfK74RSVAMDs6cZ8B-WLuafOygFmO/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors group"><span className="text-xs font-sans-tech text-gray-400 font-mono w-5 text-right flex-shrink-0">2.</span><p className="text-xs font-sans-tech text-gray-600 group-hover:text-emerald-700 transition-colors flex-1">Ley General de Inteligencia Artificial v1 — Dictamen (PDF, Comisión de IA del Senado)</p><ExternalLink size={12} className="text-gray-300 flex-shrink-0 group-hover:text-emerald-500" /></a>
+            <a href="https://drive.google.com/file/d/1IVWTfK74RSVAMDs6cZ8B-WLuafOygFmO/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors group"><span className="text-xs font-sans-tech text-gray-400 font-mono w-5 text-right flex-shrink-0">2.</span><p className="text-xs font-sans-tech text-gray-600 group-hover:text-emerald-700 transition-colors flex-1">Ley General de Inteligencia Artificial v1 — texto de trabajo enlazado (PDF)</p><ExternalLink size={12} className="text-gray-300 flex-shrink-0 group-hover:text-emerald-500" /></a>
             <a href="https://mobiletime.la/noticias/03/10/2025/senado-regular-ia/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors group"><span className="text-xs font-sans-tech text-gray-400 font-mono w-5 text-right flex-shrink-0">3.</span><p className="text-xs font-sans-tech text-gray-600 group-hover:text-emerald-700 transition-colors flex-1">Senado de México publica iniciativa de ley para regular IA — Mobile Time</p><ExternalLink size={12} className="text-gray-300 flex-shrink-0 group-hover:text-emerald-500" /></a>
             <a href="https://www.noticierogubernamental.com/comision-del-senado-impulsa-ley-general-para-regular-y-fomentar-el-uso-de-la-inteligencia-artificial/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors group"><span className="text-xs font-sans-tech text-gray-400 font-mono w-5 text-right flex-shrink-0">4.</span><p className="text-xs font-sans-tech text-gray-600 group-hover:text-emerald-700 transition-colors flex-1">Comisión del Senado impulsa ley general para regular la IA — Noticiero Gubernamental</p><ExternalLink size={12} className="text-gray-300 flex-shrink-0 group-hover:text-emerald-500" /></a>
             <a href="https://laorquesta.mx/legislar-ia-sin-definirla-articulo-19-critica-reforma-aprobada-en-slp/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors group"><span className="text-xs font-sans-tech text-gray-400 font-mono w-5 text-right flex-shrink-0">5.</span><p className="text-xs font-sans-tech text-gray-600 group-hover:text-emerald-700 transition-colors flex-1">Legislar IA sin definirla: Artículo 19 critica reforma aprobada en SLP — La Orquesta</p><ExternalLink size={12} className="text-gray-300 flex-shrink-0 group-hover:text-emerald-500" /></a>

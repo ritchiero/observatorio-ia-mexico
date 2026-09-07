@@ -27,11 +27,11 @@ export default function PropuestasPage() {
 
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-gray-600">Agente activo</span>
+              <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+              <span className="text-gray-600">Cobertura no acreditada</span>
             </div>
             <div className="text-gray-400">|</div>
-            <span className="text-gray-600">Actualización mensual</span>
+            <span className="text-gray-600">Sin actualización periódica acreditada</span>
           </div>
         </div>
       </section>
@@ -41,7 +41,7 @@ export default function PropuestasPage() {
           <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-8 text-center">
             <div className="text-5xl mb-4">🤖</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              Agente en Configuración
+              Sección pendiente de verificación
             </h2>
             <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
               El agente de propuestas legislativas rastreará automáticamente iniciativas, reformas y 
@@ -75,7 +75,7 @@ export default function PropuestasPage() {
             </div>
 
             <div className="mt-6 text-sm text-gray-500">
-              Primera ejecución programada para enero 2026
+              El calendario anterior de enero de 2026 está vencido. Esta sección no acredita una ejecución reciente ni sustituye los catálogos publicados de Legislación y Casos.
             </div>
           </div>
         </div>

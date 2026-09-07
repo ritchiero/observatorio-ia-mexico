@@ -64,7 +64,7 @@ export async function GET(request: Request) {
       tipo: evaluacion.ok ? 'agente_ejecutado' : 'agente_fallo',
       descripcion: evaluacion.ok
         ? `Corrida consolidada de agentes. ${evaluacion.resumen}.`
-        : `Corrida consolidada con fallos en: ${evaluacion.fallidos.join(', ')}. ${evaluacion.resumen}.`,
+        : `Corrida consolidada incompleta. Agentes con fallos: ${evaluacion.fallidos.join(', ')}. ${evaluacion.hallazgosTotales} hallazgo(s) reportado(s). El detalle de los errores requiere acceso administrativo.`,
     });
   } catch (error) {
     // Si ni siquiera se puede registrar, se dice en la respuesta; no se silencia.

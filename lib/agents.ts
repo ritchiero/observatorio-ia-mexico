@@ -380,12 +380,14 @@ export async function ejecutarAgenteMonitoreo(
     // Registrar actividad de ejecución
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
-      tipo: 'agente_ejecutado',
-      descripcion: `Agente de monitoreo ejecutado. ${actualizacionesDetectadas} actualización(es) detectada(s).`,
+      tipo: errores.length > 0 ? 'agente_fallo' : 'agente_ejecutado',
+      descripcion: errores.length > 0
+        ? `Revisión de monitoreo incompleta: ${errores.length} error(es). ${actualizacionesDetectadas} actualización(es) detectada(s). Consulta el panel administrativo para revisar los errores.`
+        : `Agente de monitoreo ejecutado. ${actualizacionesDetectadas} actualización(es) detectada(s).`,
     });
 
     return {
-      success: true,
+      success: errores.length === 0,
       actualizacionesDetectadas,
       errores,
       duracionMs,
