@@ -21,7 +21,12 @@ export const dynamic = 'force-dynamic';
 // descripciones, se hace aparte y su fallo no puede tumbar el cron.
 
 const VENTANA_DIAS = Number(process.env.GACETAS_VENTANA_DIAS || 14);
-const TIMEOUT_MS = Number(process.env.GACETAS_TIMEOUT_MS || 15_000);
+// 8-sep-2026: el servidor de la Gaceta tardó 72 s en servir una parte de 555 KB; con
+// 15 s la sesión del día se perdía en silencio. 45 s por página + reintento, y un
+// presupuesto global que deja margen a las escrituras antes del maxDuration (300 s).
+const TIMEOUT_MS = Number(process.env.GACETAS_TIMEOUT_MS || 45_000);
+const TIMEOUT_PDF_MS = Number(process.env.GACETAS_TIMEOUT_PDF_MS || 90_000);
+const PRESUPUESTO_MS = Number(process.env.GACETAS_PRESUPUESTO_MS || 230_000);
 
 const fetchTexto: FetchTexto = async (url) => {
   try {
@@ -47,7 +52,7 @@ const UA = 'Mozilla/5.0 (compatible; ObservatorioIAMexico/1.0; +https://www.obse
 
 const fetchBinario: FetchBinario = async (url, maxBytes) => {
   try {
-    const r = await fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(TIMEOUT_MS * 3), cache: 'no-store' });
+    const r = await fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(TIMEOUT_PDF_MS), cache: 'no-store' });
     const anunciado = Number(r.headers.get('content-length') || 0);
     if (anunciado > maxBytes) {
       await r.body?.cancel();
@@ -138,7 +143,10 @@ export async function GET(request: Request) {
     }
 
     // 2) Rastreo determinista de las gacetas.
-    const r = await rastrearGacetas(fetchTexto, new Date(), VENTANA_DIAS, 120, { fetchBinario, extraerTextoPdf, maxPdfBytes: MAX_PDF_BYTES });
+    const r = await rastrearGacetas(fetchTexto, new Date(), VENTANA_DIAS, 120, {
+      fetchBinario, extraerTextoPdf, maxPdfBytes: MAX_PDF_BYTES,
+      deadlineMs: startTime + PRESUPUESTO_MS, reintentos: 1, concurrenciaPartes: 3,
+    });
     errores.push(...r.diputados.errores.map((e) => `diputados: ${e}`), ...r.senado.errores.map((e) => `senado: ${e}`));
 
     // 3) Alta de lo nuevo (provisional: pendiente de auditoría humana).
