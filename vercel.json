@@ -8,7 +8,7 @@
     },
     {
       "path": "/api/cron/legislacion",
-      "schedule": "50 19 * * *"
+      "schedule": "25 20 * * *"
     }
   ]
 }
