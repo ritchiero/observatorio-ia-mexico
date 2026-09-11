@@ -7,8 +7,8 @@
       "schedule": "0 9 */3 * *"
     },
     {
-      "path": "/api/cron/mensual",
-      "schedule": "0 11 1 * *"
+      "path": "/api/cron/legislacion",
+      "schedule": "20 22 * * *"
     }
   ]
 }
