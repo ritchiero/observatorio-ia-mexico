@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { esFederal } from '@/lib/camaras';
 import { getAdminDb } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
@@ -46,7 +47,7 @@ const ESTADOS: [RegExp, string][] = [
 ];
 function estado(d: Doc): string {
   const blob = `${d.camara ?? ''} ${d.entidadFederativa ?? ''} ${d.legislatura ?? ''}`.toLowerCase();
-  if (d.camara === 'Diputados' || d.camara === 'Senado' || /\bfederal\b/.test(blob)) return 'Federal';
+  if (esFederal(d.camara) || /\bfederal\b/.test(blob)) return 'Federal';
   for (const [re, nombre] of ESTADOS) if (re.test(blob)) return nombre;
   if (/local|estatal|congreso d/.test(blob)) return 'Estatal (sin especificar)';
   return 'Federal';
