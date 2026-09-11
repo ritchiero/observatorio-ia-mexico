@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ActividadLog } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { ZONA_FECHAS, formatDate } from '@/lib/utils';
 import { 
   PlusCircleIcon, 
   ArrowPathIcon, 
@@ -78,7 +78,7 @@ export default function ActividadFeed({ actividad }: ActividadFeedProps) {
 
   const entradas = agrupar(actividad);
   const fmtCorto = (d: Date | null) =>
-    d ? d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '';
+    d ? d.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'short' }) : '';
 
   return (
     <div className="space-y-2 sm:space-y-3">

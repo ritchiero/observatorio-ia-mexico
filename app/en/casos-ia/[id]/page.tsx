@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import Link from 'next/link';
 import { ArrowLeft, FileText, ExternalLink, Calendar, Building, Scale, AlertCircle, Gavel, ChevronRight, Users, BookOpen } from 'lucide-react';
 import { CasoIA, TemaIA, Criterio } from '@/types/casos-ia';
@@ -142,7 +143,7 @@ export default function CasoDetallePageEn({ params }: { params: Promise<{ id: st
 
   const formatFecha = (fecha: string) => {
     if (!fecha) return 'N/A';
-    return new Date(fecha).toLocaleDateString('en-US', {
+    return new Date(fecha).toLocaleDateString('en-US', { timeZone: ZONA_FECHAS,
       day: 'numeric',
       month: 'long',
       year: 'numeric'

@@ -38,19 +38,6 @@ export function getStatusEmoji(status: StatusType): string {
   return emojis[status] || '⚪';
 }
 
-export function formatDate(date: Date | null): string {
-  if (!date) return 'No especificada';
-  return new Intl.DateTimeFormat('es-MX', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date);
-}
-
-export function formatDateShort(date: Date | null): string {
-  if (!date) return 'N/A';
-  return new Intl.DateTimeFormat('es-MX', {
-    year: 'numeric',
-    month: 'short',
-  }).format(date);
-}
+// El formato de fechas vive en `lib/fechas.ts` (probado aparte); se reexporta
+// aquí para no cambiar los imports existentes.
+export { ZONA_FECHAS, formatDate, formatDateShort } from './fechas';

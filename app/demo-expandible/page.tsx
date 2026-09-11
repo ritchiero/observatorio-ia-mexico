@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 type CategoriaImpacto = 
@@ -176,7 +177,7 @@ export default function DemoExpandible() {
                         <div className="text-xs text-gray-500">{iniciativa.partido}</div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {new Date(iniciativa.fecha).toLocaleDateString('es-MX', { 
+                        {new Date(iniciativa.fecha).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, 
                           year: 'numeric', 
                           month: 'short', 
                           day: 'numeric' 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { EventoTimeline, TipoEvento, ImpactoEvento } from '@/types';
 
 interface TimelineInteractivoProps {
@@ -39,7 +40,7 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
     fecha = new Date(evento.fecha as any);
   }
   
-  const fechaFormateada = fecha.toLocaleDateString('es-MX', {
+  const fechaFormateada = fecha.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS,
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -113,7 +114,7 @@ function EventoItem({ evento }: { evento: EventoTimeline }) {
                   fechaFuente = new Date(fuente.fecha as any);
                 }
                 
-                const fechaFuenteFormateada = fechaFuente.toLocaleDateString('es-MX', {
+                const fechaFuenteFormateada = fechaFuente.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS,
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric'

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -1500,7 +1501,7 @@ export default function DashboardPage() {
                             <span className="text-[11px] text-gray-400">{ini.categoria}</span>
                             {ini.fechaVerificacion && (
                               <span className="text-[11px] text-gray-400">
-                                Verificado: {new Date(ini.fechaVerificacion).toLocaleDateString('es-MX')}
+                                Verificado: {new Date(ini.fechaVerificacion).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS })}
                               </span>
                             )}
                           </div>
@@ -2538,7 +2539,7 @@ export default function DashboardPage() {
                                   {item.titulo}
                                 </h4>
                                 <div className="flex flex-wrap gap-2 text-xs text-gray-500 font-sans-tech">
-                                  <span>📅 {new Date(item.fecha).toLocaleDateString('es-MX')}</span>
+                                  <span>📅 {new Date(item.fecha).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS })}</span>
                                   <span>👤 {item.proponente?.substring(0, 30)}...</span>
                                   <span className={`px-1.5 py-0.5 rounded ${
                                     item.estadoVerificacion === 'verificado' 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useState } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto, CategoriaTema } from '@/types';
 import { Scale, AlertCircle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
@@ -193,7 +194,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
   const formatFecha = (fecha: any) => {
     if (!fecha) return 'N/A';
     const date = fecha.toDate ? fecha.toDate() : new Date(fecha);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { timeZone: ZONA_FECHAS, year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const formatDate = formatFecha; // Alias for consistency
@@ -701,7 +702,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
                                       Model: Claude Sonnet 4 (Anthropic)
                                       {iniciativa.fechaVerificacion && (
                                         <span className="ml-2">
-                                          • {new Date(iniciativa.fechaVerificacion).toLocaleDateString('en-US', {
+                                          • {new Date(iniciativa.fechaVerificacion).toLocaleDateString('en-US', { timeZone: ZONA_FECHAS,
                                             year: 'numeric',
                                             month: 'long',
                                             day: 'numeric',

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ZONA_FECHAS } from '@/lib/utils';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Download, ExternalLink, FileDown } from 'lucide-react';
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 function fmtFecha(iso?: string): string {
   if (!iso) return '';
   try {
-    return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    return new Date(iso).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'long', year: 'numeric' });
   } catch {
     return '';
   }

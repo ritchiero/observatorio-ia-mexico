@@ -1,6 +1,7 @@
 // Hemeroteca: capa de datos + render de los artículos MD (server-side, indexable).
 // Los artículos viven en Firestore (campo `articuloMD`) y se exponen vía /api/iniciativas.
 import { traduccionIniciativa, traduccionArticulo } from './i18n/traducciones';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { tematicaEn } from './i18n/labels-en';
 
 // Fuente de datos: SIEMPRE el API público de producción. Es contenido publicado,
@@ -531,7 +532,7 @@ export function toItem(f: FichaHemeroteca): ItemHemeroteca {
   const vig = vigenciaDe(f.estatus, f.fecha);
   const temas = (f.tematicas ?? []).map((t) => t.replace(/_/g, ' '));
   let fechaLegible = '';
-  try { if (f.fecha) fechaLegible = new Date(f.fecha).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { /* */ }
+  try { if (f.fecha) fechaLegible = new Date(f.fecha).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'short', year: 'numeric' }); } catch { /* */ }
   return {
     id: f.id, slug: f.slug, titulo: f.titulo, resumen: f.resumen,
     fecha: f.fecha, anio: anioDe(f.fecha), fechaLegible,
@@ -612,7 +613,7 @@ const ESTATUS_EN: Record<string, string> = {
 
 function fechaLegibleEn(fecha?: string): string {
   if (!fecha) return '';
-  try { return new Date(fecha).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return ''; }
+  try { return new Date(fecha).toLocaleDateString('en-US', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'short', year: 'numeric' }); } catch { return ''; }
 }
 
 /** Igual que toItem(), reutilizando la clasificación por regex, pero con labels en inglés. */

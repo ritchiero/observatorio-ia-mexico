@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { ActividadLog } from '@/types';
 import { traducirResumenGacetas } from '@/lib/gacetas/resumen-en';
 import { STATUS_ANUNCIO_EN } from '@/lib/i18n/labels-en';
@@ -247,7 +248,7 @@ export default function ActividadFeedEn({ actividad }: ActividadFeedEnProps) {
 
   const entradas = agrupar(actividad);
   const fmtCorto = (d: Date | null) =>
-    d ? d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : '';
+    d ? d.toLocaleDateString('en-US', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'short' }) : '';
 
   return (
     <div className="space-y-2 sm:space-y-3">
