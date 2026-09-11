@@ -61,6 +61,18 @@ export function entidadDe(iniciativa: { camara?: unknown; entidadFederativa?: un
   return null;
 }
 
+/**
+ * Nombre del congreso de una entidad, con el artículo correcto: «Congreso de la
+ * Ciudad de México», «Congreso del Estado de México», «Congreso de Michoacán».
+ */
+export function nombreCongresoDe(entidad: string): string {
+  const e = (entidad || '').trim();
+  if (!e) return 'Congreso local';
+  if (/^ciudad de m[eé]xico$/i.test(e)) return 'Congreso de la Ciudad de México';
+  if (/^estado de m[eé]xico$/i.test(e)) return 'Congreso del Estado de México';
+  return `Congreso de ${e}`;
+}
+
 /** Nombre legible de la cámara, conservando el de la fuente cuando es local. */
 export function etiquetaCamara(valor: unknown): string {
   const c = normalizarCamara(valor);
