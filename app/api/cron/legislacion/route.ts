@@ -5,6 +5,7 @@ import { requireCron } from '@/lib/auth';
 import { extractText, getDocumentProxy } from 'unpdf';
 import { rastrearGacetas, resumenRastreo, type FetchTexto, type FetchBinario } from '@/lib/gacetas/rastreo';
 import { claveTitulo, tematicasDe, tipoDe, partidoDe } from '@/lib/gacetas/keywords';
+import { normalizarCamara } from '@/lib/camaras';
 import type { HallazgoGaceta } from '@/lib/gacetas/diputados';
 
 export const maxDuration = 300; // 5 minutos
@@ -96,7 +97,9 @@ function docDe(h: HallazgoGaceta, numero: number) {
     partido: partidoDe(h.grupo),
     fecha: fechaMediodia(h.fecha),
     legislatura: 'LXVI',
-    camara: h.camara,
+    // Canónica: el corpus ya arrastra «Diputados»/«diputados»/«senadores» y quince
+    // formas de nombrar un congreso estatal; no hay por qué añadir más variantes.
+    camara: normalizarCamara(h.camara) ?? h.camara,
     entidadFederativa: 'Federal',
     // La descripción deja ver POR QUÉ entró: si la IA no está en el título, primero el fragmento donde aparece.
     descripcion: (h.relevancia === 'cuerpo' && h.evidencia ? `${h.evidencia}\n\n` : '') + h.textoCompleto.slice(0, 1200) + (notaCuerpo ? `\n\n${notaCuerpo}` : ''),

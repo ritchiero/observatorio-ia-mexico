@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { normalizarCamara, entidadDe, etiquetaCamara } from '@/lib/camaras';
 import { ZONA_FECHAS } from '@/lib/utils';
 import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto, CATEGORIAS_TEMA, CategoriaTema } from '@/types';
 import { Scale, AlertCircle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
@@ -24,17 +25,10 @@ export default function LegislacionClient({ iniciativas }: Props) {
   const iniciativasFiltradas = iniciativas.filter(i => {
     if (filtroStatus !== 'todos' && i.status !== filtroStatus) return false;
     if (filtroLegislatura !== 'todos' && i.legislatura !== filtroLegislatura) return false;
-    if (filtroCamara !== 'todos' && i.camara !== filtroCamara) return false;
+    if (filtroCamara !== 'todos' && normalizarCamara(i.camara) !== filtroCamara) return false;
     if (filtroTema !== 'todos' && !(i.temas || []).includes(filtroTema)) return false;
     if (filtroCategoria !== 'todos' && (i as any).categoriaTema !== filtroCategoria) return false;
-    if (filtroEstado !== 'todos') {
-      const camara = i.camara as string;
-      const estado = i.entidadFederativa || 
-        (camara === 'Local' && i.legislatura?.includes('CDMX') ? 'Ciudad de México' : 
-        (camara === 'Local' && i.legislatura?.includes('SLP') ? 'San Luis Potosí' : 
-        (camara === 'Diputados' || camara === 'Senado' ? 'Federal' : null)));
-      if (estado !== filtroEstado) return false;
-    }
+    if (filtroEstado !== 'todos' && entidadDe(i) !== filtroEstado) return false;
     if (busqueda) {
       const searchLower = busqueda.toLowerCase();
       const matchTitulo = i.titulo?.toLowerCase().includes(searchLower);
@@ -180,14 +174,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
     return labels[tipo] || tipo.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const getCamaraLabel = (camara: string): string => {
-    const labels: Record<string, string> = {
-      'diputados': 'Cámara de Diputados',
-      'senadores': 'Senado',
-      'congreso_cdmx': 'Congreso CDMX'
-    };
-    return labels[camara] || camara;
-  };
+  const getCamaraLabel = (camara: string): string => etiquetaCamara(camara);
 
   const getStatusLabel = (status: IniciativaStatus): string => {
     return getStatusBadge(status).text;
