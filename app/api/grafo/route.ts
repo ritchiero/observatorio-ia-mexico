@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { normalizarCamara, entidadDe } from '@/lib/camaras';
+import { normalizarCamara, entidadDe, nombreCongresoDe } from '@/lib/camaras';
 import { asignarComunidades } from '@/lib/grafo-comunidades';
 import { anioAparicionItem, anioHub, anioMesh } from '@/lib/grafo-tiempo';
 import { enteDeLabel, type Ente } from '@/lib/entes';
@@ -152,7 +152,7 @@ export async function GET() {
         const clave = canon === 'Diputados' || canon === 'Senado' ? canon : (entidad ?? cam);
         const label = canon === 'Diputados' ? 'Cámara de Diputados'
           : canon === 'Senado' ? 'Senado'
-          : entidad ? `Congreso de ${entidad}`
+          : entidad ? nombreCongresoDe(entidad)
           : (CAMARA_LABEL[cam.toLowerCase()] ?? cam.replace(/_/g, ' '));
         addConn(`c:${keyify(clave)}`, { id: `c:${keyify(clave)}`, label, type: 'camara', val: 4, ente: 'legislativo' }, id, !hayTema);
       }
