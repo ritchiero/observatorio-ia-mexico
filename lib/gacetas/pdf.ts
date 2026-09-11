@@ -1,9 +1,14 @@
 // Partes del Anexo II que la Gaceta de Diputados publica SÓLO en PDF.
 //
 // Verificado el 8-sep-2026: en la sesión del 2-sep, 7 de 17 partes eran PDF.
-// Dos tipos: (a) PDF con capa de texto (0.3–1.6 MB, 30–70 págs): se pueden leer;
-// (b) escaneos sin texto (10–28 MB, 200 págs, «Acrobat Distiller»): no hay
-// nada que leer sin OCR, y no se descargan (el tope de bytes los descarta).
+// Dos tipos: (a) PDF con capa de texto (0.3–1.6 MB, 30–70 págs), que se leen
+// enteros; (b) partes cuyo CUERPO va escaneado (10–28 MB, ~200 págs). Hallazgo
+// del 11-sep-2026: en esas segundas la PORTADA (el «CONTENIDO») **sí lleva capa
+// de texto** con el título completo, el proponente y el grupo de cada asunto —
+// sólo el articulado es imagen. Descartarlas enteras ocultaba iniciativas de IA
+// reales (p. ej. la del uso responsable de IA en los servicios consulares, de
+// Arellano Ávila, 2-sep-2026, en una parte de 27.7 MB). Por eso ahora SIEMPRE se
+// lee la portada, y el cuerpo se marca como no disponible cuando es imagen.
 //
 // Estructura del texto extraído (unpdf, páginas unidas):
 //   Gaceta Parlamentaria … Número 7117-II-2-3
@@ -26,7 +31,8 @@ import { conteoIA, evidenciaIA, relevanciaConCuerpo } from './keywords.ts';
 export interface ResultadoPdf {
   bloques: number;            // asuntos según la portada (CONTENIDO)
   incidentales: number;
-  sinCapaTexto: boolean;      // escaneo: no hay texto que leer
+  sinCapaTexto: boolean;      // ni siquiera la portada trae texto: no hay nada que leer
+  cuerpoEscaneado: boolean;   // la portada se leyó, pero el articulado va como imagen
   separacion: 'cierre' | 'encabezado' | 'unico' | 'ninguna';
   hallazgos: HallazgoGaceta[];
 }
@@ -36,7 +42,13 @@ export function normalizarLineas(t: string): string {
   return t.replace(/-\n\s*/g, '').replace(/\s+/g, ' ').trim();
 }
 
-/** ¿El PDF es un escaneo sin capa de texto? (menos de ~300 caracteres útiles por página) */
+/**
+ * ¿El ARTICULADO va escaneado? (menos de ~300 caracteres útiles por página).
+ * Medida sobre el documento completo: una parte con cuerpo en imagen ronda
+ * 26–450 c/pág, mientras que una con texto ronda 700–2 300.
+ * Ojo: esto NO significa que no haya nada que leer — la portada casi siempre
+ * conserva su capa de texto; ver `parseTextoPdfAnexoII`.
+ */
 export function pareceEscaneo(texto: string, paginas: number): boolean {
   const utiles = (texto || '').replace(/\s+/g, '').length;
   return paginas > 0 ? utiles / paginas < 300 : utiles < 1500;
@@ -62,7 +74,16 @@ export function entradasDePortada(texto: string): string[] {
     }
   }
   if (actual) entradas.push(actual.join('\n'));
-  return entradas.map(normalizarLineas).filter((e) => e.length > 20);
+  return entradas.map((e) => limpiarNumerosDePagina(normalizarLineas(e))).filter((e) => e.length > 20);
+}
+
+/**
+ * La portada va en dos columnas y unpdf manda los números de página al final del
+ * bloque: «…del Grupo Parlamentario de Morena 2 45 57 121 149 171». Sin esto el
+ * grupo parlamentario salía como «PRI 2 31 51».
+ */
+export function limpiarNumerosDePagina(entrada: string): string {
+  return entrada.replace(/(?:\s+\d{1,4})+\s*$/, '').trim();
 }
 
 const RE_CIERRE = /Palacio Legislativo de San L[aá]zaro,?\s+a\s+\d{1,2}\s+de\s+[a-záéíóú]+\s+de\s+\d{4}/gi;
@@ -92,11 +113,15 @@ export function bloquesDeCuerpo(cuerpo: string, n: number): { bloques: string[];
 }
 
 export function parseTextoPdfAnexoII(texto: string, paginas: number, fecha: string, url: string): ResultadoPdf {
-  if (pareceEscaneo(texto, paginas)) return { bloques: 0, incidentales: 0, sinCapaTexto: true, separacion: 'ninguna', hallazgos: [] };
   const entradas = entradasDePortada(texto);
+  // Sin portada legible no hay nada que hacer: ni títulos ni cuerpo.
+  if (entradas.length === 0) {
+    return { bloques: 0, incidentales: 0, sinCapaTexto: true, cuerpoEscaneado: pareceEscaneo(texto, paginas), separacion: 'ninguna', hallazgos: [] };
+  }
+  const cuerpoEscaneado = pareceEscaneo(texto, paginas);
   const iniCuerpo = texto.search(/\n\s*Anexo\s+II[-\d\s]*\n/i);
-  const cuerpo = iniCuerpo > 0 ? texto.slice(iniCuerpo) : texto;
-  const { bloques, separacion } = bloquesDeCuerpo(cuerpo, entradas.length);
+  const cuerpo = cuerpoEscaneado ? '' : (iniCuerpo > 0 ? texto.slice(iniCuerpo) : texto);
+  const { bloques, separacion } = cuerpoEscaneado ? { bloques: [] as string[], separacion: 'ninguna' as const } : bloquesDeCuerpo(cuerpo, entradas.length);
   const hallazgos: HallazgoGaceta[] = [];
   let incidentales = 0;
   entradas.forEach((enc, i) => {
@@ -119,7 +144,8 @@ export function parseTextoPdfAnexoII(texto: string, paginas: number, fecha: stri
       menciones: conteoIA(b || enc),
       relevancia: nivel,
       evidencia: evidenciaIA(b || enc),
+      cuerpoNoDisponible: cuerpoEscaneado || undefined,
     });
   });
-  return { bloques: entradas.length, incidentales, sinCapaTexto: false, separacion, hallazgos };
+  return { bloques: entradas.length, incidentales, sinCapaTexto: false, cuerpoEscaneado, separacion, hallazgos };
 }
