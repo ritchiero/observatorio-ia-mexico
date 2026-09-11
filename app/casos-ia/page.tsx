@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import Link from 'next/link';
 import { Scale, Gavel, ChevronDown, ChevronUp, FileText, AlertCircle, Building, Calendar, ArrowRight } from 'lucide-react';
 import { CasoIA, TEMAS_IA, MATERIAS, getTipoCriterio, TemaIA } from '@/types/casos-ia';
@@ -66,7 +67,7 @@ export default function CasosIAPage() {
 
   const formatFecha = (fecha: string) => {
     if (!fecha) return 'N/A';
-    return new Date(fecha).toLocaleDateString('es-MX', { 
+    return new Date(fecha).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, 
       day: 'numeric', 
       month: 'short', 
       year: 'numeric' 

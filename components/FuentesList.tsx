@@ -1,6 +1,7 @@
 'use client';
 
 import { Fuente } from '@/types';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
 
 interface FuentesListProps {
@@ -10,7 +11,7 @@ interface FuentesListProps {
 
 function formatDate(timestamp: Timestamp): string {
   const date = timestamp.toDate();
-  return date.toLocaleDateString('es-MX', { 
+  return date.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric' 

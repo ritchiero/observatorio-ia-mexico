@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { requireAdmin } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Iniciativa requerida' }, { status: 400 });
     }
 
-    const fechaActual = new Date().toLocaleDateString('es-MX', {
+    const fechaActual = new Date().toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS,
       weekday: 'long',
       year: 'numeric',
       month: 'long',

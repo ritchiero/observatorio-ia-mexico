@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import type { CasoJudicial } from '@/types';
 
@@ -148,7 +149,7 @@ export default function CasosJudicialesPage() {
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">Fecha:</span>
-                      <span className="text-gray-600 ml-2">{caso.fechaPresentacion ? new Date(caso.fechaPresentacion).toLocaleDateString('es-MX') : 'N/A'}</span>
+                      <span className="text-gray-600 ml-2">{caso.fechaPresentacion ? new Date(caso.fechaPresentacion).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS }) : 'N/A'}</span>
                     </div>
                     {caso.expediente && (
                       <div>

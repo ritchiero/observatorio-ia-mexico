@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { Anuncio } from '@/types';
 import StatusBadge from './StatusBadge';
 
@@ -27,12 +28,12 @@ export default function AnuncioCard({ anuncio }: AnuncioCardProps) {
         <div className="flex flex-wrap gap-3 text-xs text-gray-600">
           {fechaAnuncio && (
             <div>
-              Anunciado: {fechaAnuncio.toLocaleDateString('es-MX')}
+              Anunciado: {fechaAnuncio.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS })}
             </div>
           )}
           {fechaPrometida && (
             <div>
-              Prometido: {fechaPrometida.toLocaleDateString('es-MX')}
+              Prometido: {fechaPrometida.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS })}
             </div>
           )}
           {anuncio.responsable && (

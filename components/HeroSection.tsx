@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { Activity, Eye, FileText, ChevronDown, Scale, Gavel } from 'lucide-react';
 import Link from 'next/link';
 
@@ -384,7 +385,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
           </div>
           
           <div className="mt-4 md:mt-0 flex flex-col md:items-end">
-            <span>Última actualización: {new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+            <span>Última actualización: {new Date().toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, day: '2-digit', month: 'short', year: 'numeric' })}</span>
             <span className="text-blue-500/40">Powered by Citizen Agents</span>
           </div>
         </div>

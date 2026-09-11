@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ZONA_FECHAS } from '@/lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
 import { requireAdmin } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
         role: "user",
         content: `Eres un experto en derecho mexicano especializado en legislación sobre inteligencia artificial. 
 
-**FECHA ACTUAL:** ${new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+**FECHA ACTUAL:** ${new Date().toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
 
 Verifica la siguiente iniciativa legislativa:
 

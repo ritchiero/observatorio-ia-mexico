@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { Radar } from 'lucide-react';
 import { iniciativasRumboLeyGeneral, camaraLegible, tonoEstatus } from '@/lib/monitoreo-legislativo';
 import { estatusLegible } from '@/lib/hemeroteca';
@@ -45,7 +46,7 @@ function fechaCorta(iso: string | undefined, locale: 'es' | 'en'): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-MX', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default async function MonitoreoLegislativo({ locale = 'es' }: { locale?: 'es' | 'en' }) {

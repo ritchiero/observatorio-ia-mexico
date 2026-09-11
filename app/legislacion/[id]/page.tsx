@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { IniciativaStatus } from '@/types';
 import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
 import FolioBadge from '@/components/FolioBadge';
@@ -111,7 +112,7 @@ export default function IniciativaDetallePage() {
 
   const formatFecha = (fechaISO: string) => {
     const date = new Date(fechaISO);
-    return date.toLocaleDateString('es-MX', { 
+    return date.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, 
       year: 'numeric', 
       month: 'long', 
       day: 'numeric' 
@@ -214,7 +215,7 @@ export default function IniciativaDetallePage() {
               </p>
               {iniciativa.fechaVerificacion && (
                 <p className="text-xs text-emerald-600 mt-2 font-mono">
-                  Última verificación: {new Date(iniciativa.fechaVerificacion).toLocaleDateString('es-MX', {
+                  Última verificación: {new Date(iniciativa.fechaVerificacion).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS,
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

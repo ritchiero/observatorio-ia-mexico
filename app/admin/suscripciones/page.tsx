@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import Link from 'next/link';
 import { ArrowLeft, Users, Mail, Phone, Calendar, Download, Search } from 'lucide-react';
 
@@ -43,7 +44,7 @@ export default function AdminSuscripcionesPage() {
 
   const formatFecha = (fecha: string) => {
     if (!fecha) return 'N/A';
-    return new Date(fecha).toLocaleDateString('es-MX', {
+    return new Date(fecha).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS,
       day: 'numeric',
       month: 'short',
       year: 'numeric',

@@ -7,6 +7,7 @@
 // evento.resultado) se quedan en español como fallback — igual que el original.
 
 import { useEffect, useState } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { IniciativaStatus } from '@/types';
 import NivelConfianzaBadgeEn from '@/components/NivelConfianzaBadgeEn';
 import FolioBadge from '@/components/FolioBadge';
@@ -166,7 +167,7 @@ export default function IniciativaDetallePageEn() {
 
   const formatFecha = (fechaISO: string) => {
     const date = new Date(fechaISO);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-US', { timeZone: ZONA_FECHAS,
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -269,7 +270,7 @@ export default function IniciativaDetallePageEn() {
               </p>
               {iniciativa.fechaVerificacion && (
                 <p className="text-xs text-emerald-600 mt-2 font-mono">
-                  Last verified: {new Date(iniciativa.fechaVerificacion).toLocaleDateString('en-US', {
+                  Last verified: {new Date(iniciativa.fechaVerificacion).toLocaleDateString('en-US', { timeZone: ZONA_FECHAS,
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

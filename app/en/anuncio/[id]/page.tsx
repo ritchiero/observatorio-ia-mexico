@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { Anuncio, EventoTimeline, Fuente } from '@/types';
 import StatusBadgeEn from '@/components/StatusBadgeEn';
@@ -441,7 +442,7 @@ function NoticiaCard({ fuente }: { fuente: Fuente }) {
   let fechaStr = '';
   const fechaDate = timestampToDate(fuente.fecha);
   if (fechaDate) {
-    fechaStr = fechaDate.toLocaleDateString('en-US', {
+    fechaStr = fechaDate.toLocaleDateString('en-US', { timeZone: ZONA_FECHAS,
       day: 'numeric',
       month: 'short',
       year: 'numeric'
@@ -623,7 +624,7 @@ function FilaMes({
   const [expandido, setExpandido] = useState(esAnuncio || tieneMovimientos);
 
   const [mesStr, anio] = mes.split('-');
-  const nombreMes = new Date(parseInt(anio), parseInt(mesStr) - 1).toLocaleDateString('en-US', {
+  const nombreMes = new Date(parseInt(anio), parseInt(mesStr) - 1).toLocaleDateString('en-US', { timeZone: ZONA_FECHAS,
     month: 'long',
     year: 'numeric'
   });
@@ -736,7 +737,7 @@ function EventoCompacto({ evento }: { evento: EventoTimeline }) {
   const [expandido, setExpandido] = useState(false);
 
   const fecha = timestampToDate(evento.fecha) || new Date();
-  const fechaFormateada = fecha.toLocaleDateString('en-US', {
+  const fechaFormateada = fecha.toLocaleDateString('en-US', { timeZone: ZONA_FECHAS,
     day: 'numeric',
     month: 'short'
   });
@@ -823,11 +824,11 @@ function EventoCompacto({ evento }: { evento: EventoTimeline }) {
 // Generate the narrative contextual summary
 function generarResumenContextual(anuncio: Anuncio, fechaAnuncio: Date | null, fechaPrometida: Date | null): string {
   const fechaAnuncioStr = fechaAnuncio
-    ? fechaAnuncio.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? fechaAnuncio.toLocaleDateString('en-US', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'long', year: 'numeric' })
     : 'an unspecified date';
 
   const fechaPrometidaStr = fechaPrometida
-    ? fechaPrometida.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    ? fechaPrometida.toLocaleDateString('en-US', { timeZone: ZONA_FECHAS, month: 'long', year: 'numeric' })
     : null;
 
   // Determine the current status, in prose form

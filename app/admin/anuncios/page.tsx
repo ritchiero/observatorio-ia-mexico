@@ -1,6 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
@@ -1044,7 +1045,7 @@ export default function AdminAnunciosPage() {
       
       if (isNaN(date.getTime())) return '-';
       
-      return date.toLocaleDateString('es-MX', {
+      return date.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS,
         day: 'numeric',
         month: 'short',
         year: 'numeric'

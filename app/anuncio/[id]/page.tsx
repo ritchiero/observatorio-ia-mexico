@@ -6,7 +6,7 @@ import { Anuncio, EventoTimeline, Fuente } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import NivelConfianzaBadge from '@/components/NivelConfianzaBadge';
 import FolioBadge from '@/components/FolioBadge';
-import { formatDate } from '@/lib/utils';
+import { ZONA_FECHAS, formatDate } from '@/lib/utils';
 import { evaluarPlazo, leyendaPlazo } from '@/lib/plazo-verificacion';
 import { ArrowLeft, Calendar, User, Building2, ExternalLink, Newspaper, Clock, TrendingUp, TrendingDown, Minus, ChevronDown, Megaphone, Circle }  from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
@@ -415,7 +415,7 @@ function NoticiaCard({ fuente }: { fuente: Fuente }) {
   let fechaStr = '';
   const fechaDate = timestampToDate(fuente.fecha);
   if (fechaDate) {
-    fechaStr = fechaDate.toLocaleDateString('es-MX', { 
+    fechaStr = fechaDate.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, 
       day: 'numeric',
       month: 'short', 
       year: 'numeric' 
@@ -597,7 +597,7 @@ function FilaMes({
   const [expandido, setExpandido] = useState(esAnuncio || tieneMovimientos);
   
   const [mesStr, anio] = mes.split('-');
-  const nombreMes = new Date(parseInt(anio), parseInt(mesStr) - 1).toLocaleDateString('es-MX', { 
+  const nombreMes = new Date(parseInt(anio), parseInt(mesStr) - 1).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, 
     month: 'long', 
     year: 'numeric' 
   });
@@ -710,7 +710,7 @@ function EventoCompacto({ evento }: { evento: EventoTimeline }) {
   const [expandido, setExpandido] = useState(false);
   
   const fecha = timestampToDate(evento.fecha) || new Date();
-  const fechaFormateada = fecha.toLocaleDateString('es-MX', {
+  const fechaFormateada = fecha.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS,
     day: 'numeric',
     month: 'short'
   });
@@ -797,11 +797,11 @@ function EventoCompacto({ evento }: { evento: EventoTimeline }) {
 // Función para generar resumen contextual narrativo
 function generarResumenContextual(anuncio: Anuncio, fechaAnuncio: Date | null, fechaPrometida: Date | null): string {
   const fechaAnuncioStr = fechaAnuncio 
-    ? fechaAnuncio.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? fechaAnuncio.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'long', year: 'numeric' })
     : 'fecha no especificada';
   
   const fechaPrometidaStr = fechaPrometida
-    ? fechaPrometida.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
+    ? fechaPrometida.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, month: 'long', year: 'numeric' })
     : null;
 
   // Determinar el estado actual en texto

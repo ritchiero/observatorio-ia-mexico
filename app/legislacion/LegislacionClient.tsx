@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { IniciativaLegislativa, IniciativaStatus, CategoriaImpacto, CATEGORIAS_TEMA, CategoriaTema } from '@/types';
 import { Scale, AlertCircle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
@@ -160,7 +161,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
   const formatFecha = (fecha: any) => {
     if (!fecha) return 'N/A';
     const date = fecha.toDate ? fecha.toDate() : new Date(fecha);
-    return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const formatDate = formatFecha; // Alias para consistencia
@@ -668,7 +669,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
                                       Modelo: Claude Sonnet 4 (Anthropic)
                                       {iniciativa.fechaVerificacion && (
                                         <span className="ml-2">
-                                          • {new Date(iniciativa.fechaVerificacion).toLocaleDateString('es-MX', {
+                                          • {new Date(iniciativa.fechaVerificacion).toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS,
                                             year: 'numeric',
                                             month: 'long',
                                             day: 'numeric',

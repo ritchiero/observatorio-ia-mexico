@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ZONA_FECHAS } from '@/lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
 import { requireAdmin } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
@@ -21,7 +22,7 @@ async function verifyInitiative(initiative: any): Promise<any> {
       } as any],
       messages: [{
         role: "user",
-        content: `Eres un experto en derecho mexicano. FECHA ACTUAL: ${new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        content: `Eres un experto en derecho mexicano. FECHA ACTUAL: ${new Date().toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
 
 Verifica esta iniciativa:
 - ID: ${initiative.id}

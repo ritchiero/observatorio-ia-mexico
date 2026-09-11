@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { ZONA_FECHAS } from '@/lib/utils';
 import { ActividadLog } from '@/types';
 import ActividadFeed from '@/components/ActividadFeed';
 
@@ -51,7 +52,7 @@ export default function HistorialPage() {
       .map((a) => (a.fecha ? new Date(a.fecha as unknown as string) : null))
       .filter((d): d is Date => !!d && !isNaN(d.getTime()));
     if (!fechas.length) return null;
-    const fmt = (d: Date) => d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+    const fmt = (d: Date) => d.toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, day: 'numeric', month: 'short', year: 'numeric' });
     const min = new Date(Math.min(...fechas.map((d) => d.getTime())));
     const max = new Date(Math.max(...fechas.map((d) => d.getTime())));
     return `${fmt(min)} – ${fmt(max)}`;
