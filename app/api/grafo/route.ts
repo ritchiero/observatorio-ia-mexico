@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { normalizarCamara, entidadDe } from '@/lib/camaras';
 import { asignarComunidades } from '@/lib/grafo-comunidades';
 import { anioAparicionItem, anioHub, anioMesh } from '@/lib/grafo-tiempo';
 import { enteDeLabel, type Ente } from '@/lib/entes';
@@ -140,10 +141,20 @@ export async function GET() {
         ? i.tematicas.filter((tema): tema is string => typeof tema === 'string')
         : [];
       const hayTema = temas.some((t) => norm(t));
+      // Una cámara, un nodo. El corpus escribe «Senado» y «senadores», «Congreso de
+      // la CDMX» y «congreso_cdmx»: sin canon el mapa pintaba el Senado dos veces y
+      // la CDMX otras dos. Las federales se agrupan por su nombre canónico y las
+      // locales por su entidad, que es lo que de verdad las distingue.
       const cam = norm(i.camara);
       if (cam) {
-        const label = CAMARA_LABEL[cam.toLowerCase()] ?? cam.replace(/_/g, ' ');
-        addConn(`c:${keyify(cam)}`, { id: `c:${keyify(cam)}`, label, type: 'camara', val: 4, ente: 'legislativo' }, id, !hayTema);
+        const canon = normalizarCamara(cam);
+        const entidad = canon === 'Local' ? entidadDe(i) : null;
+        const clave = canon === 'Diputados' || canon === 'Senado' ? canon : (entidad ?? cam);
+        const label = canon === 'Diputados' ? 'Cámara de Diputados'
+          : canon === 'Senado' ? 'Senado'
+          : entidad ? `Congreso de ${entidad}`
+          : (CAMARA_LABEL[cam.toLowerCase()] ?? cam.replace(/_/g, ' '));
+        addConn(`c:${keyify(clave)}`, { id: `c:${keyify(clave)}`, label, type: 'camara', val: 4, ente: 'legislativo' }, id, !hayTema);
       }
       temas.slice(0, 3).forEach((t, k) => {
         const tt = norm(t);
