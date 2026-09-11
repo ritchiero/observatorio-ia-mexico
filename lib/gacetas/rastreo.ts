@@ -25,13 +25,30 @@ export interface EstadisticasFuente {
   sinEvaluar?: number;         // Senado: candidatos cuyo cuerpo no se pudo abrir (sólo se evaluó el título)
   sesionesBloqueadas?: number; // Senado: días en que la propia gaceta devolvió el muro
   fallosLectura?: number;      // páginas que no se pudieron leer tras reintentar (timeout o red); cada una queda en `errores`
+  partesPdfCuerpoEscaneado?: number; // PDF cuya portada se leyó pero cuyo articulado es imagen
   diasSinRevisar?: number;     // días que no se alcanzaron a revisar por el presupuesto de tiempo
   relevantes: number;
+  /** Fallos REALES de la corrida: red, timeouts, excepciones. Escalan a «revisión incompleta». */
   errores: string[];
+  /**
+   * Límites conocidos de la fuente, no fallos nuestros: el muro anti-bots del
+   * Senado, un articulado publicado como imagen. Se informan al público pero NO
+   * convierten una corrida sana en fallida — si lo hicieran, el agente figuraría
+   * como roto en cada corrida y un fallo de verdad pasaría inadvertido.
+   */
+  limitaciones: string[];
 }
 
 export interface ResultadoRastreo {
   tiempoAgotado: boolean;      // se alcanzó deadlineMs antes de terminar la ventana
+  /**
+   * URLs de gaceta leídas ÍNTEGRAMENTE y con éxito en esta corrida. Sólo sobre
+   * ellas puede afirmarse «este documento se revisó y el asunto X ya no califica»:
+   * una parte que falló al descargarse no prueba nada.
+   */
+  urlsLeidas: string[];
+  /** Claves de título (normalizadas) de todo lo que SÍ calificó como de IA. */
+  clavesRelevantes: string[];
   ventana: { desde: string; hasta: string; dias: number };
   diputados: EstadisticasFuente;
   senado: EstadisticasFuente;
@@ -51,7 +68,7 @@ export interface OpcionesRastreo {
 }
 
 function nuevaStat(): EstadisticasFuente {
-  return { diasConsultados: 0, sesionesConDatos: 0, asuntosLeidos: 0, partesLeidas: 0, partesPdfOmitidas: 0, partesPdfLeidas: 0, partesPdfSinTexto: 0, pdfSinSeparar: 0, candidatos: 0, cuerposDescargados: 0, cuerposBloqueados: 0, sinEvaluar: 0, sesionesBloqueadas: 0, fallosLectura: 0, diasSinRevisar: 0, relevantes: 0, errores: [] };
+  return { diasConsultados: 0, sesionesConDatos: 0, asuntosLeidos: 0, partesLeidas: 0, partesPdfOmitidas: 0, partesPdfLeidas: 0, partesPdfSinTexto: 0, partesPdfCuerpoEscaneado: 0, pdfSinSeparar: 0, candidatos: 0, cuerposDescargados: 0, cuerposBloqueados: 0, sinEvaluar: 0, sesionesBloqueadas: 0, fallosLectura: 0, diasSinRevisar: 0, relevantes: 0, errores: [], limitaciones: [] };
 }
 
 export function fechasVentana(hoy: Date, dias: number): Date[] {
@@ -70,12 +87,21 @@ export async function rastrearGacetas(fetchTexto: FetchTexto, hoy = new Date(), 
   const senado = nuevaStat();
   const hallazgos: HallazgoGaceta[] = [];
   const vistos = new Set<string>();
+  const urlsLeidas = new Set<string>();
 
-  const agregar = (h: HallazgoGaceta) => {
+  // Devuelve si el hallazgo era nuevo: los contadores `relevantes` deben reflejar
+  // asuntos ÚNICOS, no coincidencias (una misma iniciativa aparece en el Anexo VII
+  // y otra vez en su parte del Anexo II, y el resumen descuadraba: «13 de IA» con
+  // 12 fichas).
+  const agregar = (h: HallazgoGaceta): boolean => {
     const k = `${h.camara}|${claveTitulo(h.titulo)}`;
-    if (vistos.has(k)) return;
+    if (vistos.has(k)) return false;
     vistos.add(k);
     hallazgos.push(h);
+    return true;
+  };
+  const sumarUnicos = (stat: EstadisticasFuente, hs: HallazgoGaceta[]) => {
+    for (const h of hs) if (agregar(h)) stat.relevantes++;
   };
 
   const deadline = op.deadlineMs ?? Number.POSITIVE_INFINITY;
@@ -116,9 +142,9 @@ export async function rastrearGacetas(fetchTexto: FetchTexto, hoy = new Date(), 
       if (r7 && r7.status === 200 && r7.texto.length > 1500) {
         const { entradas, hallazgos: hs } = parseAnexoVII(r7.texto, f, url7);
         if (entradas > 0) huboSesion = true;
+        urlsLeidas.add(url7);
         diputados.asuntosLeidos += entradas;
-        diputados.relevantes += hs.length;
-        hs.forEach(agregar);   // primero: traen turno
+        sumarUnicos(diputados, hs);   // primero: traen turno
       }
       const rIdx = await leer(diputados, f, urlIndiceDia(fecha));
       const urlII = rIdx && rIdx.status === 200 ? urlAnexoIIDesdeIndice(rIdx.texto) : null;
@@ -131,16 +157,28 @@ export async function rastrearGacetas(fetchTexto: FetchTexto, hoy = new Date(), 
             if (!op.fetchBinario || !op.extraerTextoPdf) { diputados.partesPdfOmitidas = (diputados.partesPdfOmitidas ?? 0) + 1; continue; }
             const rb = await op.fetchBinario(up, maxPdf);
             if (!rb) { diputados.fallosLectura = (diputados.fallosLectura ?? 0) + 1; diputados.errores.push(`${f}: no se pudo leer ${up} (tiempo agotado o error de red)`); continue; }
-            if (rb.status !== 200 || !rb.bytes) { diputados.partesPdfOmitidas = (diputados.partesPdfOmitidas ?? 0) + 1; continue; }
+            if (rb.status !== 200 || !rb.bytes) {
+              diputados.partesPdfOmitidas = (diputados.partesPdfOmitidas ?? 0) + 1;
+              diputados.limitaciones.push(`${f}: ${up} excede el tope de descarga (${(rb.tamano / 1048576).toFixed(1)} MB)`);
+              continue;
+            }
             const { texto, paginas } = await op.extraerTextoPdf(rb.bytes);
             const res = parseTextoPdfAnexoII(texto, paginas, f, up);
-            if (res.sinCapaTexto) { diputados.partesPdfSinTexto = (diputados.partesPdfSinTexto ?? 0) + 1; continue; }
+            if (res.sinCapaTexto) {
+              diputados.partesPdfSinTexto = (diputados.partesPdfSinTexto ?? 0) + 1;
+              diputados.limitaciones.push(`${f}: ${up} no trae capa de texto ni en la portada (documento escaneado)`);
+              continue;
+            }
             diputados.partesPdfLeidas = (diputados.partesPdfLeidas ?? 0) + 1;
+            if (res.cuerpoEscaneado) {
+              diputados.partesPdfCuerpoEscaneado = (diputados.partesPdfCuerpoEscaneado ?? 0) + 1;
+              diputados.limitaciones.push(`${f}: ${up} trae el articulado como imagen; sólo se evaluó el título de la portada`);
+            }
             if (res.separacion === 'ninguna' && res.bloques > 1) diputados.pdfSinSeparar = (diputados.pdfSinSeparar ?? 0) + 1;
             if (res.bloques > 0) huboSesion = true;
+            urlsLeidas.add(up);
             diputados.asuntosLeidos += res.bloques;
-            diputados.relevantes += res.hallazgos.length;
-            res.hallazgos.forEach(agregar);
+            sumarUnicos(diputados, res.hallazgos);
           }
           // Partes HTML en lotes concurrentes: el servidor de la Gaceta llega a tardar más de un minuto por parte.
           for (let j = 0; j < partes.html.length; j += concurrencia) {
@@ -151,10 +189,10 @@ export async function rastrearGacetas(fetchTexto: FetchTexto, hoy = new Date(), 
               if (!rp || rp.status !== 200) continue;
               const { bloques, hallazgos: hs } = parseParteAnexoII(rp.texto, f, up);
               diputados.partesLeidas = (diputados.partesLeidas ?? 0) + 1;
+              urlsLeidas.add(up);
               if (bloques > 0) huboSesion = true;
               diputados.asuntosLeidos += bloques;
-              diputados.relevantes += hs.length;
-              hs.forEach(agregar);   // se deduplican contra las del Anexo VII por título
+              sumarUnicos(diputados, hs);   // se deduplican contra las del Anexo VII por título
             }
           }
         }
@@ -171,7 +209,7 @@ export async function rastrearGacetas(fetchTexto: FetchTexto, hoy = new Date(), 
       const r = await leer(senado, f, url);
       if (r && r.status === 200 && esMuroAntiBots(r.texto)) {
         senado.sesionesBloqueadas = (senado.sesionesBloqueadas ?? 0) + 1;
-        senado.errores.push(`${f}: la gaceta del Senado devolvió el muro anti-bots (Incapsula); sesión no evaluada`);
+        senado.limitaciones.push(`${f}: la gaceta del Senado devolvió el muro anti-bots (Incapsula); sesión no evaluada`);
       } else if (r && r.status === 200) {
         const res = await rastrearSesionSenado(r.texto, f, 'senado', {
           maxDescargas: maxCuerposPorSesion,
@@ -183,8 +221,7 @@ export async function rastrearGacetas(fetchTexto: FetchTexto, hoy = new Date(), 
         senado.cuerposDescargados = (senado.cuerposDescargados ?? 0) + res.descargados;
         senado.cuerposBloqueados = (senado.cuerposBloqueados ?? 0) + res.bloqueados;
         senado.sinEvaluar = (senado.sinEvaluar ?? 0) + res.sinEvaluar;
-        senado.relevantes += res.hallazgos.length;
-        res.hallazgos.forEach(agregar);
+        sumarUnicos(senado, res.hallazgos);
       }
     } catch (e) {
       senado.errores.push(`${f}: ${e instanceof Error ? e.message : String(e)}`);
@@ -193,6 +230,8 @@ export async function rastrearGacetas(fetchTexto: FetchTexto, hoy = new Date(), 
 
   return {
     tiempoAgotado,
+    urlsLeidas: [...urlsLeidas],
+    clavesRelevantes: hallazgos.map((h) => claveTitulo(h.titulo)),
     ventana: { desde: iso(fechas[fechas.length - 1]), hasta: iso(fechas[0]), dias },
     diputados,
     senado,
@@ -205,7 +244,7 @@ export function resumenRastreo(r: ResultadoRastreo, nuevas: number, yaRegistrada
   const d = r.diputados, s = r.senado;
   return (
     `Gacetas revisadas del ${r.ventana.desde} al ${r.ventana.hasta}: ` +
-    `Diputados ${d.sesionesConDatos} sesión(es), ${d.asuntosLeidos} asuntos leídos (Anexo II: ${d.partesLeidas ?? 0} partes en HTML${(d.partesPdfLeidas ?? 0) ? ` y ${d.partesPdfLeidas} en PDF` : ''}${(d.partesPdfOmitidas ?? 0) ? `; ${d.partesPdfOmitidas} PDF pesados sin leer, probablemente escaneos` : ''}${(d.partesPdfSinTexto ?? 0) ? `; ${d.partesPdfSinTexto} PDF escaneados sin texto` : ''}${(d.pdfSinSeparar ?? 0) ? `; ${d.pdfSinSeparar} PDF con varios asuntos sin separar, sólo título evaluado` : ''}), ${d.relevantes} de IA; ` +
+    `Diputados ${d.sesionesConDatos} sesión(es), ${d.asuntosLeidos} asuntos leídos (Anexo II: ${d.partesLeidas ?? 0} partes en HTML${(d.partesPdfLeidas ?? 0) ? ` y ${d.partesPdfLeidas} en PDF` : ''}${(d.partesPdfCuerpoEscaneado ?? 0) ? `, ${d.partesPdfCuerpoEscaneado} de ellas con el articulado escaneado y sólo el título legible` : ''}${(d.partesPdfOmitidas ?? 0) ? `; ${d.partesPdfOmitidas} PDF sin leer por exceder el tope de descarga` : ''}${(d.partesPdfSinTexto ?? 0) ? `; ${d.partesPdfSinTexto} PDF sin capa de texto alguna` : ''}${(d.pdfSinSeparar ?? 0) ? `; ${d.pdfSinSeparar} PDF con varios asuntos sin separar, sólo título evaluado` : ''}), ${d.relevantes} de IA; ` +
     `Senado ${s.sesionesConDatos} sesión(es), ${s.asuntosLeidos} asuntos leídos, ${s.cuerposDescargados ?? 0} documentos abiertos${(s.sinEvaluar ?? 0) ? ` (${s.sinEvaluar} candidatos sin abrir por la protección anti-bots del Senado; de ésos sólo se evaluó el título)` : ''}${(s.sesionesBloqueadas ?? 0) ? `; ${s.sesionesBloqueadas} día(s) en que la gaceta misma quedó bloqueada` : ''}, ${s.relevantes} de IA. ` +
     `Nuevas en el corpus: ${nuevas}; ya registradas: ${yaRegistradas}.` +
     ((d.fallosLectura ?? 0) + (s.fallosLectura ?? 0) ? ` ${(d.fallosLectura ?? 0) + (s.fallosLectura ?? 0)} página(s) no se pudieron leer por tiempo agotado o error de red (se reintentarán en la siguiente corrida).` : '') +

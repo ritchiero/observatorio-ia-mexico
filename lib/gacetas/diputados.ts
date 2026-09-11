@@ -23,6 +23,8 @@ export interface HallazgoGaceta {
   menciones?: number;
   relevancia?: 'titulo' | 'cuerpo';
   evidencia?: string;
+  /** La Gaceta publicó el articulado como imagen: sólo se pudo leer el título de la portada. */
+  cuerpoNoDisponible?: boolean;
 }
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];

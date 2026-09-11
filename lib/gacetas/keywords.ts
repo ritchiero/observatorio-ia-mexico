@@ -47,20 +47,36 @@ export function evidenciaIA(texto: string, radio = 160): string {
 }
 
 export const MIN_MENCIONES_CUERPO = 3;
+/**
+ * Menciones por cada 10 000 caracteres. Medido el 11-sep-2026 sobre las 23 fichas
+ * con alguna mención de IA de las sesiones del 2 al 10-sep: las que realmente
+ * tratan de IA caen entre 4.0 y 35.4, y las que sólo la citan de paso entre 0.4 y
+ * 1.6 — un corte natural sin casos intermedios. El conteo absoluto no bastaba:
+ * una iniciativa fiscal de 25 000 caracteres mencionó «el uso ético de la
+ * inteligencia artificial» 4 veces en un párrafo retórico y se colaba.
+ */
+export const MIN_DENSIDAD_CUERPO = 3;
+
+/** Menciones de IA por cada 10 000 caracteres de texto. */
+export function densidadIA(texto: string): number {
+  const largo = (texto || '').length;
+  return largo > 0 ? conteoIA(texto) / (largo / 10000) : 0;
+}
 
 /**
  * Relevancia de un asunto con texto completo (Anexo II de Diputados, PDF):
  *  - 'titulo'  : el encabezado (título + proponente) ya habla de IA;
- *  - 'cuerpo'  : el título no, pero la exposición de motivos la menciona al menos
- *                MIN_MENCIONES_CUERPO veces (tema sustantivo, p. ej. tarifas por algoritmo);
- *  - null      : mención incidental (1-2 veces en 10-30 mil caracteres) o ninguna.
- * Calibrado con las gacetas del 2 y 8-sep-2026: las fichas reales tienen 10-97
- * menciones; las incidentales (licencia menstrual, pueblos indígenas, líneas de
- * crisis) tienen 1-2 y quedaban registradas como si fueran de IA.
+ *  - 'cuerpo'  : el título no, pero la IA es tema del documento — al menos
+ *                MIN_MENCIONES_CUERPO menciones Y una densidad de al menos
+ *                MIN_DENSIDAD_CUERPO por 10 000 caracteres;
+ *  - null      : mención incidental o ninguna.
+ * Ambas condiciones hacen falta: el conteo solo deja pasar párrafos retóricos de
+ * documentos largos, y la densidad sola dejaría pasar un texto muy corto.
  */
 export function relevanciaConCuerpo(encabezado: string, cuerpo: string): 'titulo' | 'cuerpo' | null {
   if (esRelevanteIA(encabezado)) return 'titulo';
-  return conteoIA(cuerpo) >= MIN_MENCIONES_CUERPO ? 'cuerpo' : null;
+  if (conteoIA(cuerpo) < MIN_MENCIONES_CUERPO) return null;
+  return densidadIA(cuerpo) >= MIN_DENSIDAD_CUERPO ? 'cuerpo' : null;
 }
 
 /** Temáticas derivadas del texto, con el catálogo que ya usa el corpus. */

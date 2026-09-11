@@ -22,6 +22,8 @@ const tipoIconos: Record<string, React.ComponentType<{ className?: string }>> = 
   agente_ejecutado: CpuChipIcon,
   anuncio_manual: PencilSquareIcon,
   agente_fallo: ExclamationTriangleIcon,
+  nueva_iniciativa: PlusCircleIcon,
+  correccion: ArrowPathIcon,
 };
 
 // OIA-012: las corridas del agente SIN cambios no merecen una tarjeta cada una —

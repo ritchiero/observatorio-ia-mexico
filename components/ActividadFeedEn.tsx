@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ActividadLog } from '@/types';
+import { traducirResumenGacetas } from '@/lib/gacetas/resumen-en';
 import { STATUS_ANUNCIO_EN } from '@/lib/i18n/labels-en';
 import {
   PlusCircleIcon,
@@ -22,6 +23,8 @@ const tipoIconos: Record<string, React.ComponentType<{ className?: string }>> = 
   agente_ejecutado: CpuChipIcon,
   anuncio_manual: PencilSquareIcon,
   agente_fallo: ExclamationTriangleIcon,
+  nueva_iniciativa: PlusCircleIcon,
+  correccion: ArrowPathIcon,
 };
 
 // OIA-012: monitoring-agent runs with NO changes don't deserve a card each —
@@ -126,10 +129,22 @@ const REGLAS_DESCRIPCION: ReglaDescripcion[] = [
     test: /^Agente de casos judiciales ejecutado\.\s*(\d+)\s*nuevo\(s\)\s*caso\(s\)\s*encontrado\(s\)\.?\s*$/i,
     build: (m) => `Judicial cases agent run. ${m[1]} new case(s) found.`,
   },
-  // "Agente de legislación ejecutado. N nueva(s) iniciativa(s) encontrada(s)."
+  // "Agente de legislación ejecutado. N nueva(s) iniciativa(s) encontrada(s). <resumen del rastreo>"
+  // Desde el 8-sep-2026 la descripción lleva pegado el resumen de qué gacetas se
+  // leyeron; sin esta regla la bitácora en inglés lo mostraba entero en español.
   {
-    test: /^Agente de legislaci[oó]n ejecutado\.\s*(\d+)\s*nueva\(s\)\s*iniciativa\(s\)\s*encontrada\(s\)\.?\s*$/i,
-    build: (m) => `Legislative agent run. ${m[1]} new initiative(s) found.`,
+    test: /^Agente de legislaci[oó]n ejecutado\.\s*(\d+)\s*nueva\(s\)\s*iniciativa\(s\)\s*encontrada\(s\)\.\s*([\s\S]*)$/i,
+    build: (m) => `Legislative agent run. ${m[1]} new initiative(s) found. ${traducirResumenGacetas(m[2])}`.trim(),
+  },
+  // "Ficha retirada tras releer la gaceta: ..."
+  {
+    test: /^Ficha retirada tras releer la gaceta: la inteligencia artificial s[oó]lo se menciona de paso\.\s*([\s\S]*)$/i,
+    build: (m) => `Record withdrawn after re-reading the gazette: artificial intelligence is only mentioned in passing. ${m[1]}`.trim(),
+  },
+  // "Nueva iniciativa detectada en la Gaceta de Diputados|del Senado (fecha): título"
+  {
+    test: /^Nueva iniciativa detectada en la (Gaceta de Diputados|Gaceta del Senado) \((\d{4}-\d{2}-\d{2})\):\s*([\s\S]*)$/i,
+    build: (m) => `New initiative detected in the ${/Diputados/i.test(m[1]) ? 'Chamber of Deputies Gazette' : 'Senate Gazette'} (${m[2]}): ${m[3]}`,
   },
   // 'Recap mensual de <mes> <año> generado: "<título>"'
   {

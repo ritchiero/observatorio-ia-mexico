@@ -45,9 +45,11 @@ const fetchTexto: FetchTexto = async (url) => {
   }
 };
 
-// Partes del Anexo II en PDF: se descargan sólo si pesan ≤ GACETAS_MAX_PDF_BYTES
-// (los escaneos sin texto pesan 10–28 MB y no aportan nada sin OCR).
-const MAX_PDF_BYTES = Number(process.env.GACETAS_MAX_PDF_BYTES || 2_500_000);
+// Partes del Anexo II en PDF: el tope sólo evita una descarga patológica.
+// 11-sep-2026: con 2.5 MB se descartaban las partes de 10–28 MB, y ahí vivían
+// iniciativas de IA reales cuyo TÍTULO sí es legible en la portada. Medido: bajar
+// 27.7 MB tarda ~2 s y extraer su texto ~0.2 s, así que el tope sube a 40 MB.
+const MAX_PDF_BYTES = Number(process.env.GACETAS_MAX_PDF_BYTES || 40_000_000);
 const UA = 'Mozilla/5.0 (compatible; ObservatorioIAMexico/1.0; +https://www.observatorio-ia-mexico.com)';
 
 const fetchBinario: FetchBinario = async (url, maxBytes) => {
@@ -80,6 +82,9 @@ function fechaMediodia(isoDia: string): Timestamp {
 
 function docDe(h: HallazgoGaceta, numero: number) {
   const fuenteMedio = h.fuente === 'diputados' ? 'Gaceta Parlamentaria · Cámara de Diputados' : 'Gaceta del Senado';
+  const notaCuerpo = h.cuerpoNoDisponible
+    ? 'La Gaceta publicó esta parte del Anexo II con el articulado escaneado; sólo se pudo leer el título del índice oficial. Falta cotejar el texto.'
+    : '';
   const eventos: Array<Record<string, unknown>> = [
     { fecha: fechaMediodia(h.fecha), tipo: 'presentacion', descripcion: `Presentada por ${h.proponente || 'legislador(a)'}${h.grupo ? ` (${h.grupo})` : ''}.` },
   ];
@@ -94,7 +99,7 @@ function docDe(h: HallazgoGaceta, numero: number) {
     camara: h.camara,
     entidadFederativa: 'Federal',
     // La descripción deja ver POR QUÉ entró: si la IA no está en el título, primero el fragmento donde aparece.
-    descripcion: (h.relevancia === 'cuerpo' && h.evidencia ? `${h.evidencia}\n\n` : '') + h.textoCompleto.slice(0, 1200),
+    descripcion: (h.relevancia === 'cuerpo' && h.evidencia ? `${h.evidencia}\n\n` : '') + h.textoCompleto.slice(0, 1200) + (notaCuerpo ? `\n\n${notaCuerpo}` : ''),
     status: h.turno ? 'turnada' : 'en_comisiones',
     estatus: h.turno ? 'turnada' : 'en_comisiones',
     tipo: tipoDe(h.titulo),
@@ -109,6 +114,7 @@ function docDe(h: HallazgoGaceta, numero: number) {
       menciones: h.menciones ?? null,
       evidencia: h.evidencia ?? '',
       anexo: /-VII\.html/.test(h.url) ? 'VII' : /-II/.test(h.url) ? 'II' : null,
+      cuerpoNoDisponible: h.cuerpoNoDisponible ?? false,
     },
     estadoVerificacion: 'pendiente',
     nivelRevision: 'automatizado',
@@ -135,11 +141,24 @@ export async function GET(request: Request) {
     const claves = new Set<string>();
     const urls = new Set<string>();
     let maxNumero = 0;
+    /** Fichas creadas por ESTE agente que siguen sin revisión humana: candidatas a autocorrección. */
+    const propiasPendientes: Array<{ id: string; titulo: string; clave: string; urlGaceta: string }> = [];
     for (const d of snap.docs) {
       const x = d.data();
       if (x.titulo) claves.add(claveTitulo(String(x.titulo)));
       if (x.urlGaceta) urls.add(String(x.urlGaceta).split('#')[0]);
       if (typeof x.numero === 'number' && x.numero > maxNumero) maxNumero = x.numero;
+      const det = x.deteccion as { metodo?: string } | undefined;
+      if (
+        det?.metodo === 'gacetas-determinista' &&
+        x.oculto !== true &&
+        x.estadoVerificacion === 'pendiente' &&
+        x.creadoManualmente !== true &&
+        typeof x.titulo === 'string' &&
+        typeof x.urlGaceta === 'string'
+      ) {
+        propiasPendientes.push({ id: d.id, titulo: x.titulo, clave: claveTitulo(x.titulo), urlGaceta: x.urlGaceta });
+      }
     }
 
     // 2) Rastreo determinista de las gacetas.
@@ -148,6 +167,13 @@ export async function GET(request: Request) {
       deadlineMs: startTime + PRESUPUESTO_MS, reintentos: 1, concurrenciaPartes: 3,
     });
     errores.push(...r.diputados.errores.map((e) => `diputados: ${e}`), ...r.senado.errores.map((e) => `senado: ${e}`));
+    // Los límites conocidos de la fuente (muro del Senado, articulado escaneado) se
+    // informan, pero NO son fallos: si entraran en `errores`, el orquestador marcaría
+    // el agente como roto en cada corrida y un fallo real pasaría inadvertido.
+    const limitaciones = [
+      ...r.diputados.limitaciones.map((e) => `diputados: ${e}`),
+      ...r.senado.limitaciones.map((e) => `senado: ${e}`),
+    ];
 
     // 3) Alta de lo nuevo (provisional: pendiente de auditoría humana).
     const altas: Array<{ id: string; titulo: string }> = [];
@@ -177,6 +203,38 @@ export async function GET(request: Request) {
       }
     }
 
+    // 3 bis) Autocorrección: una ficha que este agente creó y que nadie ha revisado
+    // deja de sostenerse si, al releer HOY el mismo documento de la Gaceta, el asunto
+    // ya no califica como de IA. Sólo se actúa sobre documentos leídos con éxito en
+    // esta corrida (`urlsLeidas`): que una parte falle al descargarse no prueba nada.
+    // No se borra: se oculta con su nota, igual que en la fusión de duplicados.
+    const leidas = new Set(r.urlsLeidas.map((u) => u.split('#')[0]));
+    const vigentes = new Set(r.clavesRelevantes);
+    const retiradas: Array<{ id: string; titulo: string }> = [];
+    for (const f of propiasPendientes) {
+      if (!leidas.has(f.urlGaceta.split('#')[0])) continue;   // el documento no se releyó
+      if (vigentes.has(f.clave)) continue;                    // sigue calificando
+      try {
+        await db.collection('iniciativas').doc(f.id).update({
+          oculto: true,
+          notaCorreccion:
+            'Retirada automáticamente el ' + new Date().toISOString().slice(0, 10) +
+            ': al releer la misma gaceta con el criterio vigente, la inteligencia artificial resultó ser una mención incidental y no el tema del asunto. Fuente: ' + f.urlGaceta,
+          updatedAt: Timestamp.now(),
+        });
+        await db.collection('actividad').add({
+          fecha: Timestamp.now(),
+          tipo: 'correccion',
+          iniciativaId: f.id,
+          iniciativaTitulo: f.titulo,
+          descripcion: `Ficha retirada tras releer la gaceta: la inteligencia artificial sólo se menciona de paso. ${f.titulo.slice(0, 120)}`,
+        });
+        retiradas.push({ id: f.id, titulo: f.titulo });
+      } catch (e) {
+        errores.push(`autocorrección "${f.titulo.slice(0, 50)}": ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
     // 4) Evidencia: interna y pública, con el resultado SEMÁNTICO (qué se leyó).
     const duracionMs = Date.now() - startTime;
     const resumen = resumenRastreo(r, iniciativasEncontradas, yaRegistradas);
@@ -190,14 +248,18 @@ export async function GET(request: Request) {
       diputados: r.diputados,
       senado: r.senado,
       altas,
+      retiradas,
       errores,
+      limitaciones,
       trigger: 'cron' as const,
       metodo: 'gacetas-determinista',
     });
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
       tipo: 'agente_ejecutado',
-      descripcion: `Agente de legislación ejecutado. ${iniciativasEncontradas} nueva(s) iniciativa(s) encontrada(s). ${resumen}`,
+      descripcion:
+        `Agente de legislación ejecutado. ${iniciativasEncontradas} nueva(s) iniciativa(s) encontrada(s). ${resumen}` +
+        (retiradas.length ? ` ${retiradas.length} ficha(s) retirada(s) al releer la gaceta: la IA sólo se mencionaba de paso.` : ''),
     });
 
     return NextResponse.json({
@@ -210,7 +272,9 @@ export async function GET(request: Request) {
       diputados: r.diputados,
       senado: r.senado,
       altas,
+      retiradas,
       errores,
+      limitaciones,
       duracionMs,
     });
   } catch (error) {
