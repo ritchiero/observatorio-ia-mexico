@@ -20,6 +20,10 @@ const REGLAS: Regla[] = [
   [/ y (\d+) en PDF/, ' and $1 in PDF'],
   [/, (\d+) de ellas con el articulado escaneado y sólo el título legible/, ', $1 of them with scanned articles and only the title legible'],
   [/; (\d+) PDF sin leer por exceder el tope de descarga/, '; $1 PDF(s) not read for exceeding the download limit'],
+  // Redacción anterior al 11-sep-2026: la bitácora conserva las corridas viejas y
+  // también hay que poder leerlas en inglés.
+  [/; (\d+) PDF pesados sin leer, probablemente escaneos/, '; $1 heavy PDF(s) left unread, probably scans'],
+  [/; (\d+) PDF escaneados sin texto/, '; $1 scanned PDF(s) with no text'],
   [/; (\d+) PDF sin capa de texto alguna/, '; $1 PDF(s) with no text layer at all'],
   [/; (\d+) PDF con varios asuntos sin separar, sólo título evaluado/, '; $1 PDF(s) with several items that could not be split, title only'],
   [/(\d+) documentos abiertos/, '$1 documents opened'],
