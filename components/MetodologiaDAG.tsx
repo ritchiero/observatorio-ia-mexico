@@ -247,7 +247,7 @@ export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) 
           </div>
         </div>
 
-        {/* footer strip — afirmaciones reales + Powered by Claude */}
+        {/* footer strip — afirmaciones reales + Agentes Colmena IA */}
         <div className="mt-10 flex items-center gap-3 flex-wrap justify-center">
           {([['Monitoreo automatizado', C.green], ['IA + auditoría humana en curso', C.cyan], ['Fuentes oficiales verificables', C.violet]] as [string, string][]).map(([t, col], i) => (
             <span key={i} className="font-mono uppercase" style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '8px 15px', border: `1px solid ${C.line2}`, borderRadius: 999, background: C.panel, fontSize: 10.5, letterSpacing: '0.1em', color: C.body, fontWeight: 500 }}>
@@ -256,7 +256,7 @@ export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) 
           ))}
           <span className="font-mono inline-flex items-center gap-1.5" style={{ fontSize: 10.5, color: C.faint, letterSpacing: '0.08em' }}>
             Powered by
-            <span style={{ color: C.body, fontWeight: 600, letterSpacing: '0.04em' }}>Claude</span>
+            <span style={{ color: C.body, fontWeight: 600, letterSpacing: '0.04em' }}>Agentes Colmena IA</span>
           </span>
         </div>
       </div>

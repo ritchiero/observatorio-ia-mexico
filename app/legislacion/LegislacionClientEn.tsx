@@ -747,7 +747,7 @@ export default function LegislacionClientEn({ iniciativas }: Props) {
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
               <span>Data updated automatically</span>
             </div>
-            <span className="font-mono text-blue-500/50">Powered by Citizen Agents</span>
+            <span className="font-mono text-blue-500/50">Powered by AI Hive Agents</span>
           </div>
         </div>
       </section>

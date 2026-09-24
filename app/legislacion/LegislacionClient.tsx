@@ -714,7 +714,7 @@ export default function LegislacionClient({ iniciativas }: Props) {
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
               <span>Datos actualizados automáticamente</span>
             </div>
-            <span className="font-mono text-blue-500/50">Powered by Citizen Agents</span>
+            <span className="font-mono text-blue-500/50">Powered by Agentes Colmena IA</span>
           </div>
         </div>
       </section>

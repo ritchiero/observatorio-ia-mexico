@@ -495,7 +495,7 @@ export default function CasosIAPageEn() {
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
               <span>Precedents documented and verified against official sources</span>
             </div>
-            <span className="font-mono text-purple-500/50">Powered by Citizen Agents</span>
+            <span className="font-mono text-purple-500/50">Powered by AI Hive Agents</span>
           </div>
         </div>
       </section>
