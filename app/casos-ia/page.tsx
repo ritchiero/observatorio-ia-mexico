@@ -490,7 +490,7 @@ export default function CasosIAPage() {
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
               <span>Criterios documentados con verificación de fuentes oficiales</span>
             </div>
-            <span className="font-mono text-purple-500/50">Powered by Citizen Agents</span>
+            <span className="font-mono text-purple-500/50">Powered by Agentes Colmena IA</span>
           </div>
         </div>
       </section>

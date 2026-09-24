@@ -386,7 +386,7 @@ export default function HeroSection({ stats, legStats, casosStats, loading, load
           
           <div className="mt-4 md:mt-0 flex flex-col md:items-end">
             <span>Última actualización: {new Date().toLocaleDateString('es-MX', { timeZone: ZONA_FECHAS, day: '2-digit', month: 'short', year: 'numeric' })}</span>
-            <span className="text-blue-500/40">Powered by Citizen Agents</span>
+            <span className="text-blue-500/40">Powered by Agentes Colmena IA</span>
           </div>
         </div>
 
