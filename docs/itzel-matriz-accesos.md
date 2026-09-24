@@ -11,13 +11,15 @@ Generado: 2026-09-24T00:25:03.484054-06:00 (America/Mexico_City). **Sin secretos
 | Código extraído | `/workspace/observatorio-ia-mexico/codigo/` | snapshot `84eb955` |
 | `origin/master` | no modificado por Itzel | `84eb95503c46f5f5ec8042c93f5eba063b7b6028` |
 
+## Estado: migración **no** operativa completa (deploy no probado; escritura de contenido pendiente)
+
 ## GitHub — PROBADO
 | Campo | Valor |
 |---|---|
 | Usuario | `ritchiero` |
 | Repo | `ritchiero/observatorio-ia-mexico` |
 | Permiso API **reportado** | admin/maintain/push/pull/triage = true |
-| Push **ejecutado** | Sí (confirmado también por Ricardo) |
+| Push **ejecutado** | Sí (verificado por Codex vía gh API (no confirmación directa de Ricardo)) |
 | Rama | `chore/itzel-migracion-recibo-20260924` |
 | Commit de prueba | `78e6d5f879b328b552f6f624623aace0e6efd73c` → `docs/itzel-migracion-recibo.md` |
 | URL | https://github.com/ritchiero/observatorio-ia-mexico/blob/chore/itzel-migracion-recibo-20260924/docs/itzel-migracion-recibo.md |
