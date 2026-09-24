@@ -124,8 +124,7 @@ export async function GET(request: Request) {
                   }
                   resultado = JSON.parse(jsonMatch[0]);
           } catch (parseError) {
-                  errores.push(`Error al parsear respuesta: ${parseError}`);
-                  resultado = { nuevos_casos: [] };
+                  throw new Error(`Respuesta invalida del agente de casos: ${parseError}`);
           }
 
       // Guardar nuevos casos
@@ -231,6 +230,15 @@ export async function GET(request: Request) {
       });
     } catch (error) {
           console.error('[CRON] Error en agente de casos judiciales:', error);
+          try {
+                  await getAdminDb().collection('actividad').add({
+                          fecha: Timestamp.now(),
+                          tipo: 'agente_fallo',
+                          descripcion: 'El agente de casos judiciales falló y no pudo completar la revisión. El detalle quedó en el registro interno.',
+                  });
+          } catch (activityError) {
+                  console.error('[CRON] No se pudo registrar el fallo de casos:', activityError);
+          }
           return NextResponse.json(
             {
                       error: 'Error al ejecutar agente de casos judiciales',
