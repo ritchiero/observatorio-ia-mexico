@@ -15,10 +15,15 @@ export async function GET(request: Request) {
 
     console.log('[CRON] Agente de monitoreo completado:', resultado);
     
-    return NextResponse.json({
-      mensaje: `Monitoreo completado. ${resultado.actualizacionesDetectadas} actualización(es) detectada(s).`,
-      ...resultado,
-    });
+    return NextResponse.json(
+      {
+        mensaje: resultado.success
+          ? `Monitoreo completado. ${resultado.actualizacionesDetectadas} actualización(es) detectada(s).`
+          : 'El monitoreo no pudo completar ninguna revisión válida.',
+        ...resultado,
+      },
+      { status: resultado.success ? 200 : 502 },
+    );
   } catch (error) {
     console.error('[CRON] Error en agente de monitoreo:', error);
     return NextResponse.json(

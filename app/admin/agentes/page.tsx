@@ -13,6 +13,20 @@ import type {
   AgentType 
 } from '@/types/agents';
 
+type CronAgentResult = {
+  agente: string;
+  ok?: boolean;
+  partial?: boolean;
+  status?: number;
+  error?: string;
+};
+
+type CronRunResponse = {
+  ok: boolean;
+  error?: string;
+  resultados?: CronAgentResult[];
+};
+
 function AgentesContent() {
   const router = useRouter();
   const { status } = useSession();
@@ -24,7 +38,9 @@ function AgentesContent() {
   const [agentConfigs, setAgentConfigs] = useState<AgentConfig[]>([]);
   const [usage, setUsage] = useState<AgentUsageResponse | null>(null);
   const [executingAgent, setExecutingAgent] = useState<string | null>(null);
+  const [executingAll, setExecutingAll] = useState(false);
   const [lastRun, setLastRun] = useState<AgentRunResult | null>(null);
+  const [lastCronRun, setLastCronRun] = useState<CronRunResponse | null>(null);
   const [selectedMode, setSelectedMode] = useState<ExecutionMode>('test');
 
   const loadData = useCallback(async () => {
@@ -150,6 +166,31 @@ function AgentesContent() {
     }
   };
 
+  const executeAllAgents = async () => {
+    setExecutingAll(true);
+    setLastCronRun(null);
+
+    try {
+      const res = await fetch('/api/admin/agentes/run-all', { method: 'POST' });
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
+
+      const data = await res.json() as CronRunResponse;
+      setLastCronRun(data);
+      await loadData();
+    } catch (err) {
+      console.error('Error executing consolidated cron:', err);
+      setLastCronRun({
+        ok: false,
+        error: 'No se pudo iniciar la ejecución completa.',
+      });
+    } finally {
+      setExecutingAll(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
@@ -248,6 +289,53 @@ function AgentesContent() {
               {selectedMode === 'live' && 'Ejecución real, guarda en cola de revisión'}
             </p>
           </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-700">Ejecución completa</h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Ejecuta ahora los cuatro agentes del cron en modo real. El secreto permanece en el servidor.
+              </p>
+            </div>
+            <button
+              onClick={executeAllAgents}
+              disabled={executingAll || executingAgent !== null}
+              className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                executingAll || executingAgent !== null
+                  ? 'bg-gray-100 text-gray-400 cursor-wait'
+                  : 'bg-violet-600 text-white hover:bg-violet-700'
+              }`}
+            >
+              {executingAll ? 'Ejecutando cron...' : 'Ejecutar cron completo ahora'}
+            </button>
+          </div>
+
+          {lastCronRun && (
+            <div
+              className={`mt-4 rounded-lg border p-4 text-sm ${
+                lastCronRun.ok
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-amber-200 bg-amber-50 text-amber-900'
+              }`}
+            >
+              <p className="font-medium">
+                {lastCronRun.ok
+                  ? '✓ Los cuatro agentes terminaron correctamente.'
+                  : 'La ejecución terminó con incidencias.'}
+              </p>
+              {lastCronRun.error && <p className="mt-1">{lastCronRun.error}</p>}
+              {lastCronRun.resultados && (
+                <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                  {lastCronRun.resultados.map((resultado) => (
+                    <li key={resultado.agente}>
+                      {resultado.ok ? '✓' : resultado.partial ? '◐' : '✗'} {resultado.agente}
+                      {resultado.status ? ` (HTTP ${resultado.status})` : ''}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Métricas de Uso */}

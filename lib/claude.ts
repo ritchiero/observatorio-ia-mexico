@@ -13,23 +13,47 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<st
   const { prompt, maxTokens = 16000 } = options;
 
   try {
-    const response = await anthropic.messages.create({
+    const tools = [
+      {
+        type: 'web_search_20260209' as const,
+        name: 'web_search' as const,
+      },
+    ];
+    let messages: Anthropic.MessageParam[] = [
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ];
+
+    let response = await anthropic.messages.create({
       model: 'claude-opus-5',
       max_tokens: maxTokens,
       thinking: { type: 'adaptive' },
-      tools: [
-        {
-          type: 'web_search_20260209' as const,
-          name: 'web_search',
-        },
-      ],
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+      tools,
+      messages,
     });
+
+    // Las herramientas de servidor pueden pausar una búsqueda larga. Reenviar
+    // la respuesta como turno del asistente conserva el estado y permite que
+    // Claude termine el JSON en vez de tratar una pausa como "cero hallazgos".
+    for (let continuacion = 0; response.stop_reason === 'pause_turn' && continuacion < 3; continuacion++) {
+      messages = [
+        ...messages,
+        { role: 'assistant', content: response.content },
+      ];
+      response = await anthropic.messages.create({
+        model: 'claude-opus-5',
+        max_tokens: maxTokens,
+        thinking: { type: 'adaptive' },
+        tools,
+        messages,
+      });
+    }
+
+    if (response.stop_reason === 'pause_turn') {
+      throw new Error('Claude no completó la búsqueda después de 3 continuaciones.');
+    }
 
     // Una negativa de seguridad llega como HTTP 200: hay que revisarla ANTES
     // de leer el contenido, o el agente la interpreta como "no encontré nada".

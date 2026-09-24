@@ -15,10 +15,15 @@ export async function GET(request: Request) {
 
     console.log('[CRON] Agente de detección completado:', resultado);
     
-    return NextResponse.json({
-      mensaje: `Detección completada. ${resultado.anunciosEncontrados} nuevo(s) anuncio(s) encontrado(s).`,
-      ...resultado,
-    });
+    return NextResponse.json(
+      {
+        mensaje: resultado.success
+          ? `Detección completada. ${resultado.anunciosEncontrados} nuevo(s) anuncio(s) encontrado(s).`
+          : 'La detección no pudo completar la revisión de fuentes.',
+        ...resultado,
+      },
+      { status: resultado.success ? 200 : 502 },
+    );
   } catch (error) {
     console.error('[CRON] Error en agente de detección:', error);
     return NextResponse.json(

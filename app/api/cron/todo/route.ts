@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { requireCron } from '@/lib/auth';
-import { getAdminDb } from '@/lib/firebase-admin';
-import { evaluarCorrida, type RespuestaAgente } from '@/lib/cron-resultado';
+import {
+  getCurrentDeploymentOrigin,
+  runConsolidatedAgents,
+} from '@/lib/agents/run-consolidated-cron';
 
 export const maxDuration = 300; // 5 minutos
 export const dynamic = 'force-dynamic';
@@ -22,64 +24,17 @@ export async function GET(request: Request) {
   const authError = requireCron(request);
   if (authError) return authError;
 
-  const host = request.headers.get('host');
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (host ? `https://${host}` : 'https://www.observatorio-ia-mexico.com');
+  // Mantener todas las subejecuciones en el mismo deployment que recibió la
+  // llamada. Esto permite probar un preview sin terminar ejecutando el código
+  // de producción por culpa de NEXT_PUBLIC_SITE_URL.
+  const base = getCurrentDeploymentOrigin(request.url);
   const secret = process.env.CRON_SECRET;
 
-  const respuestas: RespuestaAgente[] = await Promise.all(
-    AGENTES.map(async (agente): Promise<RespuestaAgente> => {
-      try {
-        const r = await fetch(`${base}/api/cron/${agente}`, {
-          headers: { Authorization: `Bearer ${secret}` },
-        });
-        // Se LEE el cuerpo: es donde vive `success`, `errores` y el conteo real.
-        let cuerpo: unknown = null;
-        try {
-          cuerpo = await r.json();
-        } catch {
-          cuerpo = null;
-        }
-        return { agente, alcanzado: true, httpOk: r.ok, status: r.status, cuerpo };
-      } catch (error) {
-        return {
-          agente,
-          alcanzado: false,
-          errorRed: error instanceof Error ? error.message : String(error),
-        };
-      }
-    }),
-  );
-
-  const evaluacion = evaluarCorrida(respuestas);
-  console.log('[CRON todo]', evaluacion.ok ? 'OK' : 'CON FALLOS', evaluacion.resumen);
-
-  // Evidencia PÚBLICA por agente: la bitácora debe poder distinguir una corrida
-  // sana sin novedad de una corrida que no pudo revisar (ver PR #92).
-  try {
-    const db = getAdminDb();
-    await db.collection('actividad').add({
-      fecha: Timestamp.now(),
-      tipo: evaluacion.ok ? 'agente_ejecutado' : 'agente_fallo',
-      descripcion: evaluacion.ok
-        ? `Corrida consolidada de agentes. ${evaluacion.resumen}.`
-        : `Corrida consolidada incompleta. Agentes con fallos: ${evaluacion.fallidos.join(', ')}. ${evaluacion.hallazgosTotales} hallazgo(s) reportado(s). El detalle de los errores requiere acceso administrativo.`,
-    });
-  } catch (error) {
-    // Si ni siquiera se puede registrar, se dice en la respuesta; no se silencia.
-    console.error('[CRON todo] no se pudo registrar la evidencia pública:', error);
-  }
+  // requireCron ya falla cerrado si el secreto no existe.
+  const result = await runConsolidatedAgents(base, secret!);
 
   return NextResponse.json(
-    {
-      ok: evaluacion.ok,
-      corridaConsolidada: true,
-      agentes: evaluacion.agentes,
-      fallidos: evaluacion.fallidos,
-      hallazgosTotales: evaluacion.hallazgosTotales,
-      resumen: evaluacion.resumen,
-    },
-    { status: evaluacion.ok ? 200 : 500 },
+    result,
+    { status: result.ok ? 200 : 502 },
   );
 }
