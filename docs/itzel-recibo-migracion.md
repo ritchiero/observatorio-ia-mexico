@@ -1,39 +1,43 @@
 # Recibo de migración — Itzel · Observatorio IA México
-Fecha: 2026-09-24T00:23:32.639065-06:00 (America/Mexico_City)
+
+Fecha: 2026-09-24T00:24:26-06:00 (America/Mexico_City)
 
 ## Identidad
-Agente: Itzel · Observatorio IA México  
-Continuidad: Codex → Itzel. Actualizar código ≠ datos vigentes.
+Agente: **Itzel · Observatorio IA México**. Continuidad Codex→Itzel. Actualizar código ≠ datos vigentes.
 
 ## Paquete
-- Extraído en `/workspace/observatorio-ia-mexico/`
-- Persistente: `/home/box/observatorio-ia-mexico/LEEME-MIGRACION.md`
-- Snapshot código: `84eb95503c46f5f5ec8042c93f5eba063b7b6028`
-- Hash tar exigido: verificado OK
+- Workspace: `/workspace/observatorio-ia-mexico/`
+- Persistente: `/home/box/observatorio-ia-mexico/`
+- ZIP `168d402b1f4de24beeb8aca50c97a2d7df32f52bd47865648497c6e1d6a4579f` · LEEME `57c67269a6a192c5a3ad119ca081a65096d0acc1db2db4137c77f2671478bbf2` · tar `abbe49502ebd4c91fa152b59e1e57d5f27cbccc2d50a44009ee3b0f07f975825` · master `84eb95503c46f5f5ec8042c93f5eba063b7b6028`
 
-## Accesos probados
-1. **GitHub escritura**: commit `78e6d5f879b328b552f6f624623aace0e6efd73c` en `chore/itzel-migracion-recibo-20260924` (confirmado también por Ricardo). Master intacto.
-2. **Sitio público lectura ejecutada** (2026-09-24T00:23:32.639065-06:00): home + `/api/actividad|anuncios|iniciativas|casos-ia` → HTTP 200 con cuerpos no vacíos. Última actividad muestra ~2026-09-22.
-3. **Vercel MCP**: identidad y proyecto coinciden con LEEME; operaciones con `teamId` pueden devolver 403 de scope — “Added” no basta. Sin deploy desde Itzel aún.
-4. **Firebase admin/contenido acotado**: no autorizado. Lectura pública sí. Propuesta de token/rutas de contenido en `docs/itzel-matriz-accesos.md` (requiere tu sí explícito).
+## Accesos
+1. **GitHub escritura PROBADA** — rama `chore/itzel-migracion-recibo-20260924`, commit `78e6d5f879b328b552f6f624623aace0e6efd73c` (`docs/itzel-migracion-recibo.md`). Ricardo confirmó en GitHub. Master intacto.
+2. **Sitio público — lectura EJECUTADA** — home + `/api/actividad|anuncios|iniciativas|casos-ia` HTTP 200; actividad reciente `2026-09-22T09:04:56.613Z`.
+3. **Vercel** — identidad/proyecto coinciden con LEEME; “Added” no implica scope team completo (403 posible con teamId). Sin deploy desde Itzel.
+4. **Firebase contenido acotado** — no autorizado. Lectura pública sí. Propuesta `CONTENT_OPS_TOKEN` en la matriz (requiere sí explícito). No usar `ADMIN_KEY`/SA amplia como equivalente.
+
+## Modelos
+- Vercel tiene configurados (nombres): `ANTHROPIC_API_KEY`, `CLAUDE_API_KEY`, `OPENROUTER_API_KEY`.
+- Caja Itzel: Anthropic ausente; OpenRouter presente y **no invocado**.
+- No duplicar secretos en Itzel si la publicación va por API segura en runtime Vercel.
 
 ## Rutinas
 - Actualizadas las **mismas** dos (sin duplicar).
-- Zona: **America/Mexico_City** en ambas (`CRON_TZ`).
+- Zona **America/Mexico_City** confirmada (`CRON_TZ`).
 - Diaria 08:00; semanal lunes 09:00.
-- Capacidad de aplicar correcciones cuando haya acceso + escritor único; si no, lote + bloqueo.
-- Scheduler: pending first fire; lectura de prueba **ya ejecutada** fuera del cron.
+- Aplican correcciones cuando haya acceso + escritor único; si no, lote + bloqueo.
+- Cron automático: pendiente primer fire; **lectura de prueba ya corrida**.
 
-## Bloqueos concretos
-1. Aprobación del mecanismo Firebase/contenido acotado (no `ADMIN_KEY`, no SA amplia, sin suscriptores).
-2. Re-auth Vercel al scope `ricardo-rodriguezs-projects-11271b26` si hacen falta logs/env/deploy team-scoped.
-3. Definir escritor único vs crons Vercel existentes antes de escritores concurrentes.
+## Bloqueos
+1. Aprobación mecanismo Firebase/contenido acotado.
+2. Re-auth Vercel al scope del team si hacen falta logs/env/deploy team-scoped.
+3. Definir escritor único vs crons Vercel antes de escritores concurrentes.
 
 ## Crons Vercel (intactos)
 - `/api/cron/todo` → `0 9 */3 * *`
 - `/api/cron/mensual` → `0 11 1 * *`
 
 ## Archivos en esta rama
-- `docs/itzel-migracion-recibo.md` (prueba inicial)
-- `docs/itzel-matriz-accesos.md` (esta matriz)
-- `docs/itzel-recibo-migracion.md` (este recibo)
+- https://github.com/ritchiero/observatorio-ia-mexico/blob/chore/itzel-migracion-recibo-20260924/docs/itzel-migracion-recibo.md
+- https://github.com/ritchiero/observatorio-ia-mexico/blob/chore/itzel-migracion-recibo-20260924/docs/itzel-matriz-accesos.md
+- https://github.com/ritchiero/observatorio-ia-mexico/blob/chore/itzel-migracion-recibo-20260924/docs/itzel-recibo-migracion.md
