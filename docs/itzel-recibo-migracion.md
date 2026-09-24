@@ -35,7 +35,7 @@ Agente: **Itzel · Observatorio IA México**. Continuidad Codex → Itzel. Actua
 1. **GitHub escritura en rama de migración — PROBADA**  
    - Rama: [chore/itzel-migracion-recibo-20260924](https://github.com/ritchiero/observatorio-ia-mexico/tree/chore/itzel-migracion-recibo-20260924)  
    - Commit de prueba de escritura: [78e6d5f](https://github.com/ritchiero/observatorio-ia-mexico/commit/78e6d5f879b328b552f6f624623aace0e6efd73c) → [`docs/itzel-migracion-recibo.md`](https://github.com/ritchiero/observatorio-ia-mexico/blob/chore/itzel-migracion-recibo-20260924/docs/itzel-migracion-recibo.md)  
-   - Tip actual de la rama: [a262820](https://github.com/ritchiero/observatorio-ia-mexico/commit/a2628203296cf135a0008ec6b1365ba1441510b4)  
+   - Tip actual de la rama: ver [cabeza de `chore/itzel-migracion-recibo-20260924`](https://github.com/ritchiero/observatorio-ia-mexico/commits/chore/itzel-migracion-recibo-20260924)  
    - Verificación: **Codex vía gh API** (no confirmación directa de Ricardo). Master intacto (`84eb955`).
 
 2. **Sitio público — lectura EJECUTADA y habilitada**  
@@ -75,7 +75,7 @@ Prompt: investigar y preparar lotes siempre; aplicar correcciones + código + CI
 - Matriz de accesos: https://github.com/ritchiero/observatorio-ia-mexico/blob/chore/itzel-migracion-recibo-20260924/docs/itzel-matriz-accesos.md
 - Prueba de escritura: https://github.com/ritchiero/observatorio-ia-mexico/blob/chore/itzel-migracion-recibo-20260924/docs/itzel-migracion-recibo.md
 - Commit escritura: https://github.com/ritchiero/observatorio-ia-mexico/commit/78e6d5f879b328b552f6f624623aace0e6efd73c
-- Tip rama: https://github.com/ritchiero/observatorio-ia-mexico/commit/a2628203296cf135a0008ec6b1365ba1441510b4
+- Cabeza de rama: https://github.com/ritchiero/observatorio-ia-mexico/commits/chore/itzel-migracion-recibo-20260924
 - Sitio: https://www.observatorio-ia-mexico.com
 
 ## Pedido en curso (Ricardo presentará)
