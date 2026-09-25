@@ -8,6 +8,7 @@ import FolioBadge from '@/components/FolioBadge';
 import LegislacionEnriched from '@/components/LegislacionEnriched';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { getAnuncioLogo } from '@/lib/anuncio-logo';
 import { STATUS_ANUNCIO } from '@/lib/estados';
 
 interface AnuncioData {
@@ -17,7 +18,7 @@ interface AnuncioData {
   descripcion: string;
   fechaAnuncio: string;
   fechaPrometida?: string;
-  responsable: string;
+  responsable?: string | null;
   dependencia: string;
   status: string;
   imagen?: string;
@@ -237,17 +238,6 @@ export default function Home() {
     return colors[status as keyof typeof colors] || colors.prometido;
   };
 
-  const getLogo = (responsable: string) => {
-    if (responsable.includes('Sheinbaum')) return '/logos/presidencia.jpg';
-    if (responsable.includes('Ebrard')) return '/logos/economia.png';
-    if (responsable.includes('Economía') || responsable.includes('SE')) return '/logos/economia.png';
-    if (responsable.includes('SEP')) return '/logos/sep.png';
-    if (responsable.includes('Senado')) return '/logos/senado.jpg';
-    if (responsable.includes('CCE')) return '/logos/cce.jpg';
-    if (responsable.includes('Infotec') || responsable.includes('ATDT') || responsable.includes('TecNM')) return '/logos/infotec.jpg';
-    if (responsable.includes('Saptiva')) return '/logos/economia.png';
-    return '/logos/presidencia.jpg'; // Default
-  };
 
   const getStatusEmoji = (status: string) => {
     const emojis = {
@@ -643,13 +633,13 @@ export default function Home() {
                   {/* Responsable */}
                   <div className="flex items-center gap-3 mb-3">
                     <img 
-                      src={getLogo(item.responsable)} 
+                      src={getAnuncioLogo(item.responsable)}
                       alt="" 
                       className="w-10 h-10 object-contain rounded-lg border border-gray-100 bg-white p-1" 
                     />
                     <div>
                       <div className="font-sans-tech text-sm font-medium text-gray-900">
-                        {item.responsable}
+                        {item.responsable || 'Responsable no indicado'}
                       </div>
                       <div className="font-sans-tech text-xs text-gray-400">
                         {item.dependencia || 'Responsable'}
