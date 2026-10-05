@@ -76,13 +76,20 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<st
       },
     ];
 
-    let response = await anthropic.messages.create({
-      model: 'claude-opus-5',
-      max_tokens: maxTokens,
-      thinking: { type: 'adaptive' },
-      tools,
-      messages,
-    });
+    const API_TIMEOUT_MS = 120_000;
+    const timeoutPromise = (ms: number): Promise<never> => 
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout después de ${ms}ms`)), ms));
+
+    let response = await Promise.race([
+      anthropic.messages.create({
+        model: 'claude-opus-5',
+        max_tokens: maxTokens,
+        thinking: { type: 'adaptive' },
+        tools,
+        messages,
+      }),
+      timeoutPromise(API_TIMEOUT_MS),
+    ]);
 
     // Las herramientas de servidor pueden pausar una búsqueda larga. Reenviar
     // la respuesta como turno del asistente conserva el estado y permite que
@@ -92,13 +99,16 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<st
         ...messages,
         { role: 'assistant', content: response.content },
       ];
-      response = await anthropic.messages.create({
-        model: 'claude-opus-5',
-        max_tokens: maxTokens,
-        thinking: { type: 'adaptive' },
-        tools,
-        messages,
-      });
+      response = await Promise.race([
+        anthropic.messages.create({
+          model: 'claude-opus-5',
+          max_tokens: maxTokens,
+          thinking: { type: 'adaptive' },
+          tools,
+          messages,
+        }),
+        timeoutPromise(API_TIMEOUT_MS),
+      ]);
     }
 
     if (response.stop_reason === 'pause_turn') {

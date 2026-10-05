@@ -20,25 +20,47 @@ export function getCurrentDeploymentOrigin(requestUrl: string) {
 }
 
 export async function runConsolidatedAgents(base: string, secret: string) {
-  const settled = await Promise.allSettled(
-    AGENTS.map((agente) =>
-      fetch(`${base}/api/cron/${agente}`, {
+  // Timeout por sub-ruta: 290s para dar margen antes del maxDuration de 300s
+  const SUB_ROUTE_TIMEOUT_MS = 290_000;
+  
+  const fetchWithTimeout = async (agente: typeof AGENTS[number]): Promise<ConsolidatedAgentResult> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), SUB_ROUTE_TIMEOUT_MS);
+    
+    try {
+      const response = await fetch(`${base}/api/cron/${agente}`, {
         headers: { Authorization: `Bearer ${secret}` },
         cache: 'no-store',
-      }).then(async (response) => {
-        const body = await response.json().catch(() => null) as {
-          success?: boolean;
-          partial?: boolean;
-        } | null;
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      const body = await response.json().catch(() => null) as {
+        success?: boolean;
+        partial?: boolean;
+      } | null;
 
+      return {
+        agente,
+        ok: response.ok && body?.success !== false,
+        partial: body?.partial === true,
+        status: response.status,
+      } satisfies ConsolidatedAgentResult;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
         return {
           agente,
-          ok: response.ok && body?.success !== false,
-          partial: body?.partial === true,
-          status: response.status,
-        } satisfies ConsolidatedAgentResult;
-      }),
-    ),
+          error: `Timeout después de ${SUB_ROUTE_TIMEOUT_MS}ms`,
+        };
+      }
+      throw error;
+    }
+  };
+  
+  const settled = await Promise.allSettled(
+    AGENTS.map(fetchWithTimeout),
   );
 
   const resultados: ConsolidatedAgentResult[] = settled.map((result, index) =>

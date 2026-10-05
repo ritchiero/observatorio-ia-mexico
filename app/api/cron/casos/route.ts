@@ -97,115 +97,133 @@ function getCasosPrompt(nombresExistentes: string[]): string {
 }
 
 export async function GET(request: Request) {
-    const authError = requireCron(request);
-    if (authError) return authError;
+  const authError = requireCron(request);
+  if (authError) return authError;
 
+  // Deadline interno: terminar con 20s de margen antes del maxDuration de 300s
+  const DEADLINE_MS = 280_000;
+  const startTime = Date.now();
+  const isDeadlineExceeded = () => Date.now() - startTime > DEADLINE_MS;
+
+  try {
+    console.log('[CRON] Iniciando agente de casos judiciales...');
+    const db = getAdminDb();
+    const errores: string[] = [];
+    let casosEncontrados = 0;
+
+    // Obtener nombres de casos existentes para deduplicación
+    const casosSnapshot = await db.collection('casos_ia').get();
+    const nombresExistentes = casosSnapshot.docs.map(doc => doc.data().nombre);
+
+    // Ejecutar búsqueda con Claude
+    const prompt = getCasosPrompt(nombresExistentes);
+    
+    if (isDeadlineExceeded()) {
+      throw new Error('Deadline excedido antes de iniciar búsqueda con Claude');
+    }
+    
+    const rawResponse = await searchWithClaude({ prompt, maxTokens: 8192 });
+
+    if (isDeadlineExceeded()) {
+      throw new Error('Deadline excedido después de búsqueda con Claude');
+    }
+
+    // Parsear respuesta JSON
+    let resultado: { nuevos_casos: any[] };
     try {
-      console.log('[CRON] Iniciando agente de casos judiciales...');
-          const startTime = Date.now();
-          const db = getAdminDb();
-          const errores: string[] = [];
-          let casosEncontrados = 0;
-
-      // Obtener nombres de casos existentes para deduplicación
-      const casosSnapshot = await db.collection('casos_ia').get();
-          const nombresExistentes = casosSnapshot.docs.map(doc => doc.data().nombre);
-
-      // Ejecutar búsqueda con Claude
-      const prompt = getCasosPrompt(nombresExistentes);
-          const rawResponse = await searchWithClaude({ prompt, maxTokens: 8192 });
-
-      // Parsear respuesta JSON
-      let resultado: { nuevos_casos: any[] };
-          try {
-                  const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
-                  if (!jsonMatch) {
-                            throw new Error('No se encontró JSON en la respuesta');
-                  }
-                  resultado = JSON.parse(jsonMatch[0]);
-          } catch (parseError) {
-                  throw new Error(`Respuesta invalida del agente de casos: ${parseError}`);
-          }
-
-      // Guardar nuevos casos
-      for (const caso of resultado.nuevos_casos) {
-              try {
-                        // Verificar duplicado por nombre (comparación flexible)
-                const nombreNormalizado = caso.nombre?.toLowerCase().trim();
-                        const esDuplicado = nombresExistentes.some(n =>
-                                    n.toLowerCase().trim() === nombreNormalizado
-                                                                           );
-                        if (esDuplicado) {
-                                    console.log(`[CRON] Caso duplicado, saltando: ${caso.nombre}`);
-                                    continue;
-                        }
-
-                const docRef = db.collection('casos_ia').doc();
-
-                await docRef.set({
-                            id: docRef.id,
-                            // Identificación
-                            nombre: caso.nombre,
-                            expedienteActual: caso.expedienteActual || '',
-                            tribunalActual: caso.tribunalActual || '',
-                            estado: caso.estado || 'en_proceso',
-                            // Clasificación
-                            materia: caso.materia || 'amparo',
-                            temaIA: caso.temaIA || 'otro',
-                            subtema: caso.subtema || null,
-                            // Partes
-                            partes: caso.partes || { actor: '', demandado: '' },
-                            // Contexto
-                            resumen: caso.resumen || '',
-                            hechos: caso.hechos || null,
-                            elementoIA: caso.elementoIA || '',
-                            // Trayectoria
-                            trayectoria: (caso.trayectoria || []).map((inst: any, idx: number) => ({
-                                          orden: inst.orden || idx + 1,
-                                          tribunal: inst.tribunal || '',
-                                          ubicacion: inst.ubicacion || '',
-                                          expediente: inst.expediente || '',
-                                          tipo: inst.tipo || '',
-                                          fechaIngreso: inst.fechaIngreso || '',
-                                          fechaResolucion: inst.fechaResolucion || null,
-                                          estado: inst.estado || 'en_proceso',
-                                          sentido: inst.sentido || null,
-                            })),
-                            // Documentos y fuentes
-                            documentos: caso.documentos || [],
-                            fuentes: caso.fuentes || [],
-                            // Meta
-                            fechaCreacion: new Date(),
-                            fechaActualizacion: new Date(),
-                });
-
-                // Registrar actividad
-                await db.collection('actividad').add({
-                            fecha: Timestamp.now(),
-                            tipo: 'nuevo_caso',
-                            casoId: docRef.id,
-                            casoNombre: caso.nombre,
-                            descripcion: `Nuevo caso judicial detectado: ${caso.nombre}`,
-                });
-
-                casosEncontrados++;
-                        nombresExistentes.push(caso.nombre);
-              } catch (error) {
-                        errores.push(`Error al guardar caso "${caso.nombre}": ${error}`);
-              }
+      const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No se encontró JSON en la respuesta');
       }
+      resultado = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      throw new Error(`Respuesta invalida del agente de casos: ${parseError}`);
+    }
 
-      // Guardar log del agente
-      const duracionMs = Date.now() - startTime;
-          await db.collection('agenteLogs').add({
-                  tipo: 'casos_judiciales',
-                  fecha: Timestamp.now(),
-                  duracionMs,
-                  casosEncontrados,
-                  errores,
-                  rawResponse,
-                  trigger: 'cron' as const,
-          });
+    // Guardar nuevos casos
+    for (const caso of resultado.nuevos_casos) {
+      if (isDeadlineExceeded()) {
+        errores.push('Deadline excedido durante el guardado de casos');
+        break;
+      }
+      
+      try {
+        // Verificar duplicado por nombre (comparación flexible)
+        const nombreNormalizado = caso.nombre?.toLowerCase().trim();
+        const esDuplicado = nombresExistentes.some(n =>
+          n.toLowerCase().trim() === nombreNormalizado
+        );
+        if (esDuplicado) {
+          console.log(`[CRON] Caso duplicado, saltando: ${caso.nombre}`);
+          continue;
+        }
+
+        const docRef = db.collection('casos_ia').doc();
+
+        await docRef.set({
+          id: docRef.id,
+          // Identificación
+          nombre: caso.nombre,
+          expedienteActual: caso.expedienteActual || '',
+          tribunalActual: caso.tribunalActual || '',
+          estado: caso.estado || 'en_proceso',
+          // Clasificación
+          materia: caso.materia || 'amparo',
+          temaIA: caso.temaIA || 'otro',
+          subtema: caso.subtema || null,
+          // Partes
+          partes: caso.partes || { actor: '', demandado: '' },
+          // Contexto
+          resumen: caso.resumen || '',
+          hechos: caso.hechos || null,
+          elementoIA: caso.elementoIA || '',
+          // Trayectoria
+          trayectoria: (caso.trayectoria || []).map((inst: any, idx: number) => ({
+            orden: inst.orden || idx + 1,
+            tribunal: inst.tribunal || '',
+            ubicacion: inst.ubicacion || '',
+            expediente: inst.expediente || '',
+            tipo: inst.tipo || '',
+            fechaIngreso: inst.fechaIngreso || '',
+            fechaResolucion: inst.fechaResolucion || null,
+            estado: inst.estado || 'en_proceso',
+            sentido: inst.sentido || null,
+          })),
+          // Documentos y fuentes
+          documentos: caso.documentos || [],
+          fuentes: caso.fuentes || [],
+          // Meta
+          fechaCreacion: new Date(),
+          fechaActualizacion: new Date(),
+        });
+
+        // Registrar actividad
+        await db.collection('actividad').add({
+          fecha: Timestamp.now(),
+          tipo: 'nuevo_caso',
+          casoId: docRef.id,
+          casoNombre: caso.nombre,
+          descripcion: `Nuevo caso judicial detectado: ${caso.nombre}`,
+        });
+
+        casosEncontrados++;
+        nombresExistentes.push(caso.nombre);
+      } catch (error) {
+        errores.push(`Error al guardar caso "${caso.nombre}": ${error}`);
+      }
+    }
+
+    // Guardar log del agente
+    const duracionMs = Date.now() - startTime;
+    await db.collection('agenteLogs').add({
+      tipo: 'casos_judiciales',
+      fecha: Timestamp.now(),
+      duracionMs,
+      casosEncontrados,
+      errores,
+      rawResponse,
+      trigger: 'cron' as const,
+    });
 
       // Registrar actividad de ejecución
       await db.collection('actividad').add({
@@ -228,23 +246,55 @@ export async function GET(request: Request) {
               errores,
               duracionMs,
       });
-    } catch (error) {
-          console.error('[CRON] Error en agente de casos judiciales:', error);
-          try {
-                  await getAdminDb().collection('actividad').add({
-                          fecha: Timestamp.now(),
-                          tipo: 'agente_fallo',
-                          descripcion: 'El agente de casos judiciales falló y no pudo completar la revisión. El detalle quedó en el registro interno.',
-                  });
-          } catch (activityError) {
-                  console.error('[CRON] No se pudo registrar el fallo de casos:', activityError);
-          }
-          return NextResponse.json(
-            {
-                      error: 'Error al ejecutar agente de casos judiciales',
-                      detalle: error instanceof Error ? error.message : String(error),
-            },
-            { status: 500 }
-                );
+  } catch (error) {
+    const duracionMs = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    const esTimeout = errorMsg.toLowerCase().includes('timeout') || 
+                      errorMsg.toLowerCase().includes('deadline') ||
+                      duracionMs > 270_000;
+    
+    console.error('[CRON] Error en agente de casos judiciales:', error);
+    
+    try {
+      // Registrar error detallado en agenteLogs (interno)
+      await getAdminDb().collection('agenteLogs').add({
+        tipo: 'casos_judiciales',
+        fecha: Timestamp.now(),
+        duracionMs,
+        casosEncontrados: 0,
+        errores: [errorMsg],
+        rawResponse: '',
+        trigger: 'cron' as const,
+        error: {
+          mensaje: errorMsg,
+          esTimeout,
+          fase: errorMsg.includes('búsqueda') ? 'busqueda_claude' : 
+                errorMsg.includes('parsear') ? 'parseo_json' : 
+                errorMsg.includes('guardar') ? 'guardado_firestore' : 'desconocida',
+        },
+      });
+      
+      // Mensaje público genérico pero indicando si fue timeout
+      await getAdminDb().collection('actividad').add({
+        fecha: Timestamp.now(),
+        tipo: 'agente_fallo',
+        descripcion: esTimeout 
+          ? 'El agente de casos judiciales excedió el tiempo límite y no pudo completar la revisión. El detalle quedó en el registro interno.'
+          : 'El agente de casos judiciales falló y no pudo completar la revisión. El detalle quedó en el registro interno.',
+      });
+    } catch (activityError) {
+      console.error('[CRON] No se pudo registrar el fallo de casos:', activityError);
     }
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Error al ejecutar agente de casos judiciales',
+        detalle: errorMsg,
+        esTimeout,
+        duracionMs,
+      },
+      { status: 500 }
+    );
+  }
 }

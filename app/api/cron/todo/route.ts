@@ -33,6 +33,20 @@ export async function GET(request: Request) {
   // requireCron ya falla cerrado si el secreto no existe.
   const result = await runConsolidatedAgents(base, secret!);
 
+  // SIEMPRE registrar evidencia de la corrida consolidada, incluso si alguna sub-ruta falló
+  try {
+    const db = await import('@/lib/firebase-admin').then(m => m.getAdminDb());
+    await db.collection('actividad').add({
+      fecha: Timestamp.now(),
+      tipo: result.ok ? 'agente_ejecutado' : 'agente_parcial',
+      descripcion: result.ok
+        ? `Corrida consolidada ejecutada exitosamente. Agentes: ${result.agentes.join(', ')}.`
+        : `Corrida consolidada completada con fallos. Resultados: ${result.resultados.map(r => `${r.agente}=${r.ok ? 'OK' : r.error || 'FAIL'}`).join(', ')}.`,
+    });
+  } catch (activityError) {
+    console.error('[CRON todo] No se pudo registrar la corrida consolidada en actividad:', activityError);
+  }
+
   return NextResponse.json(
     result,
     { status: result.ok ? 200 : 502 },
