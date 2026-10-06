@@ -13,6 +13,10 @@ export async function ejecutarAgenteDeteccion(
 ) {
   const dryRun = opts.dryRun === true;
   const startTime = Date.now();
+  // Deadline interno: terminar con 20s de margen antes del maxDuration de 300s
+  const DEADLINE_MS = 280_000;
+  const isDeadlineExceeded = () => Date.now() - startTime > DEADLINE_MS;
+  
   const db = getAdminDb();
   const errores: string[] = [];
   const decisiones: Array<Record<string, unknown>> = [];
@@ -30,9 +34,17 @@ export async function ejecutarAgenteDeteccion(
     const titulosExistentes = existentes.map(e => e.titulo);
     const siguienteFolio = folioFactory('ANU', existentes.map(e => e.folio));
 
+    if (isDeadlineExceeded()) {
+      throw new Error('Deadline excedido antes de iniciar búsqueda con Claude');
+    }
+
     // Ejecutar búsqueda con Claude
     const prompt = getDeteccionPrompt(titulosExistentes);
     const rawResponse = await searchWithClaude({ prompt });
+
+    if (isDeadlineExceeded()) {
+      throw new Error('Deadline excedido después de búsqueda con Claude');
+    }
 
     // Parsear respuesta JSON
     let deteccion: DeteccionResponseConFuentes;
@@ -49,6 +61,11 @@ export async function ejecutarAgenteDeteccion(
 
     // Guardar nuevos anuncios (con guardrails: dedup → verificación → folio)
     for (const anuncio of deteccion.nuevos_anuncios) {
+      if (isDeadlineExceeded()) {
+        errores.push('Deadline excedido durante el guardado de anuncios');
+        break;
+      }
+      
       try {
         const urls = [anuncio.fuente_url, ...((anuncio.fuentes_adicionales || []).map(f => f.url))]
           .filter((u): u is string => typeof u === 'string');
@@ -178,9 +195,12 @@ export async function ejecutarAgenteDeteccion(
   } catch (error) {
     const duracionMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
+    const esTimeout = errorMsg.toLowerCase().includes('timeout') || 
+                      errorMsg.toLowerCase().includes('deadline') ||
+                      duracionMs > 270_000;
     errores.push(`Error general: ${errorMsg}`);
 
-    // Guardar log de error
+    // Guardar log de error con detalles
     await db.collection('agenteLogs').add({
       tipo: 'deteccion',
       fecha: Timestamp.now(),
@@ -190,6 +210,13 @@ export async function ejecutarAgenteDeteccion(
       errores,
       rawResponse: '',
       trigger,
+      error: {
+        mensaje: errorMsg,
+        esTimeout,
+        fase: errorMsg.includes('búsqueda') ? 'busqueda_claude' : 
+              errorMsg.includes('parsear') ? 'parseo_json' : 
+              errorMsg.includes('guardar') ? 'guardado_firestore' : 'desconocida',
+      },
     });
 
     // OIA-012: una corrida FALLIDA debe dejar rastro en la bitácora pública.
@@ -199,7 +226,9 @@ export async function ejecutarAgenteDeteccion(
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
       tipo: 'agente_fallo',
-      descripcion: 'El agente de detección falló y no pudo completar la revisión de fuentes. El detalle quedó en el registro interno.',
+      descripcion: esTimeout
+        ? 'El agente de detección excedió el tiempo límite y no pudo completar la revisión de fuentes. El detalle quedó en el registro interno.'
+        : 'El agente de detección falló y no pudo completar la revisión de fuentes. El detalle quedó en el registro interno.',
     });
 
     return {
@@ -207,6 +236,7 @@ export async function ejecutarAgenteDeteccion(
       anunciosEncontrados: 0,
       errores,
       duracionMs,
+      esTimeout,
     };
   }
 }
