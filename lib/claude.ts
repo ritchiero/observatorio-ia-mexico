@@ -7,6 +7,13 @@ const anthropic = new Anthropic({
 export interface ClaudeSearchOptions {
   prompt: string;
   maxTokens?: number;
+  timeoutMs?: number;
+}
+
+export interface ClaudeSearchResult {
+  texto: string;
+  turnos: number;
+  duracionMs: number;
 }
 
 // Fallback a OpenRouter cuando Anthropic falle por billing/créditos
@@ -59,14 +66,16 @@ async function searchWithOpenRouter(options: ClaudeSearchOptions): Promise<strin
   return content;
 }
 
-export async function searchWithClaude(options: ClaudeSearchOptions): Promise<string> {
-  const { prompt, maxTokens = 16000 } = options;
+export async function searchWithClaude(options: ClaudeSearchOptions): Promise<ClaudeSearchResult> {
+  const { prompt, maxTokens = 16000, timeoutMs } = options;
+  const startTime = Date.now();
 
   try {
     const tools = [
       {
         type: 'web_search_20260209' as const,
         name: 'web_search' as const,
+        max_uses: 8,
       },
     ];
     let messages: Anthropic.MessageParam[] = [
@@ -76,65 +85,92 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<st
       },
     ];
 
-    const API_TIMEOUT_MS = 120_000;
-    const timeoutPromise = (ms: number): Promise<never> => 
-      new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout después de ${ms}ms`)), ms));
+    const abortController = new AbortController();
+    let timeoutId: NodeJS.Timeout | undefined;
 
-    let response = await Promise.race([
-      anthropic.messages.create({
-        model: 'claude-opus-5',
-        max_tokens: maxTokens,
-        thinking: { type: 'adaptive' },
-        tools,
-        messages,
-      }),
-      timeoutPromise(API_TIMEOUT_MS),
-    ]);
+    if (timeoutMs) {
+      timeoutId = setTimeout(() => {
+        console.log(`[claude] Cancelando petición después de ${timeoutMs}ms`);
+        abortController.abort();
+      }, timeoutMs);
+    }
 
-    // Las herramientas de servidor pueden pausar una búsqueda larga. Reenviar
-    // la respuesta como turno del asistente conserva el estado y permite que
-    // Claude termine el JSON en vez de tratar una pausa como "cero hallazgos".
-    for (let continuacion = 0; response.stop_reason === 'pause_turn' && continuacion < 3; continuacion++) {
-      messages = [
-        ...messages,
-        { role: 'assistant', content: response.content },
-      ];
-      response = await Promise.race([
-        anthropic.messages.create({
+    try {
+      let response = await anthropic.messages.create(
+        {
           model: 'claude-opus-5',
           max_tokens: maxTokens,
           thinking: { type: 'adaptive' },
           tools,
           messages,
-        }),
-        timeoutPromise(API_TIMEOUT_MS),
-      ]);
-    }
-
-    if (response.stop_reason === 'pause_turn') {
-      throw new Error('Claude no completó la búsqueda después de 3 continuaciones.');
-    }
-
-    // Una negativa de seguridad llega como HTTP 200: hay que revisarla ANTES
-    // de leer el contenido, o el agente la interpreta como "no encontré nada".
-    if (response.stop_reason === 'refusal') {
-      throw new Error(
-        `Claude declinó la solicitud (categoría: ${response.stop_details?.category ?? 'desconocida'}).`
+        },
+        {
+          signal: abortController.signal,
+        }
       );
+
+      let turnos = 1;
+
+      // Reducir reintentos pause_turn de 3 a 2 para evitar timeouts
+      for (let continuacion = 0; response.stop_reason === 'pause_turn' && continuacion < 2; continuacion++) {
+        messages = [
+          ...messages,
+          { role: 'assistant', content: response.content },
+        ];
+        response = await anthropic.messages.create(
+          {
+            model: 'claude-opus-5',
+            max_tokens: maxTokens,
+            thinking: { type: 'adaptive' },
+            tools,
+            messages,
+          },
+          {
+            signal: abortController.signal,
+          }
+        );
+        turnos++;
+      }
+
+      if (timeoutId) clearTimeout(timeoutId);
+
+      if (response.stop_reason === 'pause_turn') {
+        throw new Error('Claude no completó la búsqueda después de 2 continuaciones.');
+      }
+
+      // Una negativa de seguridad llega como HTTP 200: hay que revisarla ANTES
+      // de leer el contenido, o el agente la interpreta como "no encontré nada".
+      if (response.stop_reason === 'refusal') {
+        throw new Error(
+          `Claude declinó la solicitud (categoría: ${response.stop_details?.category ?? 'desconocida'}).`
+        );
+      }
+
+      // Con búsqueda web la respuesta trae varios bloques (thinking, resultados de
+      // búsqueda, texto). Se concatena TODO el texto: quedarse con el primer bloque
+      // devolvía el preámbulo en vez del JSON que el agente necesita parsear.
+      const texto = response.content
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+        .map((block) => block.text)
+        .join('\n')
+        .trim();
+
+      const duracionMs = Date.now() - startTime;
+
+      return {
+        texto: texto || JSON.stringify(response.content),
+        turnos,
+        duracionMs,
+      };
+    } catch (error) {
+      if (timeoutId) clearTimeout(timeoutId);
+
+      // Convertir AbortError en timeout explícito
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Búsqueda con Claude cancelada después de ${timeoutMs}ms (timeout)`);
+      }
+      throw error;
     }
-
-    // Con búsqueda web la respuesta trae varios bloques (thinking, resultados de
-    // búsqueda, texto). Se concatena TODO el texto: quedarse con el primer bloque
-    // devolvía el preámbulo en vez del JSON que el agente necesita parsear.
-    const texto = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('\n')
-      .trim();
-
-    if (texto) return texto;
-
-    return JSON.stringify(response.content);
   } catch (error) {
     // Detectar error de billing/créditos de Anthropic (HTTP 400)
     if (error instanceof Anthropic.APIError && error.status === 400) {
@@ -148,7 +184,13 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<st
         if (process.env.OPENROUTER_API_KEY) {
           try {
             console.log('[claude] Intentando fallback a OpenRouter...');
-            return await searchWithOpenRouter(options);
+            const fallbackTexto = await searchWithOpenRouter(options);
+            const duracionMs = Date.now() - startTime;
+            return {
+              texto: fallbackTexto,
+              turnos: 1,
+              duracionMs,
+            };
           } catch (fallbackError) {
             console.error('[claude] Fallback a OpenRouter también falló:', fallbackError);
             // Propagar error combinado

@@ -20,8 +20,8 @@ export function getCurrentDeploymentOrigin(requestUrl: string) {
 }
 
 export async function runConsolidatedAgents(base: string, secret: string) {
-  // Timeout por sub-ruta: 290s para dar margen antes del maxDuration de 300s
-  const SUB_ROUTE_TIMEOUT_MS = 290_000;
+  // Timeout por sub-ruta: 295s para dar más margen (las sub-rutas tienen deadline de 280s)
+  const SUB_ROUTE_TIMEOUT_MS = 295_000;
   
   const fetchWithTimeout = async (agente: typeof AGENTS[number]): Promise<ConsolidatedAgentResult> => {
     const controller = new AbortController();
@@ -39,6 +39,7 @@ export async function runConsolidatedAgents(base: string, secret: string) {
       const body = await response.json().catch(() => null) as {
         success?: boolean;
         partial?: boolean;
+        esTimeout?: boolean;
       } | null;
 
       return {
@@ -50,9 +51,11 @@ export async function runConsolidatedAgents(base: string, secret: string) {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
+        // El fetch abortó, pero el agente pudo haber completado su trabajo.
+        // El agente habrá escrito su log en agenteLogs antes de devolver la respuesta.
         return {
           agente,
-          error: `Timeout después de ${SUB_ROUTE_TIMEOUT_MS}ms`,
+          error: `El consolidado dejó de esperar respuesta después de ${SUB_ROUTE_TIMEOUT_MS}ms. Revise agenteLogs para verificar si el agente completó su trabajo.`,
         };
       }
       throw error;

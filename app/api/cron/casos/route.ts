@@ -102,8 +102,12 @@ export async function GET(request: Request) {
 
   // Deadline interno: terminar con 20s de margen antes del maxDuration de 300s
   const DEADLINE_MS = 280_000;
+  const MARGEN_PARSEO_MS = 10_000;
   const startTime = Date.now();
   const isDeadlineExceeded = () => Date.now() - startTime > DEADLINE_MS;
+  
+  let turnosClaude = 0;
+  let duracionClaudeMs = 0;
 
   try {
     console.log('[CRON] Iniciando agente de casos judiciales...');
@@ -122,7 +126,19 @@ export async function GET(request: Request) {
       throw new Error('Deadline excedido antes de iniciar búsqueda con Claude');
     }
     
-    const rawResponse = await searchWithClaude({ prompt, maxTokens: 8192 });
+    // Calcular timeout dinámico
+    const tiempoTranscurrido = Date.now() - startTime;
+    const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
+    const timeoutClaude = Math.max(30_000, tiempoRestante - MARGEN_PARSEO_MS);
+    
+    const claudeResult = await searchWithClaude({ 
+      prompt, 
+      maxTokens: 8192,
+      timeoutMs: timeoutClaude,
+    });
+
+    turnosClaude = claudeResult.turnos;
+    duracionClaudeMs = claudeResult.duracionMs;
 
     if (isDeadlineExceeded()) {
       throw new Error('Deadline excedido después de búsqueda con Claude');
@@ -131,7 +147,7 @@ export async function GET(request: Request) {
     // Parsear respuesta JSON
     let resultado: { nuevos_casos: any[] };
     try {
-      const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+      const jsonMatch = claudeResult.texto.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error('No se encontró JSON en la respuesta');
       }
@@ -221,8 +237,12 @@ export async function GET(request: Request) {
       duracionMs,
       casosEncontrados,
       errores,
-      rawResponse,
+      rawResponse: claudeResult.texto,
       trigger: 'cron' as const,
+      claudeMeta: {
+        turnos: turnosClaude,
+        duracionMs: duracionClaudeMs,
+      },
     });
 
       // Registrar actividad de ejecución
@@ -251,9 +271,22 @@ export async function GET(request: Request) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     const esTimeout = errorMsg.toLowerCase().includes('timeout') || 
                       errorMsg.toLowerCase().includes('deadline') ||
+                      errorMsg.toLowerCase().includes('cancelada') ||
                       duracionMs > 270_000;
     
     console.error('[CRON] Error en agente de casos judiciales:', error);
+    
+    // Mejorar detección de fase
+    let fase = 'desconocida';
+    if (errorMsg.includes('búsqueda') || errorMsg.includes('Claude') || errorMsg.includes('cancelada')) {
+      fase = 'busqueda_claude';
+    } else if (errorMsg.includes('parsear') || errorMsg.includes('JSON')) {
+      fase = 'parseo_json';
+    } else if (errorMsg.includes('guardar') || errorMsg.includes('Firestore')) {
+      fase = 'guardado_firestore';
+    } else if (errorMsg.includes('Deadline')) {
+      fase = duracionClaudeMs > 0 ? 'guardado_firestore' : 'busqueda_claude';
+    }
     
     try {
       // Registrar error detallado en agenteLogs (interno)
@@ -268,10 +301,12 @@ export async function GET(request: Request) {
         error: {
           mensaje: errorMsg,
           esTimeout,
-          fase: errorMsg.includes('búsqueda') ? 'busqueda_claude' : 
-                errorMsg.includes('parsear') ? 'parseo_json' : 
-                errorMsg.includes('guardar') ? 'guardado_firestore' : 'desconocida',
+          fase,
         },
+        claudeMeta: turnosClaude > 0 ? {
+          turnos: turnosClaude,
+          duracionMs: duracionClaudeMs,
+        } : undefined,
       });
       
       // Mensaje público genérico pero indicando si fue timeout
