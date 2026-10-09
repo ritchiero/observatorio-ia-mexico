@@ -15,12 +15,15 @@ export async function ejecutarAgenteDeteccion(
   const startTime = Date.now();
   // Deadline interno: terminar con 20s de margen antes del maxDuration de 300s
   const DEADLINE_MS = 280_000;
+  const MARGEN_PARSEO_MS = 10_000;
   const isDeadlineExceeded = () => Date.now() - startTime > DEADLINE_MS;
   
   const db = getAdminDb();
   const errores: string[] = [];
   const decisiones: Array<Record<string, unknown>> = [];
   let anunciosEncontrados = 0;
+  let turnosClaude = 0;
+  let duracionClaudeMs = 0;
 
   try {
     // Obtener anuncios existentes (título + fuentes + folio) para dedup y folio
@@ -38,9 +41,20 @@ export async function ejecutarAgenteDeteccion(
       throw new Error('Deadline excedido antes de iniciar búsqueda con Claude');
     }
 
+    // Calcular timeout dinámico: tiempo restante menos margen para parseo y guardado
+    const tiempoTranscurrido = Date.now() - startTime;
+    const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
+    const timeoutClaude = Math.max(30_000, tiempoRestante - MARGEN_PARSEO_MS);
+
     // Ejecutar búsqueda con Claude
     const prompt = getDeteccionPrompt(titulosExistentes);
-    const rawResponse = await searchWithClaude({ prompt });
+    const claudeResult = await searchWithClaude({ 
+      prompt, 
+      timeoutMs: timeoutClaude 
+    });
+
+    turnosClaude = claudeResult.turnos;
+    duracionClaudeMs = claudeResult.duracionMs;
 
     if (isDeadlineExceeded()) {
       throw new Error('Deadline excedido después de búsqueda con Claude');
@@ -50,7 +64,7 @@ export async function ejecutarAgenteDeteccion(
     let deteccion: DeteccionResponseConFuentes;
     try {
       // Extraer JSON de la respuesta (puede venir con texto adicional)
-      const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+      const jsonMatch = claudeResult.texto.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error('No se encontró JSON en la respuesta');
       }
@@ -167,8 +181,12 @@ export async function ejecutarAgenteDeteccion(
         anunciosEncontrados,
         actualizacionesDetectadas: 0,
         errores,
-        rawResponse,
+        rawResponse: claudeResult.texto,
         trigger,
+        claudeMeta: {
+          turnos: turnosClaude,
+          duracionMs: duracionClaudeMs,
+        },
       });
 
       const parcial = errores.length > 0;
@@ -197,8 +215,21 @@ export async function ejecutarAgenteDeteccion(
     const errorMsg = error instanceof Error ? error.message : String(error);
     const esTimeout = errorMsg.toLowerCase().includes('timeout') || 
                       errorMsg.toLowerCase().includes('deadline') ||
+                      errorMsg.toLowerCase().includes('cancelada') ||
                       duracionMs > 270_000;
     errores.push(`Error general: ${errorMsg}`);
+
+    // Mejorar detección de fase basándose en el mensaje de error
+    let fase = 'desconocida';
+    if (errorMsg.includes('búsqueda') || errorMsg.includes('Claude') || errorMsg.includes('cancelada')) {
+      fase = 'busqueda_claude';
+    } else if (errorMsg.includes('parsear') || errorMsg.includes('JSON')) {
+      fase = 'parseo_json';
+    } else if (errorMsg.includes('guardar') || errorMsg.includes('Firestore')) {
+      fase = 'guardado_firestore';
+    } else if (errorMsg.includes('Deadline')) {
+      fase = duracionClaudeMs > 0 ? 'guardado_firestore' : 'busqueda_claude';
+    }
 
     // Guardar log de error con detalles
     await db.collection('agenteLogs').add({
@@ -213,10 +244,12 @@ export async function ejecutarAgenteDeteccion(
       error: {
         mensaje: errorMsg,
         esTimeout,
-        fase: errorMsg.includes('búsqueda') ? 'busqueda_claude' : 
-              errorMsg.includes('parsear') ? 'parseo_json' : 
-              errorMsg.includes('guardar') ? 'guardado_firestore' : 'desconocida',
+        fase,
       },
+      claudeMeta: turnosClaude > 0 ? {
+        turnos: turnosClaude,
+        duracionMs: duracionClaudeMs,
+      } : undefined,
     });
 
     // OIA-012: una corrida FALLIDA debe dejar rastro en la bitácora pública.
@@ -247,11 +280,17 @@ export async function ejecutarAgenteMonitoreo(
 ) {
   const LIMIT = opts.limit ?? 12; // rotación anti-timeout: solo N por corrida
   const startTime = Date.now();
+  const DEADLINE_MS = 280_000;
+  const MARGEN_POR_LLAMADA_MS = 5_000;
+  const isDeadlineExceeded = () => Date.now() - startTime > DEADLINE_MS;
+  
   const db = getAdminDb();
   const errores: string[] = [];
   let actualizacionesDetectadas = 0;
   let verificacionesExitosas = 0;
   let verificacionesFallidas = 0;
+  let turnosTotales = 0;
+  let duracionClaudeTotalMs = 0;
 
   try {
     // Obtener todos los anuncios
@@ -280,7 +319,21 @@ export async function ejecutarAgenteMonitoreo(
 
     // Monitorear cada anuncio del lote rotado
     for (const anuncio of candidatos) {
+      if (isDeadlineExceeded()) {
+        errores.push('Deadline excedido durante el monitoreo de anuncios');
+        break;
+      }
+
       try {
+        // Calcular timeout dinámico para esta llamada
+        const tiempoTranscurrido = Date.now() - startTime;
+        const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
+        const candidatosRestantes = candidatos.length - verificacionesExitosas - verificacionesFallidas;
+        const timeoutPorAnuncio = Math.max(
+          20_000,
+          Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes))
+        );
+
         const prompt = getMonitoreoPrompt({
           titulo: anuncio.titulo,
           descripcion: anuncio.descripcion,
@@ -292,12 +345,18 @@ export async function ejecutarAgenteMonitoreo(
           status: anuncio.status,
         });
 
-        const rawResponse = await searchWithClaude({ prompt });
+        const claudeResult = await searchWithClaude({ 
+          prompt,
+          timeoutMs: timeoutPorAnuncio,
+        });
+
+        turnosTotales += claudeResult.turnos;
+        duracionClaudeTotalMs += claudeResult.duracionMs;
 
         // Parsear respuesta
         let monitoreo: MonitoreoResponseConFuentes;
         try {
-          const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+          const jsonMatch = claudeResult.texto.match(/\{[\s\S]*\}/);
           if (!jsonMatch) {
             throw new Error('No se encontró JSON en la respuesta');
           }
@@ -424,6 +483,10 @@ export async function ejecutarAgenteMonitoreo(
       errores,
       rawResponse: '',
       trigger,
+      claudeMeta: {
+        turnos: turnosTotales,
+        duracionMs: duracionClaudeTotalMs,
+      },
     });
 
     // Una corrida con cero actualizaciones solo cuenta como "sin novedad" si
@@ -458,6 +521,10 @@ export async function ejecutarAgenteMonitoreo(
   } catch (error) {
     const duracionMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
+    const esTimeout = errorMsg.toLowerCase().includes('timeout') || 
+                      errorMsg.toLowerCase().includes('deadline') ||
+                      errorMsg.toLowerCase().includes('cancelada') ||
+                      duracionMs > 270_000;
     errores.push(`Error general: ${errorMsg}`);
 
     // Guardar log de error
@@ -470,13 +537,23 @@ export async function ejecutarAgenteMonitoreo(
       errores,
       rawResponse: '',
       trigger,
+      error: {
+        mensaje: errorMsg,
+        esTimeout,
+      },
+      claudeMeta: turnosTotales > 0 ? {
+        turnos: turnosTotales,
+        duracionMs: duracionClaudeTotalMs,
+      } : undefined,
     });
 
     // Mismo criterio que en detección: el fallo se publica, no se esconde.
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
       tipo: 'agente_fallo',
-      descripcion: 'El agente de monitoreo falló antes de completar la revisión de estatus. El detalle quedó en el registro interno.',
+      descripcion: esTimeout
+        ? 'El agente de monitoreo excedió el tiempo límite durante la revisión de estatus. El detalle quedó en el registro interno.'
+        : 'El agente de monitoreo falló antes de completar la revisión de estatus. El detalle quedó en el registro interno.',
     });
 
     return {
@@ -487,14 +564,19 @@ export async function ejecutarAgenteMonitoreo(
       verificacionesFallidas: 0,
       errores,
       duracionMs,
+      esTimeout,
     };
   }
 }
 
 export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual') {
     const startTime = Date.now();
+    const DEADLINE_MS = 280_000;
+    const MARGEN_PARSEO_MS = 10_000;
     const db = getAdminDb();
     const errores: string[] = [];
+    let turnosClaude = 0;
+    let duracionClaudeMs = 0;
 
     try {
           const ahora = new Date();
@@ -592,12 +674,24 @@ export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual'
                   statsTracker,
           });
 
-          const rawResponse = await searchWithClaude({ prompt, maxTokens: 4096 });
+          // Calcular timeout dinámico
+          const tiempoTranscurrido = Date.now() - startTime;
+          const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
+          const timeoutClaude = Math.max(30_000, tiempoRestante - MARGEN_PARSEO_MS);
+
+          const claudeResult = await searchWithClaude({ 
+                  prompt, 
+                  maxTokens: 4096,
+                  timeoutMs: timeoutClaude,
+          });
+
+          turnosClaude = claudeResult.turnos;
+          duracionClaudeMs = claudeResult.duracionMs;
 
           // Parsear respuesta
           let recap: any;
           try {
-                  const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+                  const jsonMatch = claudeResult.texto.match(/\{[\s\S]*\}/);
                   if (!jsonMatch) throw new Error('No se encontró JSON en la respuesta');
                   recap = JSON.parse(jsonMatch[0]);
           } catch (parseError) {
@@ -624,7 +718,7 @@ export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual'
                             iniciativasActivas: activas,
                             totalCasos,
                   },
-                  rawResponse,
+                  rawResponse: claudeResult.texto,
                   duracionMs: Date.now() - startTime,
                   trigger,
                   createdAt: Timestamp.now(),
@@ -639,8 +733,12 @@ export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual'
                   anunciosEncontrados: 0,
                   actualizacionesDetectadas: 0,
                   errores,
-                  rawResponse,
+                  rawResponse: claudeResult.texto,
                   trigger,
+                  claudeMeta: {
+                          turnos: turnosClaude,
+                          duracionMs: duracionClaudeMs,
+                  },
           });
 
           // Registrar en actividad
@@ -660,6 +758,10 @@ export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual'
     } catch (error) {
           const duracionMs = Date.now() - startTime;
           const errorMsg = error instanceof Error ? error.message : String(error);
+          const esTimeout = errorMsg.toLowerCase().includes('timeout') || 
+                            errorMsg.toLowerCase().includes('deadline') ||
+                            errorMsg.toLowerCase().includes('cancelada') ||
+                            duracionMs > 270_000;
           errores.push(`Error general: ${errorMsg}`);
 
           await db.collection('agenteLogs').add({
@@ -671,8 +773,16 @@ export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual'
                   errores,
                   rawResponse: '',
                   trigger,
+                  error: {
+                          mensaje: errorMsg,
+                          esTimeout,
+                  },
+                  claudeMeta: turnosClaude > 0 ? {
+                          turnos: turnosClaude,
+                          duracionMs: duracionClaudeMs,
+                  } : undefined,
           });
 
-          return { success: false, errores, duracionMs };
+          return { success: false, errores, duracionMs, esTimeout };
     }
 }
