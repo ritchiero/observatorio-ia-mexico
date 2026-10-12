@@ -39,6 +39,7 @@ function initializeFirebaseAdmin() {
   
   try {
     adminDb = getFirestore(adminApp);
+    adminDb.settings({ ignoreUndefinedProperties: true });
     adminStorage = getStorage(adminApp);
   } catch (error: any) {
     console.error('[FIREBASE_ADMIN] Firestore initialization error:', error);

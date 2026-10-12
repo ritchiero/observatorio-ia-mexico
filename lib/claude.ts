@@ -75,7 +75,7 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
       {
         type: 'web_search_20260209' as const,
         name: 'web_search' as const,
-        max_uses: 8,
+        max_uses: 3,
       },
     ];
     let messages: Anthropic.MessageParam[] = [

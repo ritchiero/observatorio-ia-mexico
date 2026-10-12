@@ -278,7 +278,7 @@ export async function ejecutarAgenteMonitoreo(
   trigger: TriggerTipo = 'manual',
   opts: { limit?: number } = {},
 ) {
-  const LIMIT = opts.limit ?? 12; // rotación anti-timeout: solo N por corrida
+  const LIMIT = opts.limit ?? 6; // rotación anti-timeout: solo N por corrida
   const startTime = Date.now();
   const DEADLINE_MS = 280_000;
   const MARGEN_POR_LLAMADA_MS = 5_000;
@@ -371,14 +371,18 @@ export async function ejecutarAgenteMonitoreo(
 
         // Si hay actualización, guardarla
         if (monitoreo.hay_actualizacion && monitoreo.actualizacion) {
-          const actualizacion = {
+          const actualizacion: Record<string, unknown> = {
             fecha: Timestamp.now(),
             descripcion: monitoreo.actualizacion.descripcion,
             fuente: monitoreo.actualizacion.fuente_url,
             cambioStatus: monitoreo.cambio_status_recomendado,
-            statusAnterior: monitoreo.cambio_status_recomendado ? anuncio.status : undefined,
-            statusNuevo: monitoreo.cambio_status_recomendado ? monitoreo.nuevo_status : undefined,
           };
+
+          // Solo incluir statusAnterior/statusNuevo si hubo cambio de status
+          if (monitoreo.cambio_status_recomendado) {
+            actualizacion.statusAnterior = anuncio.status;
+            actualizacion.statusNuevo = monitoreo.nuevo_status;
+          }
 
           const actualizaciones = anuncio.actualizaciones || [];
           actualizaciones.push(actualizacion);
@@ -392,8 +396,19 @@ export async function ejecutarAgenteMonitoreo(
           // Cambiar status si es recomendado
           if (monitoreo.cambio_status_recomendado && monitoreo.nuevo_status) {
             updateData.status = monitoreo.nuevo_status;
+          }
 
-            // Registrar actividad de cambio de status
+          // IMPORTANTE: Hacer el update PRIMERO, luego registrar actividad
+          try {
+            await db.collection('anuncios').doc(anuncio.id).update(updateData);
+          } catch (updateError) {
+            errores.push(`Error al actualizar "${anuncio.titulo}": ${updateError}`);
+            verificacionesFallidas++;
+            continue;
+          }
+
+          // Solo registrar actividad si el update tuvo éxito
+          if (monitoreo.cambio_status_recomendado && monitoreo.nuevo_status) {
             await db.collection('actividad').add({
               fecha: Timestamp.now(),
               tipo: 'cambio_status',
@@ -402,7 +417,6 @@ export async function ejecutarAgenteMonitoreo(
               descripcion: `Status cambió de "${anuncio.status}" a "${monitoreo.nuevo_status}": ${monitoreo.justificacion}`,
             });
           } else {
-            // Registrar actividad de actualización
             await db.collection('actividad').add({
               fecha: Timestamp.now(),
               tipo: 'actualizacion',
@@ -411,8 +425,6 @@ export async function ejecutarAgenteMonitoreo(
               descripcion: monitoreo.actualizacion.descripcion,
             });
           }
-
-          await db.collection('anuncios').doc(anuncio.id).update(updateData);
           
           // Crear evento en el timeline
           try {
