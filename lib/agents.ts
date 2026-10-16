@@ -7,6 +7,35 @@ import { crearEventoInicial, crearEventoTimeline } from './timeline';
 import { tierFuente, esDuplicado, folioFactory } from './expediente';
 import { selectMonitoringCandidates, summarizeMonitoringRun } from './monitoring-health';
 
+/**
+ * Helper para normalizar fechas de Firestore que pueden ser Timestamp o string ISO
+ */
+function normalizarFecha(fecha: any): Date | null {
+  if (!fecha) return null;
+  if (typeof fecha?.toDate === 'function') return fecha.toDate();
+  if (typeof fecha === 'string') return new Date(fecha);
+  if (fecha instanceof Date) return fecha;
+  return null;
+}
+
+/**
+ * Sanitizar error para logging seguro (sin secretos ni stack traces largos)
+ */
+function sanitizarError(error: unknown): { tipo: string; mensaje: string; codigo?: string; status?: number } {
+  if (error instanceof Error) {
+    return {
+      tipo: error.name || 'Error',
+      mensaje: error.message.slice(0, 500), // Limitar longitud
+      codigo: (error as any).code,
+      status: (error as any).status || (error as any).statusCode,
+    };
+  }
+  return {
+    tipo: 'UnknownError',
+    mensaje: String(error).slice(0, 500),
+  };
+}
+
 export async function ejecutarAgenteDeteccion(
   trigger: TriggerTipo = 'manual',
   opts: { dryRun?: boolean } = {},
@@ -276,9 +305,10 @@ export async function ejecutarAgenteDeteccion(
 
 export async function ejecutarAgenteMonitoreo(
   trigger: TriggerTipo = 'manual',
-  opts: { limit?: number } = {},
+  opts: { limit?: number; maxSearches?: number } = {},
 ) {
   const LIMIT = opts.limit ?? 6; // rotación anti-timeout: solo N por corrida
+  const MAX_SEARCHES = opts.maxSearches ?? 3; // búsquedas web por anuncio
   const startTime = Date.now();
   const DEADLINE_MS = 280_000;
   const MARGEN_POR_LLAMADA_MS = 5_000;
@@ -291,6 +321,7 @@ export async function ejecutarAgenteMonitoreo(
   let verificacionesFallidas = 0;
   let turnosTotales = 0;
   let duracionClaudeTotalMs = 0;
+  let primerErrorDetallado: ReturnType<typeof sanitizarError> | null = null;
 
   try {
     // Obtener todos los anuncios
@@ -334,13 +365,19 @@ export async function ejecutarAgenteMonitoreo(
           Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes))
         );
 
+        // Normalizar fechas que pueden ser Timestamp o string
+        const fechaAnuncio = normalizarFecha(anuncio.fechaAnuncio);
+        const fechaPrometida = normalizarFecha(anuncio.fechaPrometida);
+
+        if (!fechaAnuncio) {
+          throw new Error('fechaAnuncio inválida o nula');
+        }
+
         const prompt = getMonitoreoPrompt({
           titulo: anuncio.titulo,
           descripcion: anuncio.descripcion,
-          fechaAnuncio: anuncio.fechaAnuncio.toDate().toISOString().split('T')[0],
-          fechaPrometida: anuncio.fechaPrometida 
-            ? anuncio.fechaPrometida.toDate().toISOString().split('T')[0]
-            : null,
+          fechaAnuncio: fechaAnuncio.toISOString().split('T')[0],
+          fechaPrometida: fechaPrometida ? fechaPrometida.toISOString().split('T')[0] : null,
           responsable: anuncio.responsable,
           status: anuncio.status,
         });
@@ -348,6 +385,7 @@ export async function ejecutarAgenteMonitoreo(
         const claudeResult = await searchWithClaude({ 
           prompt,
           timeoutMs: timeoutPorAnuncio,
+          maxSearches: MAX_SEARCHES,
         });
 
         turnosTotales += claudeResult.turnos;
@@ -470,7 +508,14 @@ export async function ejecutarAgenteMonitoreo(
         }
         verificacionesExitosas++;
       } catch (error) {
-        errores.push(`Error al monitorear "${anuncio.titulo}": ${error}`);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        errores.push(`Error al monitorear "${anuncio.titulo}": ${errorMsg}`);
+        
+        // Capturar detalles del primer error para diagnóstico
+        if (!primerErrorDetallado) {
+          primerErrorDetallado = sanitizarError(error);
+        }
+        
         verificacionesFallidas++;
       }
     }
@@ -495,6 +540,7 @@ export async function ejecutarAgenteMonitoreo(
       errores,
       rawResponse: '',
       trigger,
+      primerError: primerErrorDetallado,
       claudeMeta: {
         turnos: turnosTotales,
         duracionMs: duracionClaudeTotalMs,
@@ -509,7 +555,7 @@ export async function ejecutarAgenteMonitoreo(
         ? 'agente_parcial'
         : 'agente_ejecutado';
     const descripcionActividad = !salud.success
-      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote. El detalle quedó en el registro interno.`
+      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${primerErrorDetallado ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})` : ''}. El detalle quedó en el registro interno.`
       : salud.partial
         ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron. Detectó ${actualizacionesDetectadas} actualización(es).`
         : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).`;
@@ -538,6 +584,10 @@ export async function ejecutarAgenteMonitoreo(
                       errorMsg.toLowerCase().includes('cancelada') ||
                       duracionMs > 270_000;
     errores.push(`Error general: ${errorMsg}`);
+    
+    if (!primerErrorDetallado) {
+      primerErrorDetallado = sanitizarError(error);
+    }
 
     // Guardar log de error
     await db.collection('agenteLogs').add({
@@ -549,6 +599,7 @@ export async function ejecutarAgenteMonitoreo(
       errores,
       rawResponse: '',
       trigger,
+      primerError: primerErrorDetallado,
       error: {
         mensaje: errorMsg,
         esTimeout,
@@ -565,7 +616,7 @@ export async function ejecutarAgenteMonitoreo(
       tipo: 'agente_fallo',
       descripcion: esTimeout
         ? 'El agente de monitoreo excedió el tiempo límite durante la revisión de estatus. El detalle quedó en el registro interno.'
-        : 'El agente de monitoreo falló antes de completar la revisión de estatus. El detalle quedó en el registro interno.',
+        : `El agente de monitoreo falló antes de completar la revisión de estatus${primerErrorDetallado ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})` : ''}. El detalle quedó en el registro interno.`,
     });
 
     return {
