@@ -8,6 +8,7 @@ export interface ClaudeSearchOptions {
   prompt: string;
   maxTokens?: number;
   timeoutMs?: number;
+  maxSearches?: number;
 }
 
 export interface ClaudeSearchResult {
@@ -67,7 +68,7 @@ async function searchWithOpenRouter(options: ClaudeSearchOptions): Promise<strin
 }
 
 export async function searchWithClaude(options: ClaudeSearchOptions): Promise<ClaudeSearchResult> {
-  const { prompt, maxTokens = 16000, timeoutMs } = options;
+  const { prompt, maxTokens = 16000, timeoutMs, maxSearches = 8 } = options;
   const startTime = Date.now();
 
   try {
@@ -75,7 +76,7 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
       {
         type: 'web_search_20260209' as const,
         name: 'web_search' as const,
-        max_uses: 8,
+        max_uses: maxSearches,
       },
     ];
     let messages: Anthropic.MessageParam[] = [
