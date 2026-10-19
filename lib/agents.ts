@@ -51,11 +51,22 @@ export function sanitizarError(error: unknown): { tipo: string; mensaje: string;
 /**
  * Helper para eliminar recursivamente todas las claves con valor undefined.
  * Defensa adicional para evitar rechazos de Firestore.
+ * 
+ * IMPORTANTE: solo recursa en objetos planos y arrays. Preserva instancias
+ * especiales (Date, Timestamp, FieldValue, etc.) intactas para evitar corrupción.
  */
 export function limpiarUndefined(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) return obj.map(limpiarUndefined);
+  
+  // Solo recursar en objetos planos (plain objects): aquellos cuyo prototipo
+  // es Object.prototype o null. Cualquier otra instancia (Date, Timestamp,
+  // FieldValue, etc.) se devuelve tal cual.
+  const proto = Object.getPrototypeOf(obj);
+  if (proto !== Object.prototype && proto !== null) {
+    return obj;
+  }
   
   const result: any = {};
   for (const [key, value] of Object.entries(obj)) {
