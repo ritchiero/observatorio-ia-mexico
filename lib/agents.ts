@@ -20,20 +20,50 @@ function normalizarFecha(fecha: any): Date | null {
 
 /**
  * Sanitizar error para logging seguro (sin secretos ni stack traces largos)
+ * IMPORTANTE: No incluir claves con valor undefined (Firestore las rechaza)
  */
-function sanitizarError(error: unknown): { tipo: string; mensaje: string; codigo?: string; status?: number } {
+export function sanitizarError(error: unknown): { tipo: string; mensaje: string; codigo?: string; status?: number } {
   if (error instanceof Error) {
-    return {
+    const result: { tipo: string; mensaje: string; codigo?: string; status?: number } = {
       tipo: error.name || 'Error',
-      mensaje: error.message.slice(0, 500), // Limitar longitud
-      codigo: (error as any).code,
-      status: (error as any).status || (error as any).statusCode,
+      mensaje: error.message.slice(0, 500),
     };
+    
+    // Solo incluir codigo/status si están definidos
+    const code = (error as any).code;
+    if (code !== undefined) {
+      result.codigo = String(code);
+    }
+    
+    const status = (error as any).status || (error as any).statusCode;
+    if (status !== undefined) {
+      result.status = status;
+    }
+    
+    return result;
   }
   return {
     tipo: 'UnknownError',
     mensaje: String(error).slice(0, 500),
   };
+}
+
+/**
+ * Helper para eliminar recursivamente todas las claves con valor undefined.
+ * Defensa adicional para evitar rechazos de Firestore.
+ */
+export function limpiarUndefined(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(limpiarUndefined);
+  
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      result[key] = limpiarUndefined(value);
+    }
+  }
+  return result;
 }
 
 export async function ejecutarAgenteDeteccion(
@@ -401,6 +431,12 @@ export async function ejecutarAgenteMonitoreo(
           monitoreo = JSON.parse(jsonMatch[0]);
         } catch (parseError) {
           errores.push(`Error al parsear respuesta para "${anuncio.titulo}": ${parseError}`);
+          
+          // Capturar detalles del primer error también en parseo JSON
+          if (!primerErrorDetallado) {
+            primerErrorDetallado = sanitizarError(parseError);
+          }
+          
           verificacionesFallidas++;
           continue;
         }
@@ -526,9 +562,9 @@ export async function ejecutarAgenteMonitoreo(
       failedChecks: verificacionesFallidas,
     });
 
-    // Guardar log del agente
+    // Guardar log del agente (con defensa adicional contra undefined)
     const duracionMs = Date.now() - startTime;
-    await db.collection('agenteLogs').add({
+    const logData = limpiarUndefined({
       tipo: 'monitoreo',
       fecha: Timestamp.now(),
       duracionMs,
@@ -541,11 +577,18 @@ export async function ejecutarAgenteMonitoreo(
       rawResponse: '',
       trigger,
       primerError: primerErrorDetallado,
-      claudeMeta: {
+      claudeMeta: turnosTotales > 0 ? {
         turnos: turnosTotales,
         duracionMs: duracionClaudeTotalMs,
-      },
+      } : undefined,
     });
+    
+    try {
+      await db.collection('agenteLogs').add(logData);
+    } catch (logError) {
+      // Si el log interno falla, NO debe impedir escribir actividad
+      console.error('[MONITOREO] Error al escribir agenteLogs:', logError);
+    }
 
     // Una corrida con cero actualizaciones solo cuenta como "sin novedad" si
     // hubo revisiones validas. Los fallos totales y parciales quedan separados.
@@ -554,10 +597,16 @@ export async function ejecutarAgenteMonitoreo(
       : salud.partial
         ? 'agente_parcial'
         : 'agente_ejecutado';
+    
+    // Resumen del primer error para diagnóstico (máximo 100 caracteres)
+    const resumenError = primerErrorDetallado 
+      ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})`
+      : '';
+    
     const descripcionActividad = !salud.success
-      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${primerErrorDetallado ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})` : ''}. El detalle quedó en el registro interno.`
+      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${resumenError}. El detalle quedó en el registro interno.`
       : salud.partial
-        ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron. Detectó ${actualizacionesDetectadas} actualización(es).`
+        ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron${resumenError}. Detectó ${actualizacionesDetectadas} actualización(es).`
         : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).`;
 
     await db.collection('actividad').add({
@@ -589,8 +638,8 @@ export async function ejecutarAgenteMonitoreo(
       primerErrorDetallado = sanitizarError(error);
     }
 
-    // Guardar log de error
-    await db.collection('agenteLogs').add({
+    // Guardar log de error (con defensa adicional contra undefined)
+    const logData = limpiarUndefined({
       tipo: 'monitoreo',
       fecha: Timestamp.now(),
       duracionMs,
@@ -609,14 +658,25 @@ export async function ejecutarAgenteMonitoreo(
         duracionMs: duracionClaudeTotalMs,
       } : undefined,
     });
+    
+    try {
+      await db.collection('agenteLogs').add(logData);
+    } catch (logError) {
+      // Si el log interno falla, NO debe impedir escribir actividad
+      console.error('[MONITOREO] Error al escribir agenteLogs:', logError);
+    }
 
     // Mismo criterio que en detección: el fallo se publica, no se esconde.
+    const resumenError = primerErrorDetallado 
+      ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})`
+      : '';
+    
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
       tipo: 'agente_fallo',
       descripcion: esTimeout
         ? 'El agente de monitoreo excedió el tiempo límite durante la revisión de estatus. El detalle quedó en el registro interno.'
-        : `El agente de monitoreo falló antes de completar la revisión de estatus${primerErrorDetallado ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})` : ''}. El detalle quedó en el registro interno.`,
+        : `El agente de monitoreo falló antes de completar la revisión de estatus${resumenError}. El detalle quedó en el registro interno.`,
     });
 
     return {
