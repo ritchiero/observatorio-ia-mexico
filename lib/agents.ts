@@ -321,37 +321,63 @@ export async function ejecutarAgenteMonitoreo(
   let verificacionesFallidas = 0;
   let turnosTotales = 0;
   let duracionClaudeTotalMs = 0;
-  let primerErrorDetallado: ReturnType<typeof sanitizarError> | null = null;
+  let primerErrorDetallado: (ReturnType<typeof sanitizarError> & { fase?: string }) | null = null;
+
+  // Función auxiliar para capturar errores con fase
+  const capturarError = (error: unknown, fase: string) => {
+    const errorSanitizado = sanitizarError(error);
+    if (!primerErrorDetallado) {
+      primerErrorDetallado = { ...errorSanitizado, fase };
+    }
+    return errorSanitizado;
+  };
 
   try {
-    // Obtener todos los anuncios
-    const anunciosSnapshot = await db.collection('anuncios').get();
-    const anuncios = anunciosSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Array<{
-      id: string;
-      titulo: string;
-      descripcion: string;
-      fechaAnuncio: { toDate: () => Date };
-      fechaPrometida: { toDate: () => Date } | null;
-      responsable: string;
-      status: string;
-      actualizaciones: unknown[];
-      [key: string]: unknown;
-    }>;
+    // Fase 1: Consulta Firestore
+    let anunciosSnapshot;
+    try {
+      anunciosSnapshot = await db.collection('anuncios').get();
+    } catch (error) {
+      capturarError(error, 'consulta_firestore');
+      throw error;
+    }
 
-    // La rotacion usa un cursor propio. `updatedAt` no cambia cuando una revision
-    // no encuentra noticias, por lo que antes se elegian los mismos 12 expedientes
-    // en cada corrida y el resto podia quedar sin revisar indefinidamente.
-    // Los incumplidos tambien vuelven a la cola: pueden aparecer pruebas tardias
-    // que rehabiliten el estatus o agreguen contexto al retraso.
-    const candidatos = selectMonitoringCandidates(anuncios, LIMIT);
+    // Fase 2: Mapear documentos
+    let anuncios;
+    try {
+      anuncios = anunciosSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Array<{
+        id: string;
+        titulo: string;
+        descripcion: string;
+        fechaAnuncio: { toDate: () => Date };
+        fechaPrometida: { toDate: () => Date } | null;
+        responsable: string;
+        status: string;
+        actualizaciones: unknown[];
+        [key: string]: unknown;
+      }>;
+    } catch (error) {
+      capturarError(error, 'mapeo_documentos');
+      throw error;
+    }
 
-    // Monitorear cada anuncio del lote rotado
+    // Fase 3: Selección de candidatos
+    let candidatos;
+    try {
+      candidatos = selectMonitoringCandidates(anuncios, LIMIT);
+    } catch (error) {
+      capturarError(error, 'seleccion_candidatos');
+      throw error;
+    }
+
+    // Fase 4: Monitorear cada anuncio del lote rotado
     for (const anuncio of candidatos) {
       if (isDeadlineExceeded()) {
         errores.push('Deadline excedido durante el monitoreo de anuncios');
+        capturarError(new Error('Deadline excedido'), 'deadline_bucle');
         break;
       }
 
@@ -400,6 +426,7 @@ export async function ejecutarAgenteMonitoreo(
           }
           monitoreo = JSON.parse(jsonMatch[0]);
         } catch (parseError) {
+          capturarError(parseError, 'parseo_json_claude');
           errores.push(`Error al parsear respuesta para "${anuncio.titulo}": ${parseError}`);
           verificacionesFallidas++;
           continue;
@@ -440,6 +467,7 @@ export async function ejecutarAgenteMonitoreo(
           try {
             await db.collection('anuncios').doc(anuncio.id).update(updateData);
           } catch (updateError) {
+            capturarError(updateError, 'update_firestore');
             errores.push(`Error al actualizar "${anuncio.titulo}": ${updateError}`);
             verificacionesFallidas++;
             continue;
@@ -511,10 +539,8 @@ export async function ejecutarAgenteMonitoreo(
         const errorMsg = error instanceof Error ? error.message : String(error);
         errores.push(`Error al monitorear "${anuncio.titulo}": ${errorMsg}`);
         
-        // Capturar detalles del primer error para diagnóstico
-        if (!primerErrorDetallado) {
-          primerErrorDetallado = sanitizarError(error);
-        }
+        // Capturar detalles del error con fase del bucle
+        capturarError(error, 'bucle_monitoreo');
         
         verificacionesFallidas++;
       }
@@ -554,11 +580,20 @@ export async function ejecutarAgenteMonitoreo(
       : salud.partial
         ? 'agente_parcial'
         : 'agente_ejecutado';
-    const descripcionActividad = !salud.success
-      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${primerErrorDetallado ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})` : ''}. El detalle quedó en el registro interno.`
-      : salud.partial
-        ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron. Detectó ${actualizacionesDetectadas} actualización(es).`
-        : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).`;
+    
+    // Construir descripción incluyendo primer error si existe
+    let descripcionActividad: string;
+    const errorSummary = primerErrorDetallado 
+      ? ` [${primerErrorDetallado.fase || 'fase_desconocida'}] (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})`
+      : '';
+    
+    if (!salud.success) {
+      descripcionActividad = `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${errorSummary}. El detalle quedó en el registro interno.`;
+    } else if (salud.partial) {
+      descripcionActividad = `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron${errorSummary}. Detectó ${actualizacionesDetectadas} actualización(es).`;
+    } else {
+      descripcionActividad = `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).`;
+    }
 
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
@@ -585,8 +620,9 @@ export async function ejecutarAgenteMonitoreo(
                       duracionMs > 270_000;
     errores.push(`Error general: ${errorMsg}`);
     
+    // Capturar error del catch general si no se capturó antes
     if (!primerErrorDetallado) {
-      primerErrorDetallado = sanitizarError(error);
+      primerErrorDetallado = { ...sanitizarError(error), fase: 'catch_general' };
     }
 
     // Guardar log de error
@@ -610,13 +646,18 @@ export async function ejecutarAgenteMonitoreo(
       } : undefined,
     });
 
+    // Construir descripción con fase y error
+    const errorSummary = primerErrorDetallado 
+      ? ` [${primerErrorDetallado.fase || 'catch_general'}] (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})`
+      : '';
+
     // Mismo criterio que en detección: el fallo se publica, no se esconde.
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
       tipo: 'agente_fallo',
       descripcion: esTimeout
-        ? 'El agente de monitoreo excedió el tiempo límite durante la revisión de estatus. El detalle quedó en el registro interno.'
-        : `El agente de monitoreo falló antes de completar la revisión de estatus${primerErrorDetallado ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})` : ''}. El detalle quedó en el registro interno.`,
+        ? `El agente de monitoreo excedió el tiempo límite durante la revisión de estatus${errorSummary}. El detalle quedó en el registro interno.`
+        : `El agente de monitoreo falló antes de completar la revisión de estatus${errorSummary}. El detalle quedó en el registro interno.`,
     });
 
     return {
