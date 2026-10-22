@@ -406,11 +406,26 @@ export async function ejecutarAgenteMonitoreo(
         const timeoutDinamico = Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes));
         const timeoutPorAnuncio = Math.max(MIN_TIMEOUT_MS, timeoutDinamico);
         
+        // Logging detallado para diagnóstico
+        console.log(
+          `[MONITOREO] Anuncio ${verificacionesExitosas + verificacionesFallidas + 1}/${candidatos.length}: ` +
+          `"${anuncio.titulo.slice(0, 50)}..." | ` +
+          `Transcurrido: ${tiempoTranscurrido}ms | ` +
+          `Restante: ${tiempoRestante}ms | ` +
+          `Timeout dinámico: ${timeoutDinamico}ms | ` +
+          `Timeout aplicado: ${timeoutPorAnuncio}ms`
+        );
+        
         // Si el timeout calculado es menor al mínimo y quedan candidatos, mejor parar aquí
         if (timeoutDinamico < MIN_TIMEOUT_MS && candidatosRestantes > 0) {
-          console.log(`[MONITOREO] Timeout restante (${timeoutDinamico}ms) < mínimo (${MIN_TIMEOUT_MS}ms). Deteniendo para evitar abortos.`);
+          console.log(`[MONITOREO] STOP: Timeout dinámico (${timeoutDinamico}ms) < mínimo (${MIN_TIMEOUT_MS}ms). Deteniendo.`);
           errores.push(`Tiempo insuficiente para ${candidatosRestantes} candidatos restantes (${timeoutDinamico}ms < ${MIN_TIMEOUT_MS}ms)`);
           break;
+        }
+        
+        // Validación: el timeout nunca debe ser <= 0
+        if (timeoutPorAnuncio <= 0) {
+          throw new Error(`Timeout inválido calculado: ${timeoutPorAnuncio}ms (dinámico: ${timeoutDinamico}ms, restante: ${tiempoRestante}ms)`);
         }
 
         // Normalizar fechas que pueden ser Timestamp o string

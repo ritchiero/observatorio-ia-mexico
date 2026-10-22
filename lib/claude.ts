@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 
+// SDK de Anthropic con timeout explícito de 10 minutos (default es 600s)
+// Sin especificar maxRetries para que el retry sea manejado por retryWithBackoff
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 600_000, // 10 minutos
+  maxRetries: 0, // Manejamos retry manualmente con presupuesto
 });
 
 export interface ClaudeSearchOptions {
@@ -68,18 +72,19 @@ async function searchWithOpenRouter(options: ClaudeSearchOptions): Promise<strin
 }
 
 /**
- * Helper para retry con exponential backoff
+ * Helper para retry con exponential backoff que respeta presupuesto de tiempo
  */
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   options: {
     maxRetries: number;
     initialDelayMs: number;
-    shouldRetry: (error: unknown) => boolean;
+    shouldRetry: (error: unknown, attempt: number) => boolean;
     onRetry?: (attempt: number, error: unknown) => void;
+    deadline?: number; // Timestamp absoluto (Date.now() + budget)
   }
 ): Promise<T> {
-  const { maxRetries, initialDelayMs, shouldRetry, onRetry } = options;
+  const { maxRetries, initialDelayMs, shouldRetry, onRetry, deadline } = options;
   let lastError: unknown;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -88,11 +93,22 @@ async function retryWithBackoff<T>(
     } catch (error) {
       lastError = error;
       
-      if (attempt === maxRetries || !shouldRetry(error)) {
+      // Verificar si se debe reintentar
+      if (attempt === maxRetries || !shouldRetry(error, attempt)) {
         throw error;
       }
       
       const delay = initialDelayMs * Math.pow(2, attempt);
+      
+      // Verificar si hay presupuesto para el backoff + otro intento
+      if (deadline) {
+        const timeLeft = deadline - Date.now();
+        if (timeLeft < delay) {
+          console.log(`[claude] No hay presupuesto para backoff (${delay}ms > ${timeLeft}ms restantes). Abortando retries.`);
+          throw error;
+        }
+      }
+      
       if (onRetry) {
         onRetry(attempt + 1, error);
       }
@@ -108,21 +124,32 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
   const { prompt, maxTokens = 16000, timeoutMs, maxSearches = 8 } = options;
   const startTime = Date.now();
 
-  // Retry en errores transitorios: abort, timeout, 5xx, 429
-  const shouldRetry = (error: unknown): boolean => {
-    if (error instanceof Error) {
-      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-        return true;
+  // Validación: timeoutMs debe ser positivo y razonable
+  if (timeoutMs !== undefined && timeoutMs <= 0) {
+    console.error(`[claude] WARNING: timeoutMs inválido (${timeoutMs}ms). No se aplicará timeout.`);
+  }
+
+  // Retry en errores transitorios: 5xx, 429
+  // NO reintentar AbortError/TimeoutError si ya se gastó el presupuesto
+  const shouldRetry = (error: unknown, attempt: number): boolean => {
+    // Solo 1 reintento (2 intentos totales) para no exceder presupuesto
+    if (attempt >= 1) return false;
+    
+    // Si es un timeout propio, verificar si queda presupuesto
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      const elapsed = Date.now() - startTime;
+      const hasTimeForRetry = timeoutMs ? (elapsed + timeoutMs < (timeoutMs * 1.8)) : true;
+      if (!hasTimeForRetry) {
+        console.log(`[claude] No hay presupuesto para reintentar timeout (elapsed: ${elapsed}ms, timeout: ${timeoutMs}ms)`);
+        return false;
       }
-      if (error.message.includes('timeout') || error.message.includes('aborted')) {
-        return true;
-      }
+      return true;
     }
+    
+    // Errores de API transitorios
     if (error instanceof Anthropic.APIError) {
       const status = error.status;
-      if (status === 429 || status === 503 || (status && status >= 500)) {
-        return true;
-      }
+      return status === 429 || status === 503 || (status !== undefined && status >= 500);
     }
     return false;
   };
@@ -145,14 +172,20 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
         },
       ];
 
+      // Crear nuevo AbortController para este intento (NO reutilizar entre intentos)
       const abortController = new AbortController();
       let timeoutId: NodeJS.Timeout | undefined;
 
-      if (timeoutMs) {
+      // Aplicar timeout solo si es positivo
+      if (timeoutMs && timeoutMs > 0) {
+        const elapsedSinceStart = Date.now() - startTime;
+        console.log(`[claude] Iniciando llamada con timeout ${timeoutMs}ms (elapsed total: ${elapsedSinceStart}ms)`);
         timeoutId = setTimeout(() => {
-          console.log(`[claude] Cancelando petición después de ${timeoutMs}ms`);
+          console.log(`[claude] Timeout alcanzado después de ${timeoutMs}ms. Abortando.`);
           abortController.abort();
         }, timeoutMs);
+      } else if (timeoutMs !== undefined) {
+        console.warn(`[claude] timeoutMs=${timeoutMs} es inválido. Continuando sin timeout.`);
       }
 
       try {
@@ -227,10 +260,12 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
 
         // Convertir AbortError en timeout explícito con metadata completa
         if (error instanceof Error && error.name === 'AbortError') {
-          const timeoutError = new Error(`Búsqueda con Claude cancelada después de ${timeoutMs}ms (timeout)`);
+          const elapsed = Date.now() - attemptStartTime;
+          const timeoutError = new Error(`Búsqueda cancelada (AbortError) después de ${elapsed}ms (timeout configurado: ${timeoutMs}ms)`);
           (timeoutError as any).name = 'TimeoutError';
           (timeoutError as any).code = 'TIMEOUT';
           (timeoutError as any).timeout = timeoutMs;
+          (timeoutError as any).elapsed = elapsed;
           throw timeoutError;
         }
         throw error;
@@ -289,14 +324,19 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
     }
   };
 
-  // Ejecutar con retry (máximo 2 reintentos = 3 intentos totales)
+  // Ejecutar con retry (máximo 1 reintento = 2 intentos totales)
+  // Calcular deadline: tiempo disponible para TODOS los intentos + backoff
+  const deadline = timeoutMs ? startTime + (timeoutMs * 2.2) : undefined;
+  
   return retryWithBackoff(executeSearch, {
-    maxRetries: 2,
-    initialDelayMs: 2000,
+    maxRetries: 1, // Solo 1 reintento para no exceder presupuesto
+    initialDelayMs: 1000, // Backoff corto (1s, 2s)
     shouldRetry,
+    deadline,
     onRetry: (attempt, error) => {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.log(`[claude] Intento ${attempt} falló: ${errorMsg}`);
+      const timeLeft = deadline ? deadline - Date.now() : 'N/A';
+      console.log(`[claude] Intento ${attempt} falló: ${errorMsg}. Presupuesto restante: ${timeLeft}ms`);
     },
   });
 }
