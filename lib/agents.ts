@@ -346,10 +346,12 @@ export async function ejecutarAgenteDeteccion(
 
 export async function ejecutarAgenteMonitoreo(
   trigger: TriggerTipo = 'manual',
-  opts: { limit?: number; maxSearches?: number } = {},
+  opts: { limit?: number; maxSearches?: number; minTimeoutMs?: number } = {},
 ) {
   const LIMIT = opts.limit ?? 6; // rotación anti-timeout: solo N por corrida
   const MAX_SEARCHES = opts.maxSearches ?? 3; // búsquedas web por anuncio
+  // Timeout mínimo generoso: con web search + thinking, cada llamada puede tomar 30-60s
+  const MIN_TIMEOUT_MS = opts.minTimeoutMs ?? 45_000;
   const startTime = Date.now();
   const DEADLINE_MS = 280_000;
   const MARGEN_POR_LLAMADA_MS = 5_000;
@@ -397,14 +399,19 @@ export async function ejecutarAgenteMonitoreo(
       }
 
       try {
-        // Calcular timeout dinámico para esta llamada
+        // Calcular timeout dinámico para esta llamada con mínimo generoso
         const tiempoTranscurrido = Date.now() - startTime;
         const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
         const candidatosRestantes = candidatos.length - verificacionesExitosas - verificacionesFallidas;
-        const timeoutPorAnuncio = Math.max(
-          20_000,
-          Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes))
-        );
+        const timeoutDinamico = Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes));
+        const timeoutPorAnuncio = Math.max(MIN_TIMEOUT_MS, timeoutDinamico);
+        
+        // Si el timeout calculado es menor al mínimo y quedan candidatos, mejor parar aquí
+        if (timeoutDinamico < MIN_TIMEOUT_MS && candidatosRestantes > 0) {
+          console.log(`[MONITOREO] Timeout restante (${timeoutDinamico}ms) < mínimo (${MIN_TIMEOUT_MS}ms). Deteniendo para evitar abortos.`);
+          errores.push(`Tiempo insuficiente para ${candidatosRestantes} candidatos restantes (${timeoutDinamico}ms < ${MIN_TIMEOUT_MS}ms)`);
+          break;
+        }
 
         // Normalizar fechas que pueden ser Timestamp o string
         const fechaAnuncio = normalizarFecha(anuncio.fechaAnuncio);
