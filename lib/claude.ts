@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { calculateRetryBudget } from './retry-budget';
+import { clasificarErrorAbort } from './error-classifier';
 
 // SDK de Anthropic con timeout explícito de 10 minutos (default es 600s)
 // Sin especificar maxRetries para que el retry sea manejado por retryWithBackoff
@@ -158,24 +159,22 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
       }
     }
     
-    // Si es un timeout propio, verificar si queda presupuesto local
-    if (error instanceof Error && error.name === 'TimeoutError') {
-      const elapsed = Date.now() - startTime;
-      const hasTimeForRetry = timeoutMs ? (elapsed + timeoutMs < (timeoutMs * 1.8)) : true;
-      if (!hasTimeForRetry) {
-        console.log(`[claude] No hay presupuesto local para reintentar timeout (elapsed: ${elapsed}ms, timeout: ${timeoutMs}ms)`);
-        return false;
-      }
-      return true;
-    }
+    // IMPORTANTE: Detectar abort ANTES de APIError genérico
+    // El SDK lanza Anthropic.APIUserAbortError, no un Error con name='AbortError'
+    const isAbort = error instanceof Anthropic.APIUserAbortError || 
+                    (error instanceof Error && error.name === 'AbortError');
     
-    // ExternalAbortError: NO reintentar (fue abort externo, no nuestro timeout)
-    if (error instanceof Error && error.name === 'ExternalAbortError') {
-      console.log(`[claude] No se reintenta ExternalAbortError (fue abort externo)`);
+    if (isAbort) {
+      // Aquí NO tenemos acceso a abortedByOurTimer, pero podemos inferir:
+      // Si es timeout propio Y hay presupuesto, reintentar
+      // Si es abort externo, NO reintentar
+      // Por simplicidad: NO reintentar ningún abort en shouldRetry
+      // (la clasificación completa se hace en el catch)
+      console.log(`[claude] No se reintenta abort (será clasificado en catch)`);
       return false;
     }
     
-    // Errores de API transitorios
+    // Errores de API transitorios (DESPUÉS del check de abort)
     if (error instanceof Anthropic.APIError) {
       const status = error.status;
       return status === 429 || status === 503 || (status !== undefined && status >= 500);
@@ -341,6 +340,9 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
         throw error;
       }
     } catch (error) {
+      // IMPORTANTE: Ya clasificamos abort en el catch interno
+      // Aquí solo manejamos otros errores de API
+      
       // Detectar error de billing/créditos de Anthropic (HTTP 400)
       if (error instanceof Anthropic.APIError && error.status === 400) {
         const mensaje = error.message || '';
@@ -354,7 +356,7 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
             try {
               console.log('[claude] Intentando fallback a OpenRouter...');
               const fallbackTexto = await searchWithOpenRouter(options);
-              const duracionMs = Date.now() - attemptStartTime;
+              const duracionMs = Date.now() - startTime;
               return {
                 texto: fallbackTexto,
                 turnos: 1,
@@ -377,8 +379,8 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
         }
       }
       
-      // Cualquier otro error de Anthropic o error no manejado
-      if (error instanceof Anthropic.APIError) {
+      // Cualquier otro error de Anthropic (PERO NO abort, que ya clasificamos)
+      if (error instanceof Anthropic.APIError && !(error instanceof Anthropic.APIUserAbortError)) {
         const status = error.status ?? 'unknown';
         const statusCode = typeof error.status === 'number' ? error.status : undefined;
         console.error(`[claude] Error de API ${status}: ${error.message}`);

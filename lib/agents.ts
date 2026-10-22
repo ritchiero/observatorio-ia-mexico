@@ -578,7 +578,15 @@ export async function ejecutarAgenteMonitoreo(
         }
         verificacionesExitosas++;
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
+        // Extraer mensaje con tipo, elapsed y timeout si están disponibles
+        let errorMsg = error instanceof Error ? error.message : String(error);
+        const errorObj = error as any;
+        
+        // Si tiene tipo clasificado (TimeoutError/ExternalAbortError), incluir detalles
+        if (errorObj.type && errorObj.elapsed !== undefined) {
+          errorMsg = `${errorObj.type} tras ${errorObj.elapsed}ms (timeout ${errorObj.timeoutMs || 'N/A'}ms)`;
+        }
+        
         errores.push(`Error al monitorear "${anuncio.titulo}": ${errorMsg}`);
         
         // Capturar detalles del primer error para diagnóstico
