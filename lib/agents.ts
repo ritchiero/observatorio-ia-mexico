@@ -449,6 +449,7 @@ export async function ejecutarAgenteMonitoreo(
           prompt,
           timeoutMs: timeoutPorAnuncio,
           maxSearches: MAX_SEARCHES,
+          globalDeadline: startTime + DEADLINE_MS, // Deadline global del agente
         });
 
         turnosTotales += claudeResult.turnos;
