@@ -346,10 +346,12 @@ export async function ejecutarAgenteDeteccion(
 
 export async function ejecutarAgenteMonitoreo(
   trigger: TriggerTipo = 'manual',
-  opts: { limit?: number; maxSearches?: number } = {},
+  opts: { limit?: number; maxSearches?: number; minTimeoutMs?: number } = {},
 ) {
   const LIMIT = opts.limit ?? 6; // rotación anti-timeout: solo N por corrida
   const MAX_SEARCHES = opts.maxSearches ?? 3; // búsquedas web por anuncio
+  // Timeout mínimo generoso: con web search + thinking, cada llamada puede tomar 30-60s
+  const MIN_TIMEOUT_MS = opts.minTimeoutMs ?? 45_000;
   const startTime = Date.now();
   const DEADLINE_MS = 280_000;
   const MARGEN_POR_LLAMADA_MS = 5_000;
@@ -397,14 +399,34 @@ export async function ejecutarAgenteMonitoreo(
       }
 
       try {
-        // Calcular timeout dinámico para esta llamada
+        // Calcular timeout dinámico para esta llamada con mínimo generoso
         const tiempoTranscurrido = Date.now() - startTime;
         const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
         const candidatosRestantes = candidatos.length - verificacionesExitosas - verificacionesFallidas;
-        const timeoutPorAnuncio = Math.max(
-          20_000,
-          Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes))
+        const timeoutDinamico = Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes));
+        const timeoutPorAnuncio = Math.max(MIN_TIMEOUT_MS, timeoutDinamico);
+        
+        // Logging detallado para diagnóstico
+        console.log(
+          `[MONITOREO] Anuncio ${verificacionesExitosas + verificacionesFallidas + 1}/${candidatos.length}: ` +
+          `"${anuncio.titulo.slice(0, 50)}..." | ` +
+          `Transcurrido: ${tiempoTranscurrido}ms | ` +
+          `Restante: ${tiempoRestante}ms | ` +
+          `Timeout dinámico: ${timeoutDinamico}ms | ` +
+          `Timeout aplicado: ${timeoutPorAnuncio}ms`
         );
+        
+        // Si el timeout calculado es menor al mínimo y quedan candidatos, mejor parar aquí
+        if (timeoutDinamico < MIN_TIMEOUT_MS && candidatosRestantes > 0) {
+          console.log(`[MONITOREO] STOP: Timeout dinámico (${timeoutDinamico}ms) < mínimo (${MIN_TIMEOUT_MS}ms). Deteniendo.`);
+          errores.push(`Tiempo insuficiente para ${candidatosRestantes} candidatos restantes (${timeoutDinamico}ms < ${MIN_TIMEOUT_MS}ms)`);
+          break;
+        }
+        
+        // Validación: el timeout nunca debe ser <= 0
+        if (timeoutPorAnuncio <= 0) {
+          throw new Error(`Timeout inválido calculado: ${timeoutPorAnuncio}ms (dinámico: ${timeoutDinamico}ms, restante: ${tiempoRestante}ms)`);
+        }
 
         // Normalizar fechas que pueden ser Timestamp o string
         const fechaAnuncio = normalizarFecha(anuncio.fechaAnuncio);
@@ -427,6 +449,7 @@ export async function ejecutarAgenteMonitoreo(
           prompt,
           timeoutMs: timeoutPorAnuncio,
           maxSearches: MAX_SEARCHES,
+          globalDeadline: startTime + DEADLINE_MS, // Deadline global del agente
         });
 
         turnosTotales += claudeResult.turnos;
@@ -555,7 +578,15 @@ export async function ejecutarAgenteMonitoreo(
         }
         verificacionesExitosas++;
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
+        // Extraer mensaje con tipo, elapsed y timeout si están disponibles
+        let errorMsg = error instanceof Error ? error.message : String(error);
+        const errorObj = error as any;
+        
+        // Si tiene tipo clasificado (TimeoutError/ExternalAbortError), incluir detalles
+        if (errorObj.type && errorObj.elapsed !== undefined) {
+          errorMsg = `${errorObj.type} tras ${errorObj.elapsed}ms (timeout ${errorObj.timeoutMs || 'N/A'}ms)`;
+        }
+        
         errores.push(`Error al monitorear "${anuncio.titulo}": ${errorMsg}`);
         
         // Capturar detalles del primer error para diagnóstico
