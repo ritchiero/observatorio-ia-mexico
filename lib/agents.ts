@@ -348,7 +348,10 @@ export async function ejecutarAgenteMonitoreo(
   trigger: TriggerTipo = 'manual',
   opts: { limit?: number; maxSearches?: number; minTimeoutMs?: number } = {},
 ) {
-  const LIMIT = opts.limit ?? 6; // rotación anti-timeout: solo N por corrida
+  // OIA-015: Reducir de 6 a 4 para caber en budget de 280s
+  // Causa raíz del fallo 2026-10-22/25: 6 expedientes × 50s/exp ≈ 300s > 280s deadline
+  // Con 4 expedientes: 4 × 50s = 200s, dejando 80s de margen
+  const LIMIT = opts.limit ?? 4;
   const MAX_SEARCHES = opts.maxSearches ?? 3; // búsquedas web por anuncio
   // Timeout mínimo generoso: con web search + thinking, cada llamada puede tomar 30-60s
   const MIN_TIMEOUT_MS = opts.minTimeoutMs ?? 45_000;
