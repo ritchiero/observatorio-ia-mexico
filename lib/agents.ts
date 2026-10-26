@@ -6,6 +6,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { crearEventoInicial, crearEventoTimeline } from './timeline';
 import { tierFuente, esDuplicado, folioFactory } from './expediente';
 import { selectMonitoringCandidates, summarizeMonitoringRun } from './monitoring-health';
+import { MONITOREO_DEFAULTS, debeDetenerMonitoreo } from './monitoreo-budget';
 
 /**
  * Helper para normalizar fechas de Firestore que pueden ser Timestamp o string ISO
@@ -346,16 +347,14 @@ export async function ejecutarAgenteDeteccion(
 
 export async function ejecutarAgenteMonitoreo(
   trigger: TriggerTipo = 'manual',
-  opts: { limit?: number; maxSearches?: number; timeoutPorLlamada?: number } = {},
+  opts: { limit?: number; maxSearches?: number; timeoutPorLlamada?: number; deadlineMs?: number } = {},
 ) {
-  // C3: Timeout fijo por llamada (120s) con LIMIT=2 para evitar el reparto equitativo
-  // que caía en el borde de MIN_TIMEOUT_MS (45s) y nunca activaba la regla de parada
-  const LIMIT = opts.limit ?? 2;
-  const MAX_SEARCHES = opts.maxSearches ?? 3; // búsquedas web por anuncio
-  const TIMEOUT_POR_LLAMADA_MS = opts.timeoutPorLlamada ?? 120_000; // timeout fijo de 120s
+  // R2: Usar defaults centralizados de monitoreo-budget.ts
+  const LIMIT = opts.limit ?? MONITOREO_DEFAULTS.LIMIT;
+  const MAX_SEARCHES = opts.maxSearches ?? MONITOREO_DEFAULTS.MAX_SEARCHES;
+  const TIMEOUT_POR_LLAMADA_MS = opts.timeoutPorLlamada ?? MONITOREO_DEFAULTS.TIMEOUT_POR_LLAMADA_MS;
+  const DEADLINE_MS = opts.deadlineMs ?? MONITOREO_DEFAULTS.DEADLINE_MS;
   const startTime = Date.now();
-  // C4: Bajar DEADLINE_MS a 250s para dejar margen dentro de 300s
-  const DEADLINE_MS = 250_000;
   const isDeadlineExceeded = () => Date.now() - startTime > DEADLINE_MS;
   
   const db = getAdminDb();
@@ -403,19 +402,21 @@ export async function ejecutarAgenteMonitoreo(
 
       const verificacionStartTime = Date.now();
       try {
-        // C3: Timeout fijo por llamada, regla de parada si no cabe un timeout completo
+        // R2: Usar función centralizada para regla de parada
         const tiempoTranscurrido = Date.now() - startTime;
-        const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
+        const parada = debeDetenerMonitoreo(tiempoTranscurrido, {
+          deadlineMs: DEADLINE_MS,
+          timeoutPorLlamadaMs: TIMEOUT_POR_LLAMADA_MS,
+        });
         
-        // Regla de parada: si no cabe un timeout completo antes del deadline, detener
-        if (tiempoRestante < TIMEOUT_POR_LLAMADA_MS) {
+        if (parada.debeDetener) {
           const candidatosRestantes = candidatos.length - verificacionesExitosas - verificacionesFallidas;
           console.log(
-            `[MONITOREO] STOP: Tiempo restante (${tiempoRestante}ms) < timeout requerido (${TIMEOUT_POR_LLAMADA_MS}ms). ` +
+            `[MONITOREO] STOP: ${parada.razon}. ` +
             `Deteniendo con ${candidatosRestantes} candidatos restantes.`
           );
           errores.push(
-            `Tiempo insuficiente para continuar: ${tiempoRestante}ms < ${TIMEOUT_POR_LLAMADA_MS}ms requeridos. ` +
+            `Tiempo insuficiente para continuar: ${parada.razon}. ` +
             `${candidatosRestantes} candidatos omitidos.`
           );
           break;
@@ -426,7 +427,7 @@ export async function ejecutarAgenteMonitoreo(
           `[MONITOREO] Anuncio ${verificacionesExitosas + verificacionesFallidas + 1}/${candidatos.length}: ` +
           `"${anuncio.titulo.slice(0, 50)}..." | ` +
           `Transcurrido: ${tiempoTranscurrido}ms | ` +
-          `Restante: ${tiempoRestante}ms | ` +
+          `Restante: ${parada.tiempoRestante}ms | ` +
           `Timeout fijo: ${TIMEOUT_POR_LLAMADA_MS}ms`
         );
 
@@ -626,9 +627,12 @@ export async function ejecutarAgenteMonitoreo(
     // Guardar log del agente (con defensa adicional contra undefined)
     const duracionMs = Date.now() - startTime;
     
-    // C5: Calcular resumen de duraciones para actividad
+    // C5 + R4: Calcular resumen de duraciones para actividad (incluso si falla)
     const duracionPromedio = verificacionesLog.length > 0
       ? Math.round(verificacionesLog.reduce((sum, v) => sum + v.duracionMs, 0) / verificacionesLog.length)
+      : 0;
+    const duracionMaxima = verificacionesLog.length > 0
+      ? Math.max(...verificacionesLog.map(v => v.duracionMs))
       : 0;
     
     const logData = limpiarUndefined({
@@ -671,13 +675,13 @@ export async function ejecutarAgenteMonitoreo(
       ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})`
       : '';
     
-    // C5: Incluir resumen de duraciones en la descripción de actividad
+    // C5 + R4: Incluir resumen de duraciones en la descripción de actividad (incluso en fallo)
     const resumenDuraciones = verificacionesLog.length > 0
-      ? ` Duración promedio por verificación: ${duracionPromedio}ms.`
+      ? ` Duración promedio: ${duracionPromedio}ms, máxima: ${duracionMaxima}ms.`
       : '';
     
     const descripcionActividad = !salud.success
-      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${resumenError}. El detalle quedó en el registro interno.`
+      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${resumenError}.${resumenDuraciones} El detalle quedó en el registro interno.`
       : salud.partial
         ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron${resumenError}. Detectó ${actualizacionesDetectadas} actualización(es).${resumenDuraciones}`
         : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).${resumenDuraciones}`;

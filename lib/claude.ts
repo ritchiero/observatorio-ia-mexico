@@ -217,11 +217,14 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
 
       // Recortar timeout al deadline global
       let effectiveTimeout = timeoutMs;
+      let timeoutWasClipped = false;
       if (globalDeadline && timeoutMs) {
         const timeLeft = globalDeadline - Date.now();
+        const originalTimeout = timeoutMs;
         effectiveTimeout = Math.min(timeoutMs, timeLeft);
-        if (effectiveTimeout < timeoutMs) {
-          console.log(`[claude] Timeout recortado: ${timeoutMs}ms → ${effectiveTimeout}ms (deadline global)`);
+        timeoutWasClipped = effectiveTimeout < originalTimeout;
+        if (timeoutWasClipped) {
+          console.log(`[claude] Timeout recortado: ${originalTimeout}ms → ${effectiveTimeout}ms (deadline global)`);
         }
       }
 
@@ -319,12 +322,20 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
         });
 
         if (classification.isAbort) {
-          const abortError = new Error(classification.message);
+          // R5: Si el timeout fue recortado, reportar el timeout efectivo en el mensaje
+          const timeoutInfo = timeoutWasClipped
+            ? ` (timeout efectivo ${effectiveTimeout}ms, recortado de ${timeoutMs}ms)`
+            : ` (timeout ${timeoutMs}ms)`;
+          const abortError = new Error(
+            `${classification.type} tras ${elapsed}ms${timeoutInfo}`
+          );
           (abortError as any).name = classification.name;
           (abortError as any).code = classification.code;
           (abortError as any).type = classification.type;
           (abortError as any).timeout = timeoutMs;
           (abortError as any).timeoutMs = timeoutMs;
+          (abortError as any).timeoutEfectivo = effectiveTimeout;
+          (abortError as any).timeoutRecortado = timeoutWasClipped;
           (abortError as any).elapsed = elapsed;
           (abortError as any).abortedByOurTimer = classification.abortedByOurTimer;
           if (classification.signalReason !== undefined) {
