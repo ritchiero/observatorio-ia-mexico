@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { calculateRetryBudget } from './retry-budget';
-import { clasificarErrorAbort } from './error-classifier';
+import { calculateRetryBudget } from './retry-budget.ts';
+import { clasificarErrorAbort } from './error-classifier.ts';
 
 // SDK de Anthropic con timeout explícito de 10 minutos (default es 600s)
 // Sin especificar maxRetries para que el retry sea manejado por retryWithBackoff
