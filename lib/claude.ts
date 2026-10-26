@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { calculateRetryBudget } from './retry-budget';
-import { clasificarErrorAbort } from './error-classifier';
+import { calculateRetryBudget } from './retry-budget.ts';
+import { clasificarErrorAbort } from './error-classifier.ts';
 
 // SDK de Anthropic con timeout explícito de 10 minutos (default es 600s)
 // Sin especificar maxRetries para que el retry sea manejado por retryWithBackoff
@@ -217,11 +217,14 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
 
       // Recortar timeout al deadline global
       let effectiveTimeout = timeoutMs;
+      let timeoutWasClipped = false;
       if (globalDeadline && timeoutMs) {
         const timeLeft = globalDeadline - Date.now();
+        const originalTimeout = timeoutMs;
         effectiveTimeout = Math.min(timeoutMs, timeLeft);
-        if (effectiveTimeout < timeoutMs) {
-          console.log(`[claude] Timeout recortado: ${timeoutMs}ms → ${effectiveTimeout}ms (deadline global)`);
+        timeoutWasClipped = effectiveTimeout < originalTimeout;
+        if (timeoutWasClipped) {
+          console.log(`[claude] Timeout recortado: ${originalTimeout}ms → ${effectiveTimeout}ms (deadline global)`);
         }
       }
 
@@ -308,34 +311,37 @@ export async function searchWithClaude(options: ClaudeSearchOptions): Promise<Cl
       } catch (error) {
         if (timeoutId) clearTimeout(timeoutId);
 
-        // Distinguir: timeout propio vs abort externo
-        if (error instanceof Error && error.name === 'AbortError') {
-          const elapsed = Date.now() - attemptStartTime;
-          
-          if (abortedByOurTimer) {
-            // Fue nuestro setTimeout → TimeoutError
-            const timeoutError = new Error(
-              `Timeout: búsqueda cancelada después de ${elapsed}ms (timeout configurado: ${timeoutMs}ms)`
-            );
-            (timeoutError as any).name = 'TimeoutError';
-            (timeoutError as any).code = 'TIMEOUT';
-            (timeoutError as any).timeout = timeoutMs;
-            (timeoutError as any).elapsed = elapsed;
-            (timeoutError as any).abortedByOurTimer = true;
-            throw timeoutError;
-          } else {
-            // Abort externo (no fue nuestro timer) → ExternalAbortError
-            const externalError = new Error(
-              `Abort externo: búsqueda cancelada después de ${elapsed}ms (timeout configurado: ${timeoutMs}ms)`
-            );
-            (externalError as any).name = 'ExternalAbortError';
-            (externalError as any).code = 'EXTERNAL_ABORT';
-            (externalError as any).timeout = timeoutMs;
-            (externalError as any).elapsed = elapsed;
-            (externalError as any).abortedByOurTimer = false;
-            (externalError as any).signalReason = (abortController.signal as any).reason;
-            throw externalError;
+        // C1: Mejorar detección de abort usando clasificarErrorAbort
+        const elapsed = Date.now() - attemptStartTime;
+        const classification = clasificarErrorAbort(error, {
+          abortedByOurTimer,
+          elapsed,
+          timeoutMs,
+          signalAborted: abortController.signal.aborted,
+          signalReason: (abortController.signal as any).reason,
+        });
+
+        if (classification.isAbort) {
+          // R5: Si el timeout fue recortado, reportar el timeout efectivo en el mensaje
+          const timeoutInfo = timeoutWasClipped
+            ? ` (timeout efectivo ${effectiveTimeout}ms, recortado de ${timeoutMs}ms)`
+            : ` (timeout ${timeoutMs}ms)`;
+          const abortError = new Error(
+            `${classification.type} tras ${elapsed}ms${timeoutInfo}`
+          );
+          (abortError as any).name = classification.name;
+          (abortError as any).code = classification.code;
+          (abortError as any).type = classification.type;
+          (abortError as any).timeout = timeoutMs;
+          (abortError as any).timeoutMs = timeoutMs;
+          (abortError as any).timeoutEfectivo = effectiveTimeout;
+          (abortError as any).timeoutRecortado = timeoutWasClipped;
+          (abortError as any).elapsed = elapsed;
+          (abortError as any).abortedByOurTimer = classification.abortedByOurTimer;
+          if (classification.signalReason !== undefined) {
+            (abortError as any).signalReason = classification.signalReason;
           }
+          throw abortError;
         }
         throw error;
       }
