@@ -346,18 +346,16 @@ export async function ejecutarAgenteDeteccion(
 
 export async function ejecutarAgenteMonitoreo(
   trigger: TriggerTipo = 'manual',
-  opts: { limit?: number; maxSearches?: number; minTimeoutMs?: number } = {},
+  opts: { limit?: number; maxSearches?: number; timeoutPorLlamada?: number } = {},
 ) {
-  // OIA-015: Reducir de 6 a 4 para caber en budget de 280s
-  // Causa raíz del fallo 2026-10-22/25: 6 expedientes × 50s/exp ≈ 300s > 280s deadline
-  // Con 4 expedientes: 4 × 50s = 200s, dejando 80s de margen
-  const LIMIT = opts.limit ?? 4;
+  // C3: Timeout fijo por llamada (120s) con LIMIT=2 para evitar el reparto equitativo
+  // que caía en el borde de MIN_TIMEOUT_MS (45s) y nunca activaba la regla de parada
+  const LIMIT = opts.limit ?? 2;
   const MAX_SEARCHES = opts.maxSearches ?? 3; // búsquedas web por anuncio
-  // Timeout mínimo generoso: con web search + thinking, cada llamada puede tomar 30-60s
-  const MIN_TIMEOUT_MS = opts.minTimeoutMs ?? 45_000;
+  const TIMEOUT_POR_LLAMADA_MS = opts.timeoutPorLlamada ?? 120_000; // timeout fijo de 120s
   const startTime = Date.now();
-  const DEADLINE_MS = 280_000;
-  const MARGEN_POR_LLAMADA_MS = 5_000;
+  // C4: Bajar DEADLINE_MS a 250s para dejar margen dentro de 300s
+  const DEADLINE_MS = 250_000;
   const isDeadlineExceeded = () => Date.now() - startTime > DEADLINE_MS;
   
   const db = getAdminDb();
@@ -368,6 +366,8 @@ export async function ejecutarAgenteMonitoreo(
   let turnosTotales = 0;
   let duracionClaudeTotalMs = 0;
   let primerErrorDetallado: ReturnType<typeof sanitizarError> | null = null;
+  // C5: Registrar duración y resultado de cada verificación
+  const verificacionesLog: Array<{ anuncio: string; duracionMs: number; resultado: 'exito' | 'fallo'; error?: string }> = [];
 
   try {
     // Obtener todos los anuncios
@@ -401,13 +401,25 @@ export async function ejecutarAgenteMonitoreo(
         break;
       }
 
+      const verificacionStartTime = Date.now();
       try {
-        // Calcular timeout dinámico para esta llamada con mínimo generoso
+        // C3: Timeout fijo por llamada, regla de parada si no cabe un timeout completo
         const tiempoTranscurrido = Date.now() - startTime;
         const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
-        const candidatosRestantes = candidatos.length - verificacionesExitosas - verificacionesFallidas;
-        const timeoutDinamico = Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes));
-        const timeoutPorAnuncio = Math.max(MIN_TIMEOUT_MS, timeoutDinamico);
+        
+        // Regla de parada: si no cabe un timeout completo antes del deadline, detener
+        if (tiempoRestante < TIMEOUT_POR_LLAMADA_MS) {
+          const candidatosRestantes = candidatos.length - verificacionesExitosas - verificacionesFallidas;
+          console.log(
+            `[MONITOREO] STOP: Tiempo restante (${tiempoRestante}ms) < timeout requerido (${TIMEOUT_POR_LLAMADA_MS}ms). ` +
+            `Deteniendo con ${candidatosRestantes} candidatos restantes.`
+          );
+          errores.push(
+            `Tiempo insuficiente para continuar: ${tiempoRestante}ms < ${TIMEOUT_POR_LLAMADA_MS}ms requeridos. ` +
+            `${candidatosRestantes} candidatos omitidos.`
+          );
+          break;
+        }
         
         // Logging detallado para diagnóstico
         console.log(
@@ -415,21 +427,8 @@ export async function ejecutarAgenteMonitoreo(
           `"${anuncio.titulo.slice(0, 50)}..." | ` +
           `Transcurrido: ${tiempoTranscurrido}ms | ` +
           `Restante: ${tiempoRestante}ms | ` +
-          `Timeout dinámico: ${timeoutDinamico}ms | ` +
-          `Timeout aplicado: ${timeoutPorAnuncio}ms`
+          `Timeout fijo: ${TIMEOUT_POR_LLAMADA_MS}ms`
         );
-        
-        // Si el timeout calculado es menor al mínimo y quedan candidatos, mejor parar aquí
-        if (timeoutDinamico < MIN_TIMEOUT_MS && candidatosRestantes > 0) {
-          console.log(`[MONITOREO] STOP: Timeout dinámico (${timeoutDinamico}ms) < mínimo (${MIN_TIMEOUT_MS}ms). Deteniendo.`);
-          errores.push(`Tiempo insuficiente para ${candidatosRestantes} candidatos restantes (${timeoutDinamico}ms < ${MIN_TIMEOUT_MS}ms)`);
-          break;
-        }
-        
-        // Validación: el timeout nunca debe ser <= 0
-        if (timeoutPorAnuncio <= 0) {
-          throw new Error(`Timeout inválido calculado: ${timeoutPorAnuncio}ms (dinámico: ${timeoutDinamico}ms, restante: ${tiempoRestante}ms)`);
-        }
 
         // Normalizar fechas que pueden ser Timestamp o string
         const fechaAnuncio = normalizarFecha(anuncio.fechaAnuncio);
@@ -450,7 +449,7 @@ export async function ejecutarAgenteMonitoreo(
 
         const claudeResult = await searchWithClaude({ 
           prompt,
-          timeoutMs: timeoutPorAnuncio,
+          timeoutMs: TIMEOUT_POR_LLAMADA_MS,
           maxSearches: MAX_SEARCHES,
           globalDeadline: startTime + DEADLINE_MS, // Deadline global del agente
         });
@@ -579,15 +578,24 @@ export async function ejecutarAgenteMonitoreo(
           // Mover el expediente al final de la cola aunque no haya novedad.
           await db.collection('anuncios').doc(anuncio.id).update({ ultimaVerificacionAt });
         }
+        
+        // C5: Registrar verificación exitosa con duración
+        const verificacionDuracionMs = Date.now() - verificacionStartTime;
+        verificacionesLog.push({
+          anuncio: anuncio.titulo.slice(0, 80),
+          duracionMs: verificacionDuracionMs,
+          resultado: 'exito',
+        });
         verificacionesExitosas++;
       } catch (error) {
-        // Extraer mensaje con tipo, elapsed y timeout si están disponibles
+        // C2: Leer name y timeout de forma consistente para errores y actividad
         let errorMsg = error instanceof Error ? error.message : String(error);
         const errorObj = error as any;
         
-        // Si tiene tipo clasificado (TimeoutError/ExternalAbortError), incluir detalles
-        if (errorObj.type && errorObj.elapsed !== undefined) {
-          errorMsg = `${errorObj.type} tras ${errorObj.elapsed}ms (timeout ${errorObj.timeoutMs || 'N/A'}ms)`;
+        // Leer tipo, elapsed y timeoutMs (no type/timeout por separado)
+        if (errorObj.name && errorObj.elapsed !== undefined) {
+          const timeoutInfo = errorObj.timeoutMs !== undefined ? ` (timeout ${errorObj.timeoutMs}ms)` : '';
+          errorMsg = `${errorObj.name} tras ${errorObj.elapsed}ms${timeoutInfo}`;
         }
         
         errores.push(`Error al monitorear "${anuncio.titulo}": ${errorMsg}`);
@@ -597,6 +605,14 @@ export async function ejecutarAgenteMonitoreo(
           primerErrorDetallado = sanitizarError(error);
         }
         
+        // C5: Registrar verificación fallida con duración y error
+        const verificacionDuracionMs = Date.now() - verificacionStartTime;
+        verificacionesLog.push({
+          anuncio: anuncio.titulo.slice(0, 80),
+          duracionMs: verificacionDuracionMs,
+          resultado: 'fallo',
+          error: errorMsg.slice(0, 200),
+        });
         verificacionesFallidas++;
       }
     }
@@ -609,6 +625,12 @@ export async function ejecutarAgenteMonitoreo(
 
     // Guardar log del agente (con defensa adicional contra undefined)
     const duracionMs = Date.now() - startTime;
+    
+    // C5: Calcular resumen de duraciones para actividad
+    const duracionPromedio = verificacionesLog.length > 0
+      ? Math.round(verificacionesLog.reduce((sum, v) => sum + v.duracionMs, 0) / verificacionesLog.length)
+      : 0;
+    
     const logData = limpiarUndefined({
       tipo: 'monitoreo',
       fecha: Timestamp.now(),
@@ -622,6 +644,7 @@ export async function ejecutarAgenteMonitoreo(
       rawResponse: '',
       trigger,
       primerError: primerErrorDetallado,
+      verificaciones: verificacionesLog, // C5: log detallado por verificación
       claudeMeta: turnosTotales > 0 ? {
         turnos: turnosTotales,
         duracionMs: duracionClaudeTotalMs,
@@ -648,11 +671,16 @@ export async function ejecutarAgenteMonitoreo(
       ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})`
       : '';
     
+    // C5: Incluir resumen de duraciones en la descripción de actividad
+    const resumenDuraciones = verificacionesLog.length > 0
+      ? ` Duración promedio por verificación: ${duracionPromedio}ms.`
+      : '';
+    
     const descripcionActividad = !salud.success
       ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${resumenError}. El detalle quedó en el registro interno.`
       : salud.partial
-        ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron${resumenError}. Detectó ${actualizacionesDetectadas} actualización(es).`
-        : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).`;
+        ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron${resumenError}. Detectó ${actualizacionesDetectadas} actualización(es).${resumenDuraciones}`
+        : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).${resumenDuraciones}`;
 
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
