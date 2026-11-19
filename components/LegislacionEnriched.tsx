@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Scale, ShieldCheck } from 'lucide-react';
 
 interface LegStats { total: number; activas: number; aprobadas: number; verificadas: number }
 interface Iniciativa { id: string; titulo: string; status?: string; proponente?: string; fecha?: string; camara?: string; estadoVerificacion?: string }
@@ -73,14 +73,14 @@ function BillDate({ value, locale, before, after }: { value?: string; locale: Lo
   return <>{before}<time dateTime={date.toISOString().slice(0, 10)}>{dateFormats[locale].format(date)}</time>{after}</>;
 }
 
-function BillBadges({ bill, locale, lead = false }: { bill: Iniciativa; locale: Locale; lead?: boolean }) {
+function BillBadges({ bill, locale }: { bill: Iniciativa; locale: Locale }) {
   const t = copy[locale];
   const verified = bill.estadoVerificacion === 'verificado';
   const review = bill.estadoVerificacion === 'revision';
   return (
     <div className="flex flex-wrap items-center gap-2 font-sans-tech text-xs font-medium leading-snug">
-      <span className={`rounded-full border px-2.5 py-1 ${lead ? 'border-[#7790bf] text-[#eff5ff]' : 'border-[#a9b9d4] text-[#233e74]'}`}>{stageOf(bill.status, locale)}</span>
-      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ${verified ? (lead ? 'bg-[#264c49] text-[#e5ffef]' : 'bg-[#def3e8] text-[#14543f]') : (lead ? 'bg-[#f5dfa8] text-[#452d06]' : 'bg-[#f4ead5] text-[#583b10]')}`}>
+      <span className={"rounded-full border border-[#2855E0]/25 bg-[#2855E0]/5 px-2.5 py-1 text-[#2855E0]"}>{stageOf(bill.status, locale)}</span>
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ${verified ? 'bg-[#087047]/5 text-[#087047]' : 'bg-gray-100 text-[#515E74]'}`}>
         {verified && <ShieldCheck size={13} aria-hidden="true" />}
         {verified ? t.verified : review ? t.review : t.pending}
       </span>
@@ -99,17 +99,17 @@ export default function LegislacionEnriched({ legStats, loading, iniciativas, lo
   const sectionId = `${anchor}-heading`;
 
   return (
-    <section id={anchor} aria-labelledby={sectionId} className="scroll-mt-28 border-y border-[#d8d5cc] bg-[#f7f5ef] px-4 py-12 text-[#14233e] sm:px-6 lg:py-16">
+    <section id={anchor} aria-labelledby={sectionId} className="scroll-mt-28 border-y border-gray-200/50 bg-gray-50 px-4 py-12 text-[#0B1220] sm:px-6 lg:py-16">
       <div className="mx-auto max-w-6xl">
         <header className="mb-7 flex flex-wrap items-end justify-between gap-x-8 gap-y-4 sm:mb-9">
           <div>
-            <p className="flex items-center gap-2 font-mono text-[11px] font-bold tracking-[0.15em] text-[#274b99] uppercase">
-              <span aria-hidden="true" className="h-px w-6 bg-[#274b99]" />{t.kicker}
+            <p className="inline-flex items-center gap-2 font-mono uppercase" style={{ padding: '7px 14px 7px 11px', border: '1px solid #2855E033', background: '#2855E00D', borderRadius: 999, fontSize: 10.5, letterSpacing: '0.18em', color: '#2855E0', fontWeight: 600 }}>
+              <Scale size={13} aria-hidden="true" />{t.kicker}
             </p>
-            <h2 id={sectionId} className="mt-2 font-serif-display text-[clamp(2.45rem,6vw,4.5rem)] leading-[0.98] font-medium tracking-[-0.04em]">{t.title}</h2>
-            <p className="mt-3 max-w-lg font-sans-tech text-sm leading-relaxed text-[#45536a] sm:text-base">{t.intro}</p>
+            <h2 id={sectionId} className="mt-5 font-serif-display text-[clamp(34px,6vw,56px)] leading-none font-medium tracking-[-0.035em]">{t.title}</h2>
+            <p className="mt-3 max-w-lg font-sans-tech text-sm leading-relaxed text-[#3B475C] sm:text-base">{t.intro}</p>
           </div>
-          <Link href={indexHref} className="inline-flex min-h-11 items-center gap-2 border-b border-[#274b99] font-sans-tech text-sm font-semibold text-[#254586] hover:border-b-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#274b99]">
+          <Link href={indexHref} className="inline-flex min-h-11 items-center gap-2 border-b border-[#2855E0] font-sans-tech text-sm font-semibold text-[#2855E0] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2855E0]">
             {t.all}<ArrowUpRight size={16} aria-hidden="true" />
           </Link>
         </header>
@@ -117,34 +117,34 @@ export default function LegislacionEnriched({ legStats, loading, iniciativas, lo
         {lead ? (
           <div className={`grid items-stretch gap-y-6 ${support.length ? 'lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-x-9' : ''}`}>
             <article className="relative min-w-0">
-              <Link href={`${indexHref}/${lead.id}`} className="group flex h-full min-h-68 flex-col gap-4 overflow-hidden rounded-[3px] border-t-[5px] border-[#668dff] bg-[#132957] p-5 text-[#f5f7ff] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#274b99] sm:p-8">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs font-medium text-[#d5e1ff]">
+              <Link href={`${indexHref}/${lead.id}`} className="group flex h-full min-h-68 flex-col gap-4 overflow-hidden rounded-xl border border-[#CED6E6] border-l-[5px] border-l-[#2855E0] bg-white p-5 text-[#0B1220] hover:shadow-lg motion-safe:transition-shadow focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2855E0] sm:p-8">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs font-medium text-[#515E74]">
                   <span className="text-[11px] font-bold tracking-widest uppercase">{t.newest}</span>
                   <BillDate value={lead.fecha} locale={locale} before={<span aria-hidden="true">/</span>} />
                 </div>
-                <h3 className="max-w-3xl font-serif-display text-[clamp(1.85rem,4vw,3.25rem)] leading-[1.04] font-medium break-words tracking-[-0.025em] text-white group-hover:underline group-focus-visible:underline decoration-[#a5bdff] underline-offset-4">
+                <h3 className="max-w-3xl font-sans-tech text-[clamp(1.45rem,3.2vw,2.4rem)] leading-tight font-semibold break-words tracking-[-0.015em] text-[#0B1220] group-hover:underline group-focus-visible:underline decoration-[#2855E0] underline-offset-4">
                   {titleOf(lead)}
                 </h3>
-                {lead.camara && <p className="font-sans-tech text-sm text-[#d5e1ff]">{lead.camara}</p>}
+                {lead.camara && <p className="font-sans-tech text-sm text-[#515E74]">{lead.camara}</p>}
                 <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-2">
-                  <BillBadges bill={lead} locale={locale} lead />
-                  <span className="inline-flex items-center gap-1.5 font-sans-tech text-sm font-semibold text-[#eff5ff]">{t.read}<ArrowRight size={17} aria-hidden="true" /></span>
+                  <BillBadges bill={lead} locale={locale} />
+                  <span className="inline-flex items-center gap-1.5 font-sans-tech text-sm font-semibold text-[#2855E0]">{t.read}<ArrowRight size={17} aria-hidden="true" /></span>
                 </div>
               </Link>
             </article>
 
             {support.length > 0 && (
-              <aside className="min-w-0 border-t border-[#929eb1]" aria-label={t.list}>
-                <h3 className="border-b border-[#c9ccd2] py-2.5 font-mono text-[11px] font-bold tracking-[0.11em] text-[#344568] uppercase">{t.list}</h3>
-                <ul>
+              <aside className="min-w-0" aria-label={t.list}>
+                <h3 className="mb-3 font-mono text-[11px] font-bold tracking-[0.11em] text-[#515E74] uppercase">{t.list}</h3>
+                <ul className="grid gap-3">
                   {support.map((bill) => (
-                    <li key={bill.id} className="border-b border-[#c9ccd2]">
-                      <Link href={`${indexHref}/${bill.id}`} className="group grid min-h-11 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 px-1 py-4 hover:bg-[#eeeef2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#274b99] sm:px-3">
-                        <p className="font-mono text-xs font-medium text-[#45536a]">
+                    <li key={bill.id}>
+                      <Link href={`${indexHref}/${bill.id}`} className="group grid min-h-11 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 rounded-xl border border-[#CED6E6] bg-white p-4 hover:shadow-lg motion-safe:transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2855E0]">
+                        <p className="font-mono text-xs font-medium text-[#3B475C]">
                           <BillDate value={bill.fecha} locale={locale} after={bill.camara && ' · '} />{bill.camara}
                         </p>
-                        <ArrowUpRight size={18} className="col-start-2 row-start-1 row-span-2 mt-0.5 text-[#274b99]" aria-hidden="true" />
-                        <h4 className="font-serif-display text-[clamp(1.35rem,2.4vw,1.9rem)] leading-tight font-medium break-words group-hover:underline group-focus-visible:underline decoration-[#7194ce] underline-offset-3">
+                        <ArrowUpRight size={18} className="col-start-2 row-start-1 row-span-2 mt-0.5 text-[#2855E0]" aria-hidden="true" />
+                        <h4 className="font-sans-tech text-[clamp(1.05rem,2vw,1.25rem)] leading-tight font-semibold break-words group-hover:underline group-focus-visible:underline decoration-[#2855E0] underline-offset-3">
                           {titleOf(bill)}
                         </h4>
                         <div className="col-span-2"><BillBadges bill={bill} locale={locale} /></div>
@@ -156,14 +156,14 @@ export default function LegislacionEnriched({ legStats, loading, iniciativas, lo
             )}
           </div>
         ) : (
-          <p role={loading ? 'status' : undefined} className="border-y border-[#d8d5cc] py-8 font-sans-tech text-sm text-[#45536a]">{loading ? t.loading : t.noData}</p>
+          <p role={loading ? 'status' : undefined} className="border-y border-[#E5E9F2] py-8 font-sans-tech text-sm text-[#3B475C]">{loading ? t.loading : t.noData}</p>
         )}
 
-        <dl className="mt-7 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-[#c9ccd2] py-3 sm:grid-cols-3 lg:grid-cols-5">
+        <dl className="mt-7 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-[#E5E9F2] py-3 sm:grid-cols-3 lg:grid-cols-5">
           {t.counts.map((label, index) => (
             <div key={label} className="flex flex-wrap items-baseline gap-x-2">
-              <dt className="font-sans-tech text-xs text-[#45536a]">{label}</dt>
-              <dd className="order-first shrink-0 font-mono text-sm font-bold tabular-nums text-[#223d76]">{loading ? '—' : counts[index]}</dd>
+              <dt className="font-sans-tech text-xs text-[#3B475C]">{label}</dt>
+              <dd className="order-first shrink-0 font-mono text-sm font-bold tabular-nums text-[#0B1220]">{loading ? '—' : counts[index]}</dd>
             </div>
           ))}
         </dl>
