@@ -113,10 +113,8 @@ export default function HomeEn() {
             verificadas: iniciativas.filter((i: { estadoVerificacion?: string }) => i.estadoVerificacion === 'verificado').length,
           });
 
-          // Obtener 3 iniciativas destacadas (verificadas y recientes), traducidas
-          const destacadas = iniciativas
-            .filter((i: { estadoVerificacion?: string }) => i.estadoVerificacion === 'verificado')
-            .slice(0, 3);
+          // La API ordena por fecha de presentación, de más reciente a más antigua.
+          const destacadas = iniciativas.slice(0, 3);
           setIniciativasDestacadas(aplicarOverlay(destacadas, overlay));
         }
       } catch (error) {

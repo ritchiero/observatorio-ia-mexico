@@ -98,10 +98,8 @@ export default function Home() {
             verificadas: iniciativas.filter((i: { estadoVerificacion?: string }) => i.estadoVerificacion === 'verificado').length,
           });
           
-          // Obtener 3 iniciativas destacadas (verificadas y recientes)
-          const destacadas = iniciativas
-            .filter((i: { estadoVerificacion?: string }) => i.estadoVerificacion === 'verificado')
-            .slice(0, 3);
+          // La API ordena por fecha de presentación, de más reciente a más antigua.
+          const destacadas = iniciativas.slice(0, 3);
           setIniciativasDestacadas(destacadas);
         }
       } catch (error) {

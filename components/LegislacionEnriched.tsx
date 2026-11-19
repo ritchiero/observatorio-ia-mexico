@@ -98,8 +98,12 @@ export default function LegislacionEnriched({ legStats, loading, iniciativas }: 
       {/* cards enriquecidas */}
       {cards.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-9">
+          <h3 className="font-sans-tech text-sm font-semibold sm:col-span-2 lg:col-span-3" style={{ color: L.ink }}>Iniciativas más recientes</h3>
           {cards.map((it, idx) => {
             const [label, c] = stageOf(it.status);
+            const verificada = it.estadoVerificacion === 'verificado';
+            const verificacion = verificada ? 'Verificada con IA'
+              : it.estadoVerificacion === 'revision' ? 'Verificación en revisión' : 'Verificación pendiente';
             return (
               <Link key={it.id || idx} href={`/legislacion/${it.id}`} className="group relative flex overflow-hidden transition-shadow hover:shadow-lg" style={{ background: L.panel, border: `1px solid ${L.line2}`, borderRadius: 12, boxShadow: '0 8px 24px -16px rgba(11,18,32,0.28)' }}>
                 <div style={{ width: 5, background: c, flex: 'none' }} />
@@ -108,11 +112,14 @@ export default function LegislacionEnriched({ legStats, loading, iniciativas }: 
                     <span className="font-mono uppercase inline-flex items-center gap-1.5" style={{ fontSize: 10, letterSpacing: '0.12em', color: c, fontWeight: 600, padding: '4px 10px', border: `1px solid ${c}40`, background: `${c}0D`, borderRadius: 999 }}>
                       <span style={{ width: 6, height: 6, borderRadius: 999, background: c, boxShadow: `0 0 6px ${c}88` }} />{label}
                     </span>
-                    {it.estadoVerificacion === 'verificado' && <ShieldCheck size={15} style={{ color: L.green }} aria-label="Verificado con IA" />}
                   </div>
-                  <h3 className="font-sans-tech line-clamp-3 group-hover:text-blue-700 transition-colors" style={{ margin: '14px 0 0', fontSize: 15.5, fontWeight: 600, lineHeight: 1.32, color: L.ink, letterSpacing: '-0.01em' }}>
+                  <h4 className="font-sans-tech line-clamp-3 group-hover:text-blue-700 transition-colors" style={{ margin: '14px 0 0', fontSize: 15.5, fontWeight: 600, lineHeight: 1.32, color: L.ink, letterSpacing: '-0.01em' }}>
                     {it.titulo}
-                  </h3>
+                  </h4>
+                  <div className="font-mono flex items-center gap-1.5 mt-2" style={{ fontSize: 11, color: L.body }}>
+                    {verificada && <ShieldCheck aria-hidden="true" size={14} style={{ color: L.green }} />}
+                    {verificacion}
+                  </div>
                   <div className="flex items-center gap-2.5" style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${L.line}` }}>
                     <span className="font-mono" style={{ width: 26, height: 26, borderRadius: 999, background: `${c}18`, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700, flex: 'none' }}>{iniciales(it.proponente)}</span>
                     <div style={{ minWidth: 0, lineHeight: 1.2 }}>
