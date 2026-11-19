@@ -10,8 +10,8 @@ import { Scale, ShieldCheck, ArrowRight } from 'lucide-react';
 
 const L = {
   bg: '#F4F6FB', panel: '#FFFFFF', ink: '#0B1220', body: '#3B475C',
-  mute: '#6B7689', faint: '#A2ABBE', line: '#E5E9F2', line2: '#CED6E6',
-  cyan: '#0E94C0', blue: '#2855E0', green: '#0E9E63', violet: '#7A3FB8', amber: '#C8771A', red: '#C0392B',
+  mute: '#515E74', faint: '#A2ABBE', line: '#E5E9F2', line2: '#CED6E6',
+  cyan: '#0E94C0', blue: '#2855E0', green: '#087047', violet: '#7A3FB8', amber: '#874607', red: '#C0392B',
 };
 
 interface LegStats { total: number; activas: number; aprobadas: number; verificadas: number }
@@ -76,17 +76,17 @@ export default function LegislacionEnrichedEn({ legStats, loading, iniciativas }
 
         {/* status-distribution bar (real) */}
         <div>
-          <div className="font-mono uppercase" style={{ fontSize: 9.5, letterSpacing: '0.16em', color: L.mute, marginBottom: 8 }}>
+          <div className="font-mono uppercase" style={{ fontSize: 11, letterSpacing: '0.10em', color: L.mute, marginBottom: 8 }}>
             Status breakdown · {loading ? '—' : legStats.total}
           </div>
-          <div className="flex" style={{ height: 12, borderRadius: 999, overflow: 'hidden', border: `1px solid ${L.line2}`, background: L.panel }}>
-            {dist.map((d, i) => (
-              <div key={i} title={`${d[0]} · ${d[1]}`} style={{ width: `${(d[1] / distTotal) * 100}%`, background: d[2], transition: 'width .6s ease' }} />
+          <div aria-hidden="true" className="flex" style={{ height: 12, borderRadius: 999, overflow: 'hidden', border: `1px solid ${L.line2}`, background: L.panel }}>
+            {dist.map(d => (
+              <div key={d[0]} className="motion-safe:transition-[width] motion-safe:duration-500" style={{ width: `${(d[1] / distTotal) * 100}%`, background: d[2] }} />
             ))}
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1.5" style={{ marginTop: 10 }}>
-            {dist.map((d, i) => (
-              <span key={i} className="font-mono inline-flex items-center gap-1.5" style={{ fontSize: 10, color: L.body, letterSpacing: '0.04em' }}>
+            {dist.map(d => (
+              <span key={d[0]} className="font-mono inline-flex items-center gap-1.5" style={{ fontSize: 11, color: L.body, letterSpacing: '0.04em' }}>
                 <span style={{ width: 7, height: 7, borderRadius: 2, background: d[2] }} />{d[0]} <b style={{ color: L.ink }}>{loading ? '—' : d[1]}</b>
               </span>
             ))}
@@ -97,35 +97,37 @@ export default function LegislacionEnrichedEn({ legStats, loading, iniciativas }
       {/* enriched cards */}
       {cards.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-9">
-          <h3 className="font-sans-tech text-sm font-semibold sm:col-span-2 lg:col-span-3" style={{ color: L.ink }}>Latest bills</h3>
+          <h3 className="font-sans-tech text-base font-semibold sm:col-span-2 lg:col-span-3" style={{ color: L.ink }}>Latest bills</h3>
           {cards.map((it, idx) => {
             const [label, c] = stageOf(it.status);
             const verificada = it.estadoVerificacion === 'verificado';
             const verificacion = verificada ? 'AI-verified'
               : it.estadoVerificacion === 'revision' ? 'Verification under review' : 'Verification pending';
             return (
-              <Link key={it.id || idx} href={`/en/legislacion/${it.id}`} className="group relative flex overflow-hidden transition-shadow hover:shadow-lg" style={{ background: L.panel, border: `1px solid ${L.line2}`, borderRadius: 12, boxShadow: '0 8px 24px -16px rgba(11,18,32,0.28)' }}>
+              <Link key={it.id || idx} href={`/en/legislacion/${it.id}`} className="group relative flex overflow-hidden rounded-xl hover:shadow-lg motion-safe:transition-shadow focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2855E0]" style={{ background: L.panel, border: `1px solid ${L.line2}` }}>
                 <div style={{ width: 5, background: c, flex: 'none' }} />
-                <div style={{ padding: '18px 20px', flex: 1, minWidth: 0 }}>
+                <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono uppercase inline-flex items-center gap-1.5" style={{ fontSize: 10, letterSpacing: '0.12em', color: c, fontWeight: 600, padding: '4px 10px', border: `1px solid ${c}40`, background: `${c}0D`, borderRadius: 999 }}>
+                    <span className="font-mono uppercase inline-flex items-center gap-1.5" style={{ fontSize: 11, letterSpacing: '0.07em', color: c, fontWeight: 600, padding: '4px 10px', border: `1px solid ${c}40`, background: `${c}0D`, borderRadius: 999 }}>
                       <span style={{ width: 6, height: 6, borderRadius: 999, background: c, boxShadow: `0 0 6px ${c}88` }} />{label}
                     </span>
                   </div>
-                  <h4 className="font-sans-tech line-clamp-3 group-hover:text-blue-700 transition-colors" style={{ margin: '14px 0 0', fontSize: 15.5, fontWeight: 600, lineHeight: 1.32, color: L.ink, letterSpacing: '-0.01em' }}>
+                  <h4 className="font-sans-tech line-clamp-4 break-words sm:line-clamp-3 group-hover:underline group-focus-visible:underline decoration-[#2855E0]/40 underline-offset-2" style={{ margin: '14px 0 0', fontSize: 17, fontWeight: 600, lineHeight: 1.35, color: L.ink, letterSpacing: '-0.01em' }}>
                     {it.titulo}
                   </h4>
-                  <div className="font-mono flex items-center gap-1.5 mt-2" style={{ fontSize: 11, color: L.body }}>
+                  <div className="font-sans-tech flex items-center gap-1.5 mt-2" style={{ fontSize: 13, color: L.body }}>
                     {verificada && <ShieldCheck aria-hidden="true" size={14} style={{ color: L.green }} />}
                     {verificacion}
                   </div>
-                  <div className="flex items-center gap-2.5" style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${L.line}` }}>
-                    <span className="font-mono" style={{ width: 26, height: 26, borderRadius: 999, background: `${c}18`, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700, flex: 'none' }}>{iniciales(it.proponente)}</span>
-                    <div style={{ minWidth: 0, lineHeight: 1.2 }}>
-                      <div className="font-sans-tech truncate" style={{ fontSize: 12.5, color: L.body, fontWeight: 500 }}>{it.proponente || 'No sponsor listed'}</div>
-                      <div className="font-mono" style={{ fontSize: 9, color: L.faint, letterSpacing: '0.08em', marginTop: 2 }}>{[it.camara ? it.camara.toUpperCase() : null, fechaMes(it.fecha)].filter(Boolean).join(' · ')}</div>
+                  <div className="mt-auto pt-4">
+                    <div className="flex items-center gap-2.5 border-t pt-3" style={{ borderColor: L.line }}>
+                      <span aria-hidden="true" className="font-mono" style={{ width: 26, height: 26, borderRadius: 999, background: `${c}18`, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700, flex: 'none' }}>{iniciales(it.proponente)}</span>
+                      <div style={{ minWidth: 0, lineHeight: 1.2 }}>
+                        <div className="font-sans-tech truncate" style={{ fontSize: 12.5, color: L.body, fontWeight: 500 }}>{it.proponente || 'No sponsor listed'}</div>
+                        <div className="font-mono" style={{ fontSize: 11, color: L.mute, letterSpacing: '0.025em', marginTop: 2 }}>{[it.camara ? it.camara.toUpperCase() : null, fechaMes(it.fecha)].filter(Boolean).join(' · ')}</div>
+                      </div>
+                      <ArrowRight aria-hidden="true" className="ml-auto shrink-0" size={16} style={{ color: L.blue }} />
                     </div>
-                    <span style={{ marginLeft: 'auto', color: c }}><ArrowRight size={14} /></span>
                   </div>
                 </div>
               </Link>
@@ -136,8 +138,8 @@ export default function LegislacionEnrichedEn({ legStats, loading, iniciativas }
 
       {/* footer: CTA + verified count */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-9">
-        <Link href="/en/legislacion" className="inline-flex items-center gap-2.5 font-mono uppercase transition-transform hover:scale-[1.02]" style={{ padding: '13px 24px', background: L.ink, color: '#fff', borderRadius: 8, fontSize: 12, letterSpacing: '0.1em', fontWeight: 600, boxShadow: '0 10px 28px -12px rgba(11,18,32,0.5)' }}>
-          <Scale size={15} /> View all bills <ArrowRight size={14} />
+        <Link href="/en/legislacion" className="inline-flex min-h-11 items-center gap-2.5 font-mono uppercase hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2855E0]" style={{ padding: '13px 24px', background: L.ink, color: '#fff', borderRadius: 8, fontSize: 12, letterSpacing: '0.1em', fontWeight: 600, boxShadow: '0 10px 28px -12px rgba(11,18,32,0.5)' }}>
+          <Scale aria-hidden="true" size={15} /> View all bills <ArrowRight aria-hidden="true" size={14} />
         </Link>
         <span className="font-mono inline-flex items-center gap-2" style={{ fontSize: 11.5, letterSpacing: '0.04em', color: L.mute }}>
           <ShieldCheck size={15} style={{ color: L.green }} />
