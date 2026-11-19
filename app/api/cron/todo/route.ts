@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 // no del HTTP. Los agentes no lanzan cuando fallan — devuelven `success:false` con
 // HTTP 200 —, así que la versión anterior, que sólo miraba `r.ok` y devolvía
 // `ok:true` incondicionalmente, reportó verde durante 20 corridas muertas.
-const AGENTES = ['deteccion', 'legislacion', 'casos', 'monitoreo'] as const;
+const AGENTES = ['deteccion', 'legislacion', 'casos', 'monitoreo', 'hemeroteca'] as const;
 
 export async function GET(request: Request) {
   const authError = requireCron(request);

@@ -7,7 +7,7 @@ import ActividadFeed from '@/components/ActividadFeed';
 
 // Agrupa los tipos crudos del feed en categorías legibles para el filtro.
 const GRUPOS: { key: string; label: string; tipos: string[] }[] = [
-  { key: 'deteccion', label: 'Detecciones y actualizaciones', tipos: ['actualizacion', 'nuevo_anuncio', 'nueva_iniciativa'] },
+  { key: 'deteccion', label: 'Detecciones y actualizaciones', tipos: ['actualizacion', 'nuevo_anuncio', 'nueva_iniciativa', 'nuevo_articulo'] },
   { key: 'status', label: 'Cambios de estatus', tipos: ['cambio_status'] },
   { key: 'agente', label: 'Corridas del agente', tipos: ['agente_ejecuta', 'agente_ejecutado', 'agente_parcial', 'agente_fallo'] },
   { key: 'correccion', label: 'Correcciones', tipos: ['correccion'] },

@@ -6,7 +6,7 @@ export type ConsolidatedAgentResult = {
   error?: string;
 };
 
-const AGENTS = ['deteccion', 'legislacion', 'casos', 'monitoreo'] as const;
+const AGENTS = ['deteccion', 'legislacion', 'casos', 'monitoreo', 'hemeroteca'] as const;
 
 export function getCurrentDeploymentOrigin(requestUrl: string) {
   const deploymentHost = process.env.VERCEL_URL?.trim();

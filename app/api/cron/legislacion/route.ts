@@ -103,6 +103,9 @@ function docDe(h: HallazgoGaceta, numero: number) {
     entidadFederativa: 'Federal',
     // La descripción deja ver POR QUÉ entró: si la IA no está en el título, primero el fragmento donde aparece.
     descripcion: (h.relevancia === 'cuerpo' && h.evidencia ? `${h.evidencia}\n\n` : '') + h.textoCompleto.slice(0, 1200) + (notaCuerpo ? `\n\n${notaCuerpo}` : ''),
+    // Texto íntegro para que el agente de hemeroteca escriba el artículo sin
+    // volver a la Gaceta. Interno: la API pública no lo expone.
+    textoFuente: h.textoCompleto.slice(0, 60_000),
     status: h.turno ? 'turnada' : 'en_comisiones',
     estatus: h.turno ? 'turnada' : 'en_comisiones',
     tipo: tipoDe(h.titulo),

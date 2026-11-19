@@ -7,7 +7,7 @@ import ActividadFeedEn from '@/components/ActividadFeedEn';
 
 // Groups the feed's raw types into filter-friendly categories.
 const GRUPOS: { key: string; label: string; tipos: string[] }[] = [
-  { key: 'deteccion', label: 'Detections and updates', tipos: ['actualizacion', 'nuevo_anuncio', 'nueva_iniciativa'] },
+  { key: 'deteccion', label: 'Detections and updates', tipos: ['actualizacion', 'nuevo_anuncio', 'nueva_iniciativa', 'nuevo_articulo'] },
   { key: 'status', label: 'Status changes', tipos: ['cambio_status'] },
   { key: 'agente', label: 'Agent runs', tipos: ['agente_ejecuta', 'agente_ejecutado', 'agente_parcial', 'agente_fallo'] },
   { key: 'correccion', label: 'Corrections', tipos: ['correccion'] },

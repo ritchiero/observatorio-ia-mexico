@@ -4,6 +4,10 @@ const INTERNAL_FIELDS = new Set([
   'pdfBackupCandidate',
   'pdfBackupMetadata',
   'resultadoVerificacion',
+  // Agente de hemeroteca: texto fuente íntegro y control de reintentos.
+  'textoFuente',
+  'articuloIntentos',
+  'articuloUltimoError',
 ]);
 
 /**

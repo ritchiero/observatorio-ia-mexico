@@ -26,6 +26,7 @@ const tipoIconos: Record<string, React.ComponentType<{ className?: string }>> = 
   agente_parcial: ExclamationTriangleIcon,
   agente_fallo: ExclamationTriangleIcon,
   nueva_iniciativa: PlusCircleIcon,
+  nuevo_articulo: DocumentTextIcon,
   correccion: ArrowPathIcon,
 };
 
