@@ -264,14 +264,11 @@ export default function HomeEn() {
       {/* Hero Section */}
       <HeroSectionGlassEn stats={stats} legStats={legStats} casosStats={casosStats} loading={loadingAnuncios} loadingLeg={loadingLegStats} loadingCasos={loadingCasos} />
 
+      <LegislacionEnrichedEn legStats={legStats} loading={loadingLegStats} iniciativas={iniciativasDestacadas} />
+
       {/* Sección: Metodología — DAG Flow (light) */}
       <section id="metodologia" className="scroll-mt-24 bg-gray-50 border-y border-gray-200/50">
         <MetodologiaDAGEn anuncios={stats.total} iniciativas={legStats.total} casos={casosStats.total} />
-      </section>
-
-      {/* Sección: Legislación en IA — Enriched + Status (l04) */}
-      <section className="bg-gray-50 border-t border-gray-200/50 py-12 sm:py-16 px-4">
-        <LegislacionEnrichedEn legStats={legStats} loading={loadingLegStats} iniciativas={iniciativasDestacadas} />
       </section>
 
       {/* Sección: Casos de IA */}
