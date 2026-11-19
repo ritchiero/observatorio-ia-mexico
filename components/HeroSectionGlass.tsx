@@ -173,7 +173,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 lg:gap-7">
+        <nav className="hidden xl:flex items-center gap-7 whitespace-nowrap">
           {navItems.map(([t, h]) => {
             const active = pathname === h;
             return (
@@ -201,7 +201,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
           </button>
           {/* Hamburguesa móvil */}
           <button onClick={() => setMenuOpen((v) => !v)} aria-label="Abrir menú" aria-expanded={menuOpen}
-            className="md:hidden flex items-center justify-center cursor-pointer"
+            className="xl:hidden flex items-center justify-center cursor-pointer"
             style={{ width: 40, height: 40, borderRadius: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: T.text }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               {menuOpen ? <path d="M6 6l12 12M6 18L18 6" /> : <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>}
@@ -212,23 +212,23 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
 
       {/* Menú móvil desplegable */}
       {menuOpen && (
-        <div className="md:hidden fixed inset-x-3 z-40 rounded-3xl p-3 flex flex-col gap-1" style={{
+        <div className="xl:hidden fixed inset-x-3 md:inset-x-8 z-40 max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-3xl p-3 flex flex-col gap-1" style={{
           top: scrolled ? 64 : 78, background: 'rgba(9,13,24,0.92)', backdropFilter: 'blur(24px) saturate(160%)', WebkitBackdropFilter: 'blur(24px) saturate(160%)',
           border: '1px solid rgba(255,255,255,0.10)', boxShadow: '0 24px 60px -16px rgba(0,0,0,0.7)',
         }}>
           {navItems.map(([t, h]) => {
             const active = pathname === h;
             return (
-              <Link key={t} href={h} onClick={() => setMenuOpen(false)} className="font-sans-tech px-4 py-3 rounded-2xl transition-colors"
+              <Link key={t} href={h} onClick={() => setMenuOpen(false)} className="font-sans-tech shrink-0 px-4 py-3 rounded-2xl transition-colors"
                 style={{ fontSize: 15, fontWeight: 500, color: active ? T.cyan : T.body, background: active ? 'rgba(61,224,255,0.08)' : 'transparent' }}>
                 {t}
               </Link>
             );
           })}
-          <a href="/en?hl=en" className="font-sans-tech px-4 py-3 rounded-2xl transition-colors" style={{ fontSize: 15, fontWeight: 500, color: T.body }}>
+          <a href="/en?hl=en" className="font-sans-tech shrink-0 px-4 py-3 rounded-2xl transition-colors" style={{ fontSize: 15, fontWeight: 500, color: T.body }}>
             🇬🇧 English
           </a>
-          <button onClick={() => { setMenuOpen(false); setShowModal(true); }} className="mt-1 font-sans-tech uppercase flex items-center justify-center gap-2.5 cursor-pointer"
+          <button onClick={() => { setMenuOpen(false); setShowModal(true); }} className="mt-1 shrink-0 font-sans-tech uppercase flex items-center justify-center gap-2.5 cursor-pointer"
             style={{ fontSize: 13, letterSpacing: '0.1em', fontWeight: 600, color: T.void, padding: '13px 18px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg, ${T.cyan} 0%, ${T.blue} 100%)` }}>
             Suscribirse
             <span style={{ width: 6, height: 6, borderRadius: 999, background: T.void }} />
