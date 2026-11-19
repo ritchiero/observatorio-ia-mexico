@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { getAnuncioLogo } from '@/lib/anuncio-logo';
 import { STATUS_ANUNCIO } from '@/lib/estados';
+import { plazoAbierto } from '@/lib/plazo-verificacion';
 import { fetchOverlayEn, aplicarOverlay } from '@/lib/i18n/client';
 import { STATUS_ANUNCIO_EN } from '@/lib/i18n/labels-en';
 
@@ -158,8 +159,9 @@ export default function HomeEn() {
   }, []);
 
   // Función para calcular días vencidos (usando UTC)
-  const calcularDiasVencidos = (fechaPrometida: string): number => {
-    if (!fechaPrometida) return 0;
+  const calcularDiasVencidos = (fechaPrometida: string, status?: string): number => {
+    // Lo que ya opera, concluyó o se abandonó no tiene retraso aunque su fecha haya pasado.
+    if (!fechaPrometida || !plazoAbierto(status)) return 0;
     try {
       const fecha = new Date(fechaPrometida);
       const hoy = new Date();
@@ -664,15 +666,15 @@ export default function HomeEn() {
 
                   {/* Footer del card */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    {item.fechaPrometida && calcularDiasVencidos(item.fechaPrometida) > 0 ? (
+                    {item.fechaPrometida && calcularDiasVencidos(item.fechaPrometida, item.status) > 0 ? (
                       <div className={`flex items-center gap-2 ${item.status === 'incumplido' ? 'text-red-500' : 'text-amber-600'}`}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-xs font-mono font-bold">
                           {item.status === 'incumplido'
-                            ? `${calcularDiasVencidos(item.fechaPrometida)} days overdue`
-                            : `Due ${calcularDiasVencidos(item.fechaPrometida)} days ago · verify status`}
+                            ? `${calcularDiasVencidos(item.fechaPrometida, item.status)} days overdue`
+                            : `Due ${calcularDiasVencidos(item.fechaPrometida, item.status)} days ago · verify status`}
                         </span>
                       </div>
                     ) : item.fechaPrometida ? (

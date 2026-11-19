@@ -246,9 +246,9 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
             color: T.text, fontWeight: 600, boxShadow: '0 4px 24px rgba(61,224,255,0.15)',
           }}>
             <span style={{ width: 8, height: 8, borderRadius: 999, background: T.cyan, boxShadow: `0 0 12px ${T.cyan}`, animation: 'glass-pulse 2s ease-in-out infinite' }} />
-            <span style={{ color: T.cyan }}>OBSERVING</span>
+            <span style={{ color: T.cyan }}>EN OBSERVACIÓN</span>
             <span style={{ color: T.faint }}>·</span>
-            <span style={{ color: T.body }}>actualización continua</span>
+            <span style={{ color: T.body }}>revisión automática cada 3 días</span>
           </div>
 
           <h1 className="font-serif-display" style={{ margin: '32px 0 0', fontSize: 'clamp(56px, 9vw, 112px)', lineHeight: 0.94, letterSpacing: '-0.04em', fontWeight: 500, color: T.text }}>
@@ -261,7 +261,7 @@ export default function HeroSectionGlass({ stats, legStats, casosStats, loading,
 
           <p className="font-serif-display" style={{ margin: '32px 0 0', fontSize: 'clamp(17px,2.2vw,20px)', lineHeight: 1.45, color: T.body, maxWidth: 560 }}>
             Inteligencia continua sobre el despliegue de IA en el aparato estatal mexicano —
-            <span style={{ color: T.text }}> sintetizada, verificada y siempre encendida.</span>
+            <span style={{ color: T.text }}> sintetizada, verificada y revisada cada tres días.</span>
           </p>
 
           <div className="mt-10 flex flex-wrap gap-3.5 items-center">

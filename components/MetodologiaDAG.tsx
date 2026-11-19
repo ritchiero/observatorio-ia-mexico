@@ -67,7 +67,7 @@ const TIERS: { key: string; color: string; label: string; desc: string }[] = [
 export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) {
   const VERTICALS: Vertical[] = [
     {
-      id: '01', code: 'ANNOUNCE', accent: C.cyan, title: 'Anuncios Oficiales', cat: 'Gobierno · Comunicación', n: anuncios,
+      id: '01', code: 'ANUNC', accent: C.cyan, title: 'Anuncios Oficiales', cat: 'Gobierno · Comunicación', n: anuncios,
       desc: 'Promesas gubernamentales sobre proyectos de IA: laboratorios, plataformas, inversiones.',
       sources: [['Conferencias matutinas', 'GOB'], ['Diario Oficial de la Federación', 'DOF'], ['Comunicados de dependencias', 'SHCP']],
     },
@@ -153,7 +153,7 @@ export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) 
                     <span style={{ width: 36, height: 36, borderRadius: 9, border: `1px solid ${v.accent}40`, background: `${v.accent}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}><Icon s={18} c={v.accent} /></span>
                     <div style={{ minWidth: 0 }}>
                       <div className="font-sans-tech" style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{v.title}</div>
-                      <div className="font-mono" style={{ fontSize: 9, letterSpacing: '0.14em', color: v.accent, marginTop: 3, fontWeight: 600 }}>{v.code} · {reg(v.n)} REGS</div>
+                      <div className="font-mono" style={{ fontSize: 9, letterSpacing: '0.14em', color: v.accent, marginTop: 3, fontWeight: 600 }}>{v.code} · {reg(v.n)} REG.</div>
                     </div>
                   </div>
                 </div>
@@ -184,7 +184,7 @@ export default function MetodologiaDAG({ anuncios, iniciativas, casos }: Props) 
                     <span style={{ width: 40, height: 40, borderRadius: 11, border: `1px solid ${v.accent}40`, background: `${v.accent}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}><Icon s={20} c={v.accent} /></span>
                     <div>
                       <div className="font-sans-tech" style={{ fontSize: 15, fontWeight: 600, color: C.ink }}>{v.title}</div>
-                      <div className="font-mono" style={{ fontSize: 9.5, letterSpacing: '0.14em', color: v.accent, marginTop: 2, fontWeight: 600 }}>{v.code} · {reg(v.n)} REGS</div>
+                      <div className="font-mono" style={{ fontSize: 9.5, letterSpacing: '0.14em', color: v.accent, marginTop: 2, fontWeight: 600 }}>{v.code} · {reg(v.n)} REG.</div>
                     </div>
                   </div>
                   <p className="font-sans-tech" style={{ fontSize: 13, lineHeight: 1.5, color: C.body, margin: '0 0 12px' }}>{v.desc}</p>

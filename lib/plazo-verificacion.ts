@@ -50,9 +50,17 @@ export function aFecha(v: unknown): Date | null {
 
 const DIA = 86_400_000;
 
+/** Estatus en los que la promesa ya se resolvió: un plazo pasado no es retraso. */
+export const ESTATUS_CERRADOS: ReadonlySet<string> = new Set(['operando', 'concluido', 'abandonado']);
+
+export function plazoAbierto(status: unknown): boolean {
+  return !ESTATUS_CERRADOS.has(String(status ?? ''));
+}
+
 export function evaluarPlazo(anuncio: AnuncioPlazo, hoy: Date = new Date()): EstadoPlazo {
   const prometida = aFecha(anuncio?.fechaPrometida);
   if (!prometida) return SIN_PLAZO;
+  if (!plazoAbierto(anuncio?.status)) return { ...SIN_PLAZO, ultimaRevision: ultimaRevisionDe(anuncio) };
 
   const vencido = prometida.getTime() < hoy.getTime();
   if (!vencido) return { ...SIN_PLAZO, ultimaRevision: ultimaRevisionDe(anuncio) };

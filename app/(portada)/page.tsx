@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { getAnuncioLogo } from '@/lib/anuncio-logo';
 import { STATUS_ANUNCIO } from '@/lib/estados';
+import { plazoAbierto } from '@/lib/plazo-verificacion';
 
 interface AnuncioData {
   id: string;
@@ -140,8 +141,9 @@ export default function Home() {
   }, []);
   
   // Función para calcular días vencidos (usando UTC)
-  const calcularDiasVencidos = (fechaPrometida: string): number => {
-    if (!fechaPrometida) return 0;
+  const calcularDiasVencidos = (fechaPrometida: string, status?: string): number => {
+    // Lo que ya opera, concluyó o se abandonó no tiene retraso aunque su fecha haya pasado.
+    if (!fechaPrometida || !plazoAbierto(status)) return 0;
     try {
       const fecha = new Date(fechaPrometida);
       const hoy = new Date();
@@ -452,13 +454,13 @@ export default function Home() {
               <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Actualización mensual
+              Revisión cada 3 días
             </div>
           </div>
           
           {/* Fecha de actualización móvil */}
           <div className="sm:hidden text-center mt-2">
-            <span className="text-[11px] text-gray-900/30 font-mono">Actualización mensual</span>
+            <span className="text-[11px] text-gray-900/30 font-mono">Revisión cada 3 días</span>
           </div>
 
           {/* Datos abiertos (OIA-013): el público cita y reutiliza sin scrapear */}
@@ -654,15 +656,15 @@ export default function Home() {
                   
                   {/* Footer del card */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    {item.fechaPrometida && calcularDiasVencidos(item.fechaPrometida) > 0 ? (
+                    {item.fechaPrometida && calcularDiasVencidos(item.fechaPrometida, item.status) > 0 ? (
                       <div className={`flex items-center gap-2 ${item.status === 'incumplido' ? 'text-red-500' : 'text-amber-600'}`}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-xs font-mono font-bold">
                           {item.status === 'incumplido'
-                            ? `${calcularDiasVencidos(item.fechaPrometida)} días de retraso`
-                            : `Venció hace ${calcularDiasVencidos(item.fechaPrometida)} días · verificar estatus`}
+                            ? `${calcularDiasVencidos(item.fechaPrometida, item.status)} días de retraso`
+                            : `Venció hace ${calcularDiasVencidos(item.fechaPrometida, item.status)} días · verificar estatus`}
                         </span>
                       </div>
                     ) : item.fechaPrometida ? (
