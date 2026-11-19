@@ -1,153 +1,173 @@
 'use client';
 
-// Sección "Legislación en IA" — diseño "Enriched + Status" (l04) elegido por Ricardo.
-// Header de dos columnas (título + barra de distribución por estatus REAL), cards
-// enriquecidas con stripe de etapa, tag de estatus, escudo de verificación y avatar.
-// Datos en vivo desde props (legStats + iniciativas destacadas).
-
 import Link from 'next/link';
-import { Scale, ShieldCheck, ArrowRight } from 'lucide-react';
-
-const L = {
-  bg: '#F4F6FB', panel: '#FFFFFF', ink: '#0B1220', body: '#3B475C',
-  mute: '#515E74', faint: '#A2ABBE', line: '#E5E9F2', line2: '#CED6E6',
-  cyan: '#0E94C0', blue: '#2855E0', green: '#087047', violet: '#7A3FB8', amber: '#874607', red: '#C0392B',
-};
+import { ArrowRight, ArrowUpRight, ShieldCheck } from 'lucide-react';
 
 interface LegStats { total: number; activas: number; aprobadas: number; verificadas: number }
 interface Iniciativa { id: string; titulo: string; status?: string; proponente?: string; fecha?: string; camara?: string; estadoVerificacion?: string }
-interface Props { legStats: LegStats; loading: boolean; iniciativas: Iniciativa[] }
+export interface LegislacionProps { legStats: LegStats; loading: boolean; iniciativas: Iniciativa[] }
+type Locale = 'es' | 'en';
 
-// status crudo → [etiqueta legible, color]
-function stageOf(raw?: string): [string, string] {
+const copy = {
+  es: {
+    kicker: 'El radar legislativo',
+    title: 'Últimas iniciativas de IA',
+    intro: 'Lo más reciente del Congreso de la Unión y los congresos estatales.',
+    newest: 'La más reciente',
+    read: 'Leer iniciativa',
+    list: 'También en el radar',
+    all: 'Ver todas las iniciativas',
+    noData: 'No hay iniciativas para mostrar en este momento.',
+    loading: 'Cargando las últimas iniciativas…',
+    counts: ['En el registro', 'Activas', 'Aprobadas o publicadas', 'Desechadas', 'Verificadas con IA'],
+    verified: 'Verificada con IA', review: 'Verificación en revisión', pending: 'Verificación pendiente',
+    stages: ['Aprobada', 'Dictamen', 'En comisiones', 'Turnada', 'En discusión', 'Primera lectura', 'Desechada', 'Presentada', 'En proceso', 'En trámite'],
+  },
+  en: {
+    kicker: 'Legislative radar',
+    title: 'Latest AI bills',
+    intro: 'New proposals from Mexico’s federal and state legislatures.',
+    newest: 'Most recent',
+    read: 'Read bill',
+    list: 'Also on the radar',
+    all: 'See all bills',
+    noData: 'No bills to show right now.',
+    loading: 'Loading the latest bills…',
+    counts: ['In the register', 'Active', 'Passed or published', 'Dismissed', 'AI-verified'],
+    verified: 'AI-verified', review: 'Verification under review', pending: 'Verification pending',
+    stages: ['Passed', 'Committee report', 'In committee', 'Referred', 'Under debate', 'First reading', 'Dismissed', 'Introduced', 'In progress', 'Pending'],
+  },
+};
+
+// Short display titles for specific public records. Other bills keep their source title.
+const displayTitles: Record<string, Record<Locale, string>> = {
+  FMHV3j86S5I7auFVssaJ: { es: 'Fraude financiero con IA contra personas mayores', en: 'AI-enabled financial fraud targeting older adults' },
+  '9YSDYjsYl0vUtiFXYNm3': { es: 'IA para la prevención y detección temprana de enfermedades', en: 'AI for disease prevention and early detection' },
+  L8jINV6fo9p2WeTOQ5bQ: { es: 'Responsabilidad civil por el uso de IA', en: 'Civil liability for the use of AI' },
+};
+
+const dateFormats = {
+  es: new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }),
+  en: new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }),
+};
+
+function stageOf(raw: string | undefined, locale: Locale) {
+  const stages = copy[locale].stages;
   const s = (raw || '').toLowerCase();
-  if (s.includes('aprob') || s.includes('publicad')) return ['Aprobada', L.green];
-  if (s.includes('dictam')) return ['Dictamen', L.amber];
-  if (s.includes('comision')) return ['En comisiones', L.blue];
-  if (s.includes('turnad')) return ['Turnada', L.blue];
-  if (s.includes('discus')) return ['En discusión', L.blue];
-  if (s.includes('lectura')) return ['Primera lectura', L.blue];
-  if (s.includes('desech') || s.includes('archiv')) return ['Desechada', L.red];
-  if (s.includes('present')) return ['Presentada', L.mute];
-  if (s.includes('elabor') || s.includes('prepar') || s.includes('recib') || s.includes('proceso')) return ['En proceso', L.mute];
-  return [raw ? raw.replace(/_/g, ' ') : 'En trámite', L.mute];
+  if (s.includes('aprob') || s.includes('publicad')) return stages[0];
+  if (s.includes('dictam')) return stages[1];
+  if (s.includes('comision')) return stages[2];
+  if (s.includes('turnad')) return stages[3];
+  if (s.includes('discus')) return stages[4];
+  if (s.includes('lectura')) return stages[5];
+  if (s.includes('desech') || s.includes('archiv')) return stages[6];
+  if (s.includes('present')) return stages[7];
+  if (s.includes('elabor') || s.includes('prepar') || s.includes('recib') || s.includes('proceso')) return stages[8];
+  return raw ? raw.replace(/_/g, ' ') : stages[9];
 }
 
-function iniciales(nombre?: string): string {
-  if (!nombre) return '··';
-  return nombre.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+function BillDate({ value, locale, before, after }: { value?: string; locale: Locale; before?: React.ReactNode; after?: React.ReactNode }) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  return <>{before}<time dateTime={date.toISOString().slice(0, 10)}>{dateFormats[locale].format(date)}</time>{after}</>;
 }
 
-function fechaMes(iso?: string): string {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '';
-    const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    return `${meses[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-  } catch { return ''; }
+function BillBadges({ bill, locale, lead = false }: { bill: Iniciativa; locale: Locale; lead?: boolean }) {
+  const t = copy[locale];
+  const verified = bill.estadoVerificacion === 'verificado';
+  const review = bill.estadoVerificacion === 'revision';
+  return (
+    <div className="flex flex-wrap items-center gap-2 font-sans-tech text-xs font-medium leading-snug">
+      <span className={`rounded-full border px-2.5 py-1 ${lead ? 'border-[#7790bf] text-[#eff5ff]' : 'border-[#a9b9d4] text-[#233e74]'}`}>{stageOf(bill.status, locale)}</span>
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ${verified ? (lead ? 'bg-[#264c49] text-[#e5ffef]' : 'bg-[#def3e8] text-[#14543f]') : (lead ? 'bg-[#f5dfa8] text-[#452d06]' : 'bg-[#f4ead5] text-[#583b10]')}`}>
+        {verified && <ShieldCheck size={13} aria-hidden="true" />}
+        {verified ? t.verified : review ? t.review : t.pending}
+      </span>
+    </div>
+  );
 }
 
-export default function LegislacionEnriched({ legStats, loading, iniciativas }: Props) {
-  const desechadas = Math.max(0, legStats.total - legStats.activas - legStats.aprobadas);
-  const dist: [string, number, string][] = [
-    ['Activas', legStats.activas, L.blue],
-    ['Aprobadas / publicadas', legStats.aprobadas, L.green],
-    ['Desechadas', desechadas, L.faint],
-  ];
-  const distTotal = dist.reduce((a, d) => a + d[1], 0) || 1;
-  const cards = iniciativas.slice(0, 3);
+export default function LegislacionEnriched({ legStats, loading, iniciativas, locale = 'es' }: LegislacionProps & { locale?: Locale }) {
+  const t = copy[locale];
+  const indexHref = locale === 'en' ? '/en/legislacion' : '/legislacion';
+  const [lead, ...support] = iniciativas.slice(0, 3);
+  const discarded = Math.max(0, legStats.total - legStats.activas - legStats.aprobadas);
+  const counts = [legStats.total, legStats.activas, legStats.aprobadas, discarded, legStats.verificadas];
+  const titleOf = (bill: Iniciativa) => displayTitles[bill.id]?.[locale] ?? bill.titulo;
+  const anchor = locale === 'en' ? 'latest-ai-bills' : 'novedades-legislativas';
+  const sectionId = `${anchor}-heading`;
 
   return (
-    <div className="max-w-6xl mx-auto px-1" style={{ color: L.ink }}>
-      {/* kicker */}
-      <div className="inline-flex items-center gap-2 font-mono uppercase" style={{ padding: '7px 14px 7px 11px', border: `1px solid ${L.blue}33`, background: `${L.blue}0D`, borderRadius: 999, fontSize: 10.5, letterSpacing: '0.18em', color: L.blue, fontWeight: 600 }}>
-        <Scale size={13} /> Monitoreo Legislativo
-      </div>
-
-      {/* header dos columnas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 md:items-end mt-5">
-        <div>
-          <h2 className="font-serif-display" style={{ margin: 0, fontWeight: 500, fontSize: 'clamp(34px,6vw,56px)', lineHeight: 1.0, letterSpacing: '-0.035em', color: L.ink }}>
-            Legislación en <em style={{ fontStyle: 'italic', fontWeight: 400, color: L.blue }}>IA</em>
-          </h2>
-          <p className="font-sans-tech" style={{ margin: '14px 0 0', maxWidth: 460, fontSize: 14.5, lineHeight: 1.5, color: L.body }}>
-            Seguimiento de todas las iniciativas de ley relacionadas con inteligencia artificial en el Congreso Federal y congresos estatales.
-          </p>
-        </div>
-
-        {/* barra de distribución por estatus (real) */}
-        <div>
-          <div className="font-mono uppercase" style={{ fontSize: 11, letterSpacing: '0.10em', color: L.mute, marginBottom: 8 }}>
-            Distribución por estatus · {loading ? '—' : legStats.total}
+    <section id={anchor} aria-labelledby={sectionId} className="scroll-mt-28 border-y border-[#d8d5cc] bg-[#f7f5ef] px-4 py-12 text-[#14233e] sm:px-6 lg:py-16">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-7 flex flex-wrap items-end justify-between gap-x-8 gap-y-4 sm:mb-9">
+          <div>
+            <p className="flex items-center gap-2 font-mono text-[11px] font-bold tracking-[0.15em] text-[#274b99] uppercase">
+              <span aria-hidden="true" className="h-px w-6 bg-[#274b99]" />{t.kicker}
+            </p>
+            <h2 id={sectionId} className="mt-2 font-serif-display text-[clamp(2.45rem,6vw,4.5rem)] leading-[0.98] font-medium tracking-[-0.04em]">{t.title}</h2>
+            <p className="mt-3 max-w-lg font-sans-tech text-sm leading-relaxed text-[#45536a] sm:text-base">{t.intro}</p>
           </div>
-          <div aria-hidden="true" className="flex" style={{ height: 12, borderRadius: 999, overflow: 'hidden', border: `1px solid ${L.line2}`, background: L.panel }}>
-            {dist.map(d => (
-              <div key={d[0]} className="motion-safe:transition-[width] motion-safe:duration-500" style={{ width: `${(d[1] / distTotal) * 100}%`, background: d[2] }} />
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5" style={{ marginTop: 10 }}>
-            {dist.map(d => (
-              <span key={d[0]} className="font-mono inline-flex items-center gap-1.5" style={{ fontSize: 11, color: L.body, letterSpacing: '0.04em' }}>
-                <span style={{ width: 7, height: 7, borderRadius: 2, background: d[2] }} />{d[0]} <b style={{ color: L.ink }}>{loading ? '—' : d[1]}</b>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+          <Link href={indexHref} className="inline-flex min-h-11 items-center gap-2 border-b border-[#274b99] font-sans-tech text-sm font-semibold text-[#254586] hover:border-b-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#274b99]">
+            {t.all}<ArrowUpRight size={16} aria-hidden="true" />
+          </Link>
+        </header>
 
-      {/* cards enriquecidas */}
-      {cards.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-9">
-          <h3 className="font-sans-tech text-base font-semibold sm:col-span-2 lg:col-span-3" style={{ color: L.ink }}>Iniciativas más recientes</h3>
-          {cards.map((it, idx) => {
-            const [label, c] = stageOf(it.status);
-            const verificada = it.estadoVerificacion === 'verificado';
-            const verificacion = verificada ? 'Verificada con IA'
-              : it.estadoVerificacion === 'revision' ? 'Verificación en revisión' : 'Verificación pendiente';
-            return (
-              <Link key={it.id || idx} href={`/legislacion/${it.id}`} className="group relative flex overflow-hidden rounded-xl hover:shadow-lg motion-safe:transition-shadow focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2855E0]" style={{ background: L.panel, border: `1px solid ${L.line2}` }}>
-                <div style={{ width: 5, background: c, flex: 'none' }} />
-                <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono uppercase inline-flex items-center gap-1.5" style={{ fontSize: 11, letterSpacing: '0.07em', color: c, fontWeight: 600, padding: '4px 10px', border: `1px solid ${c}40`, background: `${c}0D`, borderRadius: 999 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: 999, background: c, boxShadow: `0 0 6px ${c}88` }} />{label}
-                    </span>
-                  </div>
-                  <h4 className="font-sans-tech line-clamp-4 break-words sm:line-clamp-3 group-hover:underline group-focus-visible:underline decoration-[#2855E0]/40 underline-offset-2" style={{ margin: '14px 0 0', fontSize: 17, fontWeight: 600, lineHeight: 1.35, color: L.ink, letterSpacing: '-0.01em' }}>
-                    {it.titulo}
-                  </h4>
-                  <div className="font-sans-tech flex items-center gap-1.5 mt-2" style={{ fontSize: 13, color: L.body }}>
-                    {verificada && <ShieldCheck aria-hidden="true" size={14} style={{ color: L.green }} />}
-                    {verificacion}
-                  </div>
-                  <div className="mt-auto pt-4">
-                    <div className="flex items-center gap-2.5 border-t pt-3" style={{ borderColor: L.line }}>
-                      <span aria-hidden="true" className="font-mono" style={{ width: 26, height: 26, borderRadius: 999, background: `${c}18`, color: c, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700, flex: 'none' }}>{iniciales(it.proponente)}</span>
-                      <div style={{ minWidth: 0, lineHeight: 1.2 }}>
-                        <div className="font-sans-tech truncate" style={{ fontSize: 12.5, color: L.body, fontWeight: 500 }}>{it.proponente || 'Sin proponente'}</div>
-                        <div className="font-mono" style={{ fontSize: 11, color: L.mute, letterSpacing: '0.025em', marginTop: 2 }}>{[it.camara ? it.camara.toUpperCase() : null, fechaMes(it.fecha)].filter(Boolean).join(' · ')}</div>
-                      </div>
-                      <ArrowRight aria-hidden="true" className="ml-auto shrink-0" size={16} style={{ color: L.blue }} />
-                    </div>
-                  </div>
+        {lead ? (
+          <div className={`grid items-stretch gap-y-6 ${support.length ? 'lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-x-9' : ''}`}>
+            <article className="relative min-w-0">
+              <Link href={`${indexHref}/${lead.id}`} className="group flex h-full min-h-68 flex-col gap-4 overflow-hidden rounded-[3px] border-t-[5px] border-[#668dff] bg-[#132957] p-5 text-[#f5f7ff] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#274b99] sm:p-8">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs font-medium text-[#d5e1ff]">
+                  <span className="text-[11px] font-bold tracking-widest uppercase">{t.newest}</span>
+                  <BillDate value={lead.fecha} locale={locale} before={<span aria-hidden="true">/</span>} />
+                </div>
+                <h3 className="max-w-3xl font-serif-display text-[clamp(1.85rem,4vw,3.25rem)] leading-[1.04] font-medium break-words tracking-[-0.025em] text-white group-hover:underline group-focus-visible:underline decoration-[#a5bdff] underline-offset-4">
+                  {titleOf(lead)}
+                </h3>
+                {lead.camara && <p className="font-sans-tech text-sm text-[#d5e1ff]">{lead.camara}</p>}
+                <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-2">
+                  <BillBadges bill={lead} locale={locale} lead />
+                  <span className="inline-flex items-center gap-1.5 font-sans-tech text-sm font-semibold text-[#eff5ff]">{t.read}<ArrowRight size={17} aria-hidden="true" /></span>
                 </div>
               </Link>
-            );
-          })}
-        </div>
-      )}
+            </article>
 
-      {/* footer: CTA + verificadas */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-9">
-        <Link href="/legislacion" className="inline-flex min-h-11 items-center gap-2.5 font-mono uppercase hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2855E0]" style={{ padding: '13px 24px', background: L.ink, color: '#fff', borderRadius: 8, fontSize: 12, letterSpacing: '0.1em', fontWeight: 600, boxShadow: '0 10px 28px -12px rgba(11,18,32,0.5)' }}>
-          <Scale aria-hidden="true" size={15} /> Ver todas las iniciativas <ArrowRight aria-hidden="true" size={14} />
-        </Link>
-        <span className="font-mono inline-flex items-center gap-2" style={{ fontSize: 11.5, letterSpacing: '0.04em', color: L.mute }}>
-          <ShieldCheck size={15} style={{ color: L.green }} />
-          <b style={{ color: L.ink, fontWeight: 600 }}>{loading ? '—' : legStats.verificadas}</b> iniciativas verificadas con IA
-        </span>
+            {support.length > 0 && (
+              <aside className="min-w-0 border-t border-[#929eb1]" aria-label={t.list}>
+                <h3 className="border-b border-[#c9ccd2] py-2.5 font-mono text-[11px] font-bold tracking-[0.11em] text-[#344568] uppercase">{t.list}</h3>
+                <ul>
+                  {support.map((bill) => (
+                    <li key={bill.id} className="border-b border-[#c9ccd2]">
+                      <Link href={`${indexHref}/${bill.id}`} className="group grid min-h-11 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 px-1 py-4 hover:bg-[#eeeef2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#274b99] sm:px-3">
+                        <p className="font-mono text-xs font-medium text-[#45536a]">
+                          <BillDate value={bill.fecha} locale={locale} after={bill.camara && ' · '} />{bill.camara}
+                        </p>
+                        <ArrowUpRight size={18} className="col-start-2 row-start-1 row-span-2 mt-0.5 text-[#274b99]" aria-hidden="true" />
+                        <h4 className="font-serif-display text-[clamp(1.35rem,2.4vw,1.9rem)] leading-tight font-medium break-words group-hover:underline group-focus-visible:underline decoration-[#7194ce] underline-offset-3">
+                          {titleOf(bill)}
+                        </h4>
+                        <div className="col-span-2"><BillBadges bill={bill} locale={locale} /></div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            )}
+          </div>
+        ) : (
+          <p role={loading ? 'status' : undefined} className="border-y border-[#d8d5cc] py-8 font-sans-tech text-sm text-[#45536a]">{loading ? t.loading : t.noData}</p>
+        )}
+
+        <dl className="mt-7 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-[#c9ccd2] py-3 sm:grid-cols-3 lg:grid-cols-5">
+          {t.counts.map((label, index) => (
+            <div key={label} className="flex flex-wrap items-baseline gap-x-2">
+              <dt className="font-sans-tech text-xs text-[#45536a]">{label}</dt>
+              <dd className="order-first shrink-0 font-mono text-sm font-bold tabular-nums text-[#223d76]">{loading ? '—' : counts[index]}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
-    </div>
+    </section>
   );
 }
