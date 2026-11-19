@@ -6,6 +6,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { crearEventoInicial, crearEventoTimeline } from './timeline';
 import { tierFuente, esDuplicado, folioFactory } from './expediente';
 import { selectMonitoringCandidates, summarizeMonitoringRun } from './monitoring-health';
+import { MONITOREO_DEFAULTS, debeDetenerMonitoreo } from './monitoreo-budget';
 
 /**
  * Helper para normalizar fechas de Firestore que pueden ser Timestamp o string ISO
@@ -346,15 +347,14 @@ export async function ejecutarAgenteDeteccion(
 
 export async function ejecutarAgenteMonitoreo(
   trigger: TriggerTipo = 'manual',
-  opts: { limit?: number; maxSearches?: number; minTimeoutMs?: number } = {},
+  opts: { limit?: number; maxSearches?: number; timeoutPorLlamada?: number; deadlineMs?: number } = {},
 ) {
-  const LIMIT = opts.limit ?? 6; // rotación anti-timeout: solo N por corrida
-  const MAX_SEARCHES = opts.maxSearches ?? 3; // búsquedas web por anuncio
-  // Timeout mínimo generoso: con web search + thinking, cada llamada puede tomar 30-60s
-  const MIN_TIMEOUT_MS = opts.minTimeoutMs ?? 45_000;
+  // R2: Usar defaults centralizados de monitoreo-budget.ts
+  const LIMIT = opts.limit ?? MONITOREO_DEFAULTS.LIMIT;
+  const MAX_SEARCHES = opts.maxSearches ?? MONITOREO_DEFAULTS.MAX_SEARCHES;
+  const TIMEOUT_POR_LLAMADA_MS = opts.timeoutPorLlamada ?? MONITOREO_DEFAULTS.TIMEOUT_POR_LLAMADA_MS;
+  const DEADLINE_MS = opts.deadlineMs ?? MONITOREO_DEFAULTS.DEADLINE_MS;
   const startTime = Date.now();
-  const DEADLINE_MS = 280_000;
-  const MARGEN_POR_LLAMADA_MS = 5_000;
   const isDeadlineExceeded = () => Date.now() - startTime > DEADLINE_MS;
   
   const db = getAdminDb();
@@ -365,6 +365,8 @@ export async function ejecutarAgenteMonitoreo(
   let turnosTotales = 0;
   let duracionClaudeTotalMs = 0;
   let primerErrorDetallado: ReturnType<typeof sanitizarError> | null = null;
+  // C5: Registrar duración y resultado de cada verificación
+  const verificacionesLog: Array<{ anuncio: string; duracionMs: number; resultado: 'exito' | 'fallo'; error?: string }> = [];
 
   try {
     // Obtener todos los anuncios
@@ -398,35 +400,36 @@ export async function ejecutarAgenteMonitoreo(
         break;
       }
 
+      const verificacionStartTime = Date.now();
       try {
-        // Calcular timeout dinámico para esta llamada con mínimo generoso
+        // R2: Usar función centralizada para regla de parada
         const tiempoTranscurrido = Date.now() - startTime;
-        const tiempoRestante = DEADLINE_MS - tiempoTranscurrido;
-        const candidatosRestantes = candidatos.length - verificacionesExitosas - verificacionesFallidas;
-        const timeoutDinamico = Math.floor((tiempoRestante - MARGEN_POR_LLAMADA_MS) / Math.max(1, candidatosRestantes));
-        const timeoutPorAnuncio = Math.max(MIN_TIMEOUT_MS, timeoutDinamico);
+        const parada = debeDetenerMonitoreo(tiempoTranscurrido, {
+          deadlineMs: DEADLINE_MS,
+          timeoutPorLlamadaMs: TIMEOUT_POR_LLAMADA_MS,
+        });
+        
+        if (parada.debeDetener) {
+          const candidatosRestantes = candidatos.length - verificacionesExitosas - verificacionesFallidas;
+          console.log(
+            `[MONITOREO] STOP: ${parada.razon}. ` +
+            `Deteniendo con ${candidatosRestantes} candidatos restantes.`
+          );
+          errores.push(
+            `Tiempo insuficiente para continuar: ${parada.razon}. ` +
+            `${candidatosRestantes} candidatos omitidos.`
+          );
+          break;
+        }
         
         // Logging detallado para diagnóstico
         console.log(
           `[MONITOREO] Anuncio ${verificacionesExitosas + verificacionesFallidas + 1}/${candidatos.length}: ` +
           `"${anuncio.titulo.slice(0, 50)}..." | ` +
           `Transcurrido: ${tiempoTranscurrido}ms | ` +
-          `Restante: ${tiempoRestante}ms | ` +
-          `Timeout dinámico: ${timeoutDinamico}ms | ` +
-          `Timeout aplicado: ${timeoutPorAnuncio}ms`
+          `Restante: ${parada.tiempoRestante}ms | ` +
+          `Timeout fijo: ${TIMEOUT_POR_LLAMADA_MS}ms`
         );
-        
-        // Si el timeout calculado es menor al mínimo y quedan candidatos, mejor parar aquí
-        if (timeoutDinamico < MIN_TIMEOUT_MS && candidatosRestantes > 0) {
-          console.log(`[MONITOREO] STOP: Timeout dinámico (${timeoutDinamico}ms) < mínimo (${MIN_TIMEOUT_MS}ms). Deteniendo.`);
-          errores.push(`Tiempo insuficiente para ${candidatosRestantes} candidatos restantes (${timeoutDinamico}ms < ${MIN_TIMEOUT_MS}ms)`);
-          break;
-        }
-        
-        // Validación: el timeout nunca debe ser <= 0
-        if (timeoutPorAnuncio <= 0) {
-          throw new Error(`Timeout inválido calculado: ${timeoutPorAnuncio}ms (dinámico: ${timeoutDinamico}ms, restante: ${tiempoRestante}ms)`);
-        }
 
         // Normalizar fechas que pueden ser Timestamp o string
         const fechaAnuncio = normalizarFecha(anuncio.fechaAnuncio);
@@ -447,7 +450,7 @@ export async function ejecutarAgenteMonitoreo(
 
         const claudeResult = await searchWithClaude({ 
           prompt,
-          timeoutMs: timeoutPorAnuncio,
+          timeoutMs: TIMEOUT_POR_LLAMADA_MS,
           maxSearches: MAX_SEARCHES,
           globalDeadline: startTime + DEADLINE_MS, // Deadline global del agente
         });
@@ -576,15 +579,24 @@ export async function ejecutarAgenteMonitoreo(
           // Mover el expediente al final de la cola aunque no haya novedad.
           await db.collection('anuncios').doc(anuncio.id).update({ ultimaVerificacionAt });
         }
+        
+        // C5: Registrar verificación exitosa con duración
+        const verificacionDuracionMs = Date.now() - verificacionStartTime;
+        verificacionesLog.push({
+          anuncio: anuncio.titulo.slice(0, 80),
+          duracionMs: verificacionDuracionMs,
+          resultado: 'exito',
+        });
         verificacionesExitosas++;
       } catch (error) {
-        // Extraer mensaje con tipo, elapsed y timeout si están disponibles
+        // C2: Leer name y timeout de forma consistente para errores y actividad
         let errorMsg = error instanceof Error ? error.message : String(error);
         const errorObj = error as any;
         
-        // Si tiene tipo clasificado (TimeoutError/ExternalAbortError), incluir detalles
-        if (errorObj.type && errorObj.elapsed !== undefined) {
-          errorMsg = `${errorObj.type} tras ${errorObj.elapsed}ms (timeout ${errorObj.timeoutMs || 'N/A'}ms)`;
+        // Leer tipo, elapsed y timeoutMs (no type/timeout por separado)
+        if (errorObj.name && errorObj.elapsed !== undefined) {
+          const timeoutInfo = errorObj.timeoutMs !== undefined ? ` (timeout ${errorObj.timeoutMs}ms)` : '';
+          errorMsg = `${errorObj.name} tras ${errorObj.elapsed}ms${timeoutInfo}`;
         }
         
         errores.push(`Error al monitorear "${anuncio.titulo}": ${errorMsg}`);
@@ -594,6 +606,14 @@ export async function ejecutarAgenteMonitoreo(
           primerErrorDetallado = sanitizarError(error);
         }
         
+        // C5: Registrar verificación fallida con duración y error
+        const verificacionDuracionMs = Date.now() - verificacionStartTime;
+        verificacionesLog.push({
+          anuncio: anuncio.titulo.slice(0, 80),
+          duracionMs: verificacionDuracionMs,
+          resultado: 'fallo',
+          error: errorMsg.slice(0, 200),
+        });
         verificacionesFallidas++;
       }
     }
@@ -606,6 +626,15 @@ export async function ejecutarAgenteMonitoreo(
 
     // Guardar log del agente (con defensa adicional contra undefined)
     const duracionMs = Date.now() - startTime;
+    
+    // C5 + R4: Calcular resumen de duraciones para actividad (incluso si falla)
+    const duracionPromedio = verificacionesLog.length > 0
+      ? Math.round(verificacionesLog.reduce((sum, v) => sum + v.duracionMs, 0) / verificacionesLog.length)
+      : 0;
+    const duracionMaxima = verificacionesLog.length > 0
+      ? Math.max(...verificacionesLog.map(v => v.duracionMs))
+      : 0;
+    
     const logData = limpiarUndefined({
       tipo: 'monitoreo',
       fecha: Timestamp.now(),
@@ -619,6 +648,7 @@ export async function ejecutarAgenteMonitoreo(
       rawResponse: '',
       trigger,
       primerError: primerErrorDetallado,
+      verificaciones: verificacionesLog, // C5: log detallado por verificación
       claudeMeta: turnosTotales > 0 ? {
         turnos: turnosTotales,
         duracionMs: duracionClaudeTotalMs,
@@ -645,11 +675,16 @@ export async function ejecutarAgenteMonitoreo(
       ? ` (${primerErrorDetallado.tipo}: ${primerErrorDetallado.mensaje.slice(0, 100)})`
       : '';
     
+    // C5 + R4: Incluir resumen de duraciones en la descripción de actividad (incluso en fallo)
+    const resumenDuraciones = verificacionesLog.length > 0
+      ? ` Duración promedio: ${duracionPromedio}ms, máxima: ${duracionMaxima}ms.`
+      : '';
+    
     const descripcionActividad = !salud.success
-      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${resumenError}. El detalle quedó en el registro interno.`
+      ? `El agente de monitoreo falló en las ${verificacionesFallidas} verificaciones del lote${resumenError}.${resumenDuraciones} El detalle quedó en el registro interno.`
       : salud.partial
-        ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron${resumenError}. Detectó ${actualizacionesDetectadas} actualización(es).`
-        : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).`;
+        ? `El agente de monitoreo completó ${verificacionesExitosas} de ${candidatos.length} verificaciones; ${verificacionesFallidas} fallaron${resumenError}. Detectó ${actualizacionesDetectadas} actualización(es).${resumenDuraciones}`
+        : `Agente de monitoreo ejecutado. ${verificacionesExitosas} expediente(s) revisado(s) y ${actualizacionesDetectadas} actualización(es) detectada(s).${resumenDuraciones}`;
 
     await db.collection('actividad').add({
       fecha: Timestamp.now(),
