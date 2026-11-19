@@ -7,6 +7,7 @@ import { crearEventoInicial, crearEventoTimeline } from './timeline';
 import { tierFuente, esDuplicado, folioFactory } from './expediente';
 import { selectMonitoringCandidates, summarizeMonitoringRun } from './monitoring-health';
 import { MONITOREO_DEFAULTS, debeDetenerMonitoreo } from './monitoreo-budget';
+import { resolverPeriodoRecap } from './recap-periodo';
 
 /**
  * Helper para normalizar fechas de Firestore que pueden ser Timestamp o string ISO
@@ -769,7 +770,10 @@ export async function ejecutarAgenteMonitoreo(
   }
 }
 
-export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual') {
+export async function ejecutarAgenteRecapMensual(
+  trigger: TriggerTipo = 'manual',
+  periodo: { mes?: number; anio?: number } = {},
+) {
     const startTime = Date.now();
     const DEADLINE_MS = 280_000;
     const MARGEN_PARSEO_MS = 10_000;
@@ -779,9 +783,7 @@ export async function ejecutarAgenteRecapMensual(trigger: TriggerTipo = 'manual'
     let duracionClaudeMs = 0;
 
     try {
-          const ahora = new Date();
-          const mesRecap = ahora.getMonth() === 0 ? 12 : ahora.getMonth();
-          const anioRecap = ahora.getMonth() === 0 ? ahora.getFullYear() - 1 : ahora.getFullYear();
+          const { mes: mesRecap, anio: anioRecap } = resolverPeriodoRecap(new Date(), periodo);
           const meses = ['enero','febrero','marzo','abril','mayo','junio',
                                             'julio','agosto','septiembre','octubre','noviembre','diciembre'];
           const mesLabel = meses[mesRecap - 1];

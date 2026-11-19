@@ -2,60 +2,35 @@ import { NextResponse } from 'next/server';
 import { ejecutarAgenteRecapMensual } from '@/lib/agents';
 import { requireCron } from '@/lib/auth';
 
-export const maxDuration = 60;
+// El recap hace búsqueda web con Claude y tarda más de un minuto. Con el
+// maxDuration anterior (60 s) Vercel mataba la función antes de escribir nada,
+// así que desde junio de 2026 ningún recap se generó solo.
+export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 
-// Monthly cron: runs recap first (fast ~30s), then dispatches monitoreo separately
+// Cron mensual: genera el recap del mes anterior. El monitoreo ya corre cada
+// 3 días dentro de /api/cron/todo, así que aquí no se vuelve a disparar.
 export async function GET(request: Request) {
-      const authError = requireCron(request);
-      if (authError) return authError;
-      const cronBearer = `Bearer ${process.env.CRON_SECRET}`;
+  const authError = requireCron(request);
+  if (authError) return authError;
 
-      try {
-        const resultados: Record<string, unknown> = {};
-              const erroresGlobales: string[] = [];
+  try {
+    console.log('[CRON-MENSUAL] Ejecutando recap mensual...');
+    const recap = await ejecutarAgenteRecapMensual('cron');
+    console.log('[CRON-MENSUAL] Completado:', recap.mensaje ?? recap.success);
 
-        // 1. Recap mensual FIRST (fast, single Claude call ~30s)
-        console.log('[CRON-MENSUAL] Ejecutando recap mensual...');
-              try {
-                        const recap = await ejecutarAgenteRecapMensual('cron');
-                        resultados.recap = recap;
-              } catch (error) {
-                        const msg = error instanceof Error ? error.message : String(error);
-                        erroresGlobales.push(`Recap fallo: ${msg}`);
-                        resultados.recap = { success: false, error: msg };
-              }
-
-        // 2. Monitoreo - dispatch as separate request (fire and forget)
-        console.log('[CRON-MENSUAL] Disparando monitoreo...');
-              try {
-                        const baseUrl = process.env.VERCEL_URL
-                          ? `https://${process.env.VERCEL_URL}`
-                                    : 'http://localhost:3000';
-                        fetch(`${baseUrl}/api/cron/monitoreo`, {
-                                    headers: { Authorization: cronBearer },
-                        }).catch(() => {});
-                        resultados.monitoreo = { status: 'dispatched' };
-              } catch (error) {
-                        const msg = error instanceof Error ? error.message : String(error);
-                                  erroresGlobales.push(`Monitoreo dispatch fallo: ${msg}`);
-              }
-
-        console.log('[CRON-MENSUAL] Completado');
-
-        return NextResponse.json({
-                  mensaje: 'Cron mensual completado (recap done + monitoreo dispatched)',
-                        resultados,
-                  erroresGlobales,
-        });
-      } catch (error) {
-              console.error('[CRON-MENSUAL] Error general:', error);
-              return NextResponse.json(
-                  {
-                              error: 'Error en cron mensual',
-                              detalle: error instanceof Error ? error.message : String(error),
-                  },
-                  { status: 500 }
-                      );
-      }
+    return NextResponse.json(
+      { mensaje: 'Cron mensual completado', resultados: { recap } },
+      { status: recap.success ? 200 : 502 },
+    );
+  } catch (error) {
+    console.error('[CRON-MENSUAL] Error general:', error);
+    return NextResponse.json(
+      {
+        error: 'Error en cron mensual',
+        detalle: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
+  }
 }
