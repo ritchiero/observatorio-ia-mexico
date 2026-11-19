@@ -135,20 +135,24 @@ async function publicarLoteEditorial() {
   const casos = db.collection('casos_ia');
   const anuncios = db.collection('anuncios');
   const iniciativas = db.collection('iniciativas');
+  const timeline = db.collection('eventos_timeline');
   const casoRef = casos.doc(CASO.id);
   const imagenRef = anuncios.doc(IMAGEN.id);
   const decretoRef = iniciativas.doc('ags-lxvi-845');
   const fabricaRef = anuncios.doc(FABRICA_ID);
-  const eventoRefs = avances.map(a => anuncios.doc(a.id));
+  const fichaRefs = avances.map(a => anuncios.doc(a.id));
+  const eventoRefs = avances.map(a => timeline.doc(`editorial-${a.id}-${a.fecha}`));
 
   await db.runTransaction(async tx => {
     if ((await tx.get(lote)).exists) return;
 
-    const [casosActuales, anunciosActuales, leyesActuales, fichas] = await Promise.all([
+    const [casosActuales, anunciosActuales, leyesActuales, fichas, eventos, eventosActuales] = await Promise.all([
       tx.get(casos.select('expedienteActual', 'nombre')),
       tx.get(anuncios.select('titulo', 'descripcion')),
       tx.get(iniciativas.select('titulo', 'referenciaOficial', 'urlPDF', 'proponente', 'entidadFederativa')),
-      tx.getAll(fabricaRef, ...eventoRefs),
+      tx.getAll(fabricaRef, ...fichaRefs),
+      tx.getAll(...eventoRefs),
+      Promise.all(avances.map(a => tx.get(timeline.where('anuncioId', '==', a.id).select('fuente', 'fuentes')))),
     ]);
     const fecha = Timestamp.now();
     const publicados: string[] = [];
@@ -188,6 +192,7 @@ async function publicarLoteEditorial() {
     })) {
       tx.create(decretoRef, {
         ...DECRETO,
+        status: DECRETO.estatus,
         fecha: fechaEditorial('2026-03-12'),
         fechaPublicacion: fechaEditorial('2026-11-09'),
         fechaVigencia: fechaEditorial('2026-11-10'),
@@ -222,15 +227,40 @@ async function publicarLoteEditorial() {
       const fuentes = ficha.get('fuentes');
       const historial: DocumentData[] = Array.isArray(actualizaciones) ? actualizaciones : [];
       const referencias: DocumentData[] = Array.isArray(fuentes) ? fuentes : [];
-      if (historial.some(a => a?.fuente === avance.fuente)) continue;
-      tx.update(ficha.ref, {
-        actualizaciones: [...historial, { fecha: fechaEditorial(avance.fecha), descripcion: avance.descripcion, fuente: avance.fuente, cambioStatus: false }],
-        fuentes: referencias.some(f => f?.url === avance.fuente)
-          ? referencias
-          : [...referencias, { url: avance.fuente, titulo: avance.titulo, fecha: fechaEditorial(avance.fecha), tipo: 'comunicado_oficial' }],
-        updatedAt: fecha,
+      const fechaAvance = fechaEditorial(avance.fecha);
+      const fuente = { url: avance.fuente, titulo: avance.titulo, fecha: fechaAvance, tipo: 'declaracion' };
+      const tieneHistorial = historial.some(a => a?.fuente === avance.fuente);
+      const tieneReferencia = referencias.some(f => f?.url === avance.fuente);
+      const corregirReferencia = referencias.some(f => f?.url === avance.fuente && f.tipo === 'comunicado_oficial');
+      const tieneEvento = eventos[i].exists || eventosActuales[i].docs.some(doc => {
+        const fuentes = doc.get('fuentes');
+        return doc.get('fuente') === avance.fuente ||
+          (Array.isArray(fuentes) && fuentes.some(f => f?.url === avance.fuente));
       });
-      publicados.push(ficha.ref.path);
+      if (!tieneHistorial || !tieneReferencia || corregirReferencia) {
+        tx.update(ficha.ref, {
+          ...(!tieneHistorial && { actualizaciones: [...historial, { fecha: fechaAvance, descripcion: avance.descripcion, fuente: avance.fuente, cambioStatus: false }] }),
+          ...(!tieneReferencia && { fuentes: [...referencias, fuente] }),
+          ...(corregirReferencia && { fuentes: referencias.map(f =>
+            f?.url === avance.fuente && f.tipo === 'comunicado_oficial' ? { ...f, tipo: fuente.tipo } : f) }),
+          updatedAt: fecha,
+        });
+      }
+      if (!tieneEvento) {
+        const eventoRef = eventoRefs[i];
+        tx.create(eventoRef, {
+          id: eventoRef.id,
+          anuncioId: avance.id,
+          fecha: fechaAvance,
+          tipo: 'actualizacion',
+          titulo: avance.titulo,
+          descripcion: avance.descripcion,
+          impacto: 'neutral',
+          fuentes: [fuente],
+          createdAt: fecha,
+        });
+      }
+      if (!tieneHistorial || !tieneReferencia || corregirReferencia || !tieneEvento) publicados.push(ficha.ref.path);
     }
 
     if (publicados.length) {
